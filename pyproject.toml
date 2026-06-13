@@ -1,0 +1,28 @@
+[project]
+name = "timeline-gen"
+version = "0.1.0"
+description = "Generación fiel de líneas de tiempo de figuras políticas (T02 — Generación de lenguaje)"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2",
+    # Backbone NLP (pinear al integrar):
+    # "spacy",
+    # "sentence-transformers",
+    # "faiss-cpu",        # o "chromadb"
+    # Producto:
+    # "fastapi",
+    # "uvicorn",
+    # "streamlit",
+    # Evaluación:
+    # "rouge-score",
+    # Almacenamiento:
+    # "pandas",           # parquet; o usar sqlite3 stdlib
+    # HeidelTime se gestiona aparte (Java + TreeTagger) — ver README / Docker.
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]

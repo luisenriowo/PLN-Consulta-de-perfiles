@@ -1,0 +1,78 @@
+"""Esquemas de datos compartidos por todo el pipeline.
+
+Estos modelos son el contrato de datos del sistema. Son CASI inmutables:
+cualquier cambio aquí afecta a las cuatro condiciones por igual y, por tanto,
+afecta la comparación. Mantén los campos fieles a  §5.
+
+Nada de lógica de negocio vive aquí: solo estructura y validación.
+"""
+
+from __future__ import annotations
+
+from datetime import date
+
+from pydantic import BaseModel, Field
+
+
+class EntidadMencion(BaseModel):
+    """Una mención de entidad detectada por NER y resuelta por entity linking.
+
+    `entidad_id` es el identificador canónico tras la resolución (p. ej.
+    "humala:ollanta"); queda en None cuando la mención no se pudo enlazar a una
+    entidad conocida del gazetteer. Es lo que resuelve la ambigüedad
+    Humala/Antauro/Nadine exigida por .
+    """
+
+    texto: str
+    tipo: str  # PER, ORG, LOC, MISC (etiquetas spaCy)
+    inicio: int  # offset de carácter en Documento.texto
+    fin: int
+    entidad_id: str | None = None
+    entidad_nombre: str | None = None
+
+
+class Documento(BaseModel):
+    """Una noticia cruda ingerida del corpus.
+
+    `fecha_pub` actúa como DCT (Document Creation Time): es el ancla que la
+    normalización temporal (HeidelTime) usa para resolver expresiones
+    relativas ("ayer", "el lunes pasado") a fechas absolutas.
+
+    `entidades` lo rellena el backbone (pipeline/entities.py); empieza vacío en
+    la ingesta. Campo aditivo: no afecta la interfaz del punto de swap.
+    """
+
+    doc_id: str
+    fuente: str
+    url: str
+    fecha_pub: date
+    texto: str
+    entidades: list[EntidadMencion] = Field(default_factory=list)
+
+
+class EventCluster(BaseModel):
+    """Un evento candidato, agrupado por correferencia entre documentos.
+
+    Es la ENTRADA del punto de swap: las cuatro condiciones de generación
+    reciben exactamente la misma `list[EventCluster]`. `pasajes_evidencia`
+    es lo que el Sistema (RAG) usa para anclar; la Ablación lo ignora.
+    """
+
+    cluster_id: str
+    fecha_normalizada: date
+    pasajes_evidencia: list[str] = Field(default_factory=list)
+    fuentes: list[str] = Field(default_factory=list)
+
+
+class TimelineEntry(BaseModel):
+    """Una entrada de la línea de tiempo generada.
+
+    Es la SALIDA del punto de swap, idéntica en forma para las cuatro
+    condiciones. `fuentes` es obligatorio por la invariante de atribución
+    (§2.6): ningún evento se afirma sin pasaje fuente que lo respalde.
+    """
+
+    fecha: date
+    resumen: str
+    fuentes: list[str] = Field(default_factory=list)
+    confianza: float | None = None
