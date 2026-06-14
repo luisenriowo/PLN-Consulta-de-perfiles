@@ -62,6 +62,9 @@ class EventCluster(BaseModel):
     fecha_normalizada: date
     pasajes_evidencia: list[str] = Field(default_factory=list)
     fuentes: list[str] = Field(default_factory=list)
+    # Aditivo: fechas de publicación de las notas miembro. Lo usa salience.py
+    # para la señal "cobertura sostenida" (§2). No afecta la interfaz del swap.
+    fechas_evidencia: list[date] = Field(default_factory=list)
 
 
 class TimelineEntry(BaseModel):

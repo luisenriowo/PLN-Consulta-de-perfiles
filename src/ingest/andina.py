@@ -17,7 +17,7 @@ Odebrecht), pero NO llega a 2006/2011. La profundidad mayor exige otra vía
 (GDELT/BigQuery), fuera de alcance por decisión del proyecto.
 
 robots.txt de andina.pe = `Allow: /`; aun así verificamos antes de cada fetch
-(CLAUDE.md §9) y respetamos la ventana temporal.
+( §9) y respetamos la ventana temporal.
 """
 
 from __future__ import annotations
@@ -55,7 +55,9 @@ def _absolutizar(href: str) -> str:
 
 def _campos_ocultos(sopa: BeautifulSoup) -> dict[str, str]:
     """Todos los inputs (incluye __VIEWSTATE) para reenviar en el postback."""
-    return {i["name"]: i.get("value", "") for i in sopa.find_all("input") if i.get("name")}
+    return {
+        i["name"]: i.get("value", "") for i in sopa.find_all("input") if i.get("name")
+    }
 
 
 def _targets_pager(sopa: BeautifulSoup) -> dict[str, str]:
@@ -91,7 +93,9 @@ def buscar(session, consulta: str, *, max_paginas: int = 15) -> list[str]:
         datos = _campos_ocultos(sopa)
         datos["__EVENTTARGET"] = targets[siguiente]
         datos["__EVENTARGUMENT"] = ""
-        resp = session.post(BUSQUEDA, params={"search": consulta}, data=datos, timeout=30)
+        resp = session.post(
+            BUSQUEDA, params={"search": consulta}, data=datos, timeout=30
+        )
         sopa = BeautifulSoup(resp.text, "lxml")
     return urls
 
@@ -129,7 +133,9 @@ def parse_nota(session, url: str) -> Documento | None:
     lead = meta_lead.get("content", "").strip() if meta_lead else ""
     cuerpo = ""
     if cuerpo_el:
-        for w in cuerpo_el.select("script, style, blockquote, iframe, ins, .twitter-tweet"):
+        for w in cuerpo_el.select(
+            "script, style, blockquote, iframe, ins, .twitter-tweet"
+        ):
             w.decompose()
         cuerpo = _limpiar_cuerpo(cuerpo_el.get_text("\n", strip=True))
 

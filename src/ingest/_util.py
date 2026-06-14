@@ -6,6 +6,7 @@ robots.txt y aplicación de la fecha de corte). Mantener fino.
 
 from __future__ import annotations
 
+import functools
 import time
 import urllib.robotparser
 from datetime import date
@@ -13,7 +14,7 @@ from urllib.parse import urlparse
 
 import requests
 
-# Ventana FIJA de la evaluación sobre Ollanta Humala (CLAUDE.md §1).
+# Ventana FIJA de la evaluación sobre Ollanta Humala ( §1).
 # Congelada para reproducibilidad: el corpus no incluye nada fuera de ella.
 # Inicio en 2021: es el piso REAL alcanzable por la búsqueda de Andina para el
 # sujeto (medido: 2021-06 … 2026-05, ver memoria andina-search-feasibility).
@@ -62,15 +63,23 @@ def get_with_backoff(
     raise last_exc
 
 
-def puede_scrapear(url: str, *, user_agent: str = USER_AGENT) -> bool:
-    """Consulta robots.txt del dominio antes de scrapear ( §9)."""
-    partes = urlparse(url)
-    robots_url = f"{partes.scheme}://{partes.netloc}/robots.txt"
+@functools.lru_cache(maxsize=32)
+def _robots(scheme: str, netloc: str) -> urllib.robotparser.RobotFileParser | None:
+    """Parser de robots.txt cacheado por dominio (un solo fetch por host)."""
     rp = urllib.robotparser.RobotFileParser()
-    rp.set_url(robots_url)
+    rp.set_url(f"{scheme}://{netloc}/robots.txt")
     try:
         rp.read()
     except Exception:
+        return None
+    return rp
+
+
+def puede_scrapear(url: str, *, user_agent: str = USER_AGENT) -> bool:
+    """Consulta robots.txt del dominio antes de scrapear ( §9)."""
+    partes = urlparse(url)
+    rp = _robots(partes.scheme, partes.netloc)
+    if rp is None:
         # Si robots.txt no se puede leer, somos conservadores: no scrapear.
         return False
     return rp.can_fetch(user_agent, url)

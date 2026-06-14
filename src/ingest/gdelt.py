@@ -1,19 +1,26 @@
 """Ingesta — colector GDELT (DOC 2.0 API).
 
-Recupera cobertura de noticias en español y la mapea a `Documento`. GDELT da
-metadatos reales (title, url, dominio, fecha vista) → buen ajuste con `fecha_pub`,
-pero NO entrega el cuerpo del artículo: `texto` queda con el titular. Para
-profundidad histórica (Humala abarca ~4 décadas) hay que ir a GDELT en BigQuery;
-la DOC API solo cubre de forma fiable los últimos ~meses (eso es 'escalar').
+Fuente SECUNDARIA: aporta medios INDEPENDIENTES (no andina.pe) para corroborar
+eventos → habilita la señal de saliencia multi-fuente (bonus). GDELT da
+metadatos reales (title, url, dominio, fecha) pero NO el cuerpo: `texto` = titular.
 
-Respeta robots.txt vía la API oficial y la fecha de corte ( §1, §9).
+⚠ Rate limit medido: la DOC API exige **1 request cada ≥5 s** (si no, 429
+"Please limit requests to one every 5 seconds"). Por eso usamos backoff base 6 s.
+La DOC API admite rango con start/enddatetime (≈2017→), suficiente para la
+ventana 2021–2025; la profundidad mayor exigiría BigQuery (fuera de alcance).
 """
 
 from __future__ import annotations
 
 from datetime import date, datetime
 
-from src.ingest._util import dentro_de_corte, get_with_backoff, http_session
+from src.ingest._util import (
+    FECHA_CORTE_HUMALA,
+    FECHA_INICIO_HUMALA,
+    dentro_de_ventana,
+    get_with_backoff,
+    http_session,
+)
 from src.schemas import Documento
 
 API = "https://api.gdeltproject.org/api/v2/doc/doc"
@@ -24,8 +31,17 @@ def _parse_seendate(s: str) -> date:
     return datetime.strptime(s, "%Y%m%dT%H%M%SZ").date()
 
 
-def collect(nombre: str, hasta: date, *, maxrecords: int = 75) -> list[Documento]:
-    """Recolecta documentos de GDELT para `nombre` hasta la fecha de corte."""
+def collect(
+    nombre: str,
+    hasta: date = FECHA_CORTE_HUMALA,
+    *,
+    desde: date = FECHA_INICIO_HUMALA,
+    maxrecords: int = 250,
+) -> list[Documento]:
+    """Recolecta documentos de GDELT para `nombre` en la ventana [desde, hasta].
+
+    Una sola request (con backoff ≥6 s por el rate limit). `maxrecords` ≤ 250.
+    """
     session = http_session()
     resp = get_with_backoff(
         session,
@@ -36,8 +52,11 @@ def collect(nombre: str, hasta: date, *, maxrecords: int = 75) -> list[Documento
             "format": "json",
             "maxrecords": maxrecords,
             "sort": "DateDesc",
+            "startdatetime": desde.strftime("%Y%m%d") + "000000",
             "enddatetime": hasta.strftime("%Y%m%d") + "235959",
         },
+        base_delay=6.0,
+        max_tries=5,
     )
     articulos = resp.json().get("articles", [])
     docs: list[Documento] = []
@@ -46,7 +65,7 @@ def collect(nombre: str, hasta: date, *, maxrecords: int = 75) -> list[Documento
             fecha_pub = _parse_seendate(art["seendate"])
         except (KeyError, ValueError):
             continue
-        if not dentro_de_corte(fecha_pub, hasta):
+        if not dentro_de_ventana(fecha_pub, desde=desde, hasta=hasta):
             continue
         docs.append(
             Documento(
@@ -54,7 +73,7 @@ def collect(nombre: str, hasta: date, *, maxrecords: int = 75) -> list[Documento
                 fuente=art.get("domain", "gdelt"),
                 url=art.get("url", ""),
                 fecha_pub=fecha_pub,
-                texto=art.get("title", "").strip(),  # sin cuerpo: solo titular
+                texto=art.get("title", "").strip(),   # sin cuerpo: solo titular
             )
         )
     return docs
