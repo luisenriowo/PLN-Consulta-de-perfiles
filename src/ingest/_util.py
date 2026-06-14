@@ -13,8 +13,13 @@ from urllib.parse import urlparse
 
 import requests
 
-# Fecha de corte FIJA de la evaluación sobre Ollanta Humala ( §1).
-# Congelada para reproducibilidad: el corpus no incluye nada posterior.
+# Ventana FIJA de la evaluación sobre Ollanta Humala (CLAUDE.md §1).
+# Congelada para reproducibilidad: el corpus no incluye nada fuera de ella.
+# Inicio en 2021: es el piso REAL alcanzable por la búsqueda de Andina para el
+# sujeto (medido: 2021-06 … 2026-05, ver memoria andina-search-feasibility).
+# Cubre toda la era judicial Odebrecht (juicio 2022→, condena 2025), que es el
+# núcleo del caso disputado. 2006/2011 no son alcanzables sin BigQuery.
+FECHA_INICIO_HUMALA: date = date(2021, 1, 1)
 FECHA_CORTE_HUMALA: date = date(2025, 12, 31)
 
 # Identificación honesta del bot (uso académico). Permite que los sitios nos
@@ -74,3 +79,13 @@ def puede_scrapear(url: str, *, user_agent: str = USER_AGENT) -> bool:
 def dentro_de_corte(fecha_pub: date, hasta: date) -> bool:
     """True si el documento es publicado en o antes de la fecha de corte."""
     return fecha_pub <= hasta
+
+
+def dentro_de_ventana(
+    fecha_pub: date,
+    *,
+    desde: date = FECHA_INICIO_HUMALA,
+    hasta: date = FECHA_CORTE_HUMALA,
+) -> bool:
+    """True si el documento cae dentro de la ventana cerrada [desde, hasta]."""
+    return desde <= fecha_pub <= hasta
