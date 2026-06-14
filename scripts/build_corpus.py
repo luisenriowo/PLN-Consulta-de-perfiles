@@ -38,6 +38,7 @@ from src.ingest._util import (
     http_session,
 )
 from src.pipeline import entities, preprocess
+from src.pipeline.protagonism import clasificar
 
 SUJETO = "Ollanta Humala"
 SUJETO_ID = "humala:ollanta"
@@ -108,36 +109,6 @@ def stats_near_dup(docs) -> dict:
     }
 
 
-def _prefijo_titular(texto: str) -> int:
-    """Largo del bloque título+lead (primeras 2 líneas del texto de Andina)."""
-    lineas = texto.split("\n")
-    if len(lineas) >= 2:
-        return len(lineas[0]) + 1 + len(lineas[1])
-    return len(lineas[0])
-
-
-def clasificar_protagonismo(doc) -> str:
-    """'protagonista' | 'solo_mencionado' | 'no_mencionado'.
-
-    protagonista := Humala aparece en título/lead, O es la persona dominante
-    (≥2 menciones y nadie lo supera). Mención sin protagonismo = lateral.
-    """
-    menciones = [e for e in doc.entidades if e.entidad_id == SUJETO_ID]
-    if not menciones:
-        return "no_mencionado"
-    prefijo = _prefijo_titular(doc.texto)
-    en_titular = any(e.inicio <= prefijo for e in menciones)
-
-    per = Counter()
-    for e in doc.entidades:
-        if e.tipo == "PER":
-            per[e.entidad_id or e.texto.lower()] += 1
-    n_ollanta = per.get(SUJETO_ID, 0)
-    dominante = n_ollanta >= 2 and n_ollanta >= max(per.values())
-
-    return "protagonista" if (en_titular or dominante) else "solo_mencionado"
-
-
 def _tipo_fuente(doc) -> str:
     return "andina" if doc.fuente == "andina.pe" else "gdelt"
 
@@ -199,7 +170,7 @@ def main() -> None:
     anotados = entities.link_entities(limpios, modelo=MODELO)
 
     print("== PROTAGONISMO (gate-metric 1) ==")
-    clase = {d.doc_id: clasificar_protagonismo(d) for d in anotados}
+    clase = {d.doc_id: clasificar(d) for d in anotados}
     clases = Counter(clase.values())
     protag = [d for d in anotados if clase[d.doc_id] == "protagonista"]
     print(f"  protagonista: {len(protag)}  | solo_mencionado: {clases['solo_mencionado']}"

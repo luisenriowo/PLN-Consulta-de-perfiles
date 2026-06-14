@@ -13,21 +13,14 @@ de agencia, pub ≈ evento, así que es una primera aproximación razonable.
 
 from __future__ import annotations
 
-import functools
-
 import numpy as np
-from sentence_transformers import SentenceTransformer
 from sklearn.cluster import AgglomerativeClustering
 
+from src.pipeline import embeddings
 from src.schemas import Documento, EventCluster
 
-MODELO_EMB = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+MODELO_EMB = embeddings.MODELO_EMB
 UMBRAL_DEFECTO = 0.35   # distancia coseno; menor = clusters más estrictos
-
-
-@functools.lru_cache(maxsize=1)
-def _modelo(nombre: str = MODELO_EMB) -> SentenceTransformer:
-    return SentenceTransformer(nombre)
 
 
 def _texto_evento(doc: Documento) -> str:
@@ -46,7 +39,7 @@ def cluster_events(
     if not docs:
         return []
 
-    emb = _modelo(modelo).encode(
+    emb = embeddings.modelo(modelo).encode(
         [_texto_evento(d) for d in docs], normalize_embeddings=True
     )
     if len(docs) == 1:
