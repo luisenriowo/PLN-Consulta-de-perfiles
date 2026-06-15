@@ -5,19 +5,35 @@ description = "Generación fiel de líneas de tiempo de figuras políticas (T02 
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2",
-    # Backbone NLP (pinear al integrar):
-    # "spacy",
-    # "sentence-transformers",
-    # "faiss-cpu",        # o "chromadb"
-    # Producto:
-    # "fastapi",
-    # "uvicorn",
-    # "streamlit",
-    # Evaluación:
-    # "rouge-score",
-    # Almacenamiento:
-    # "pandas",           # parquet; o usar sqlite3 stdlib
-    # HeidelTime se gestiona aparte (Java + TreeTagger) — ver README / Docker.
+
+    # Ingesta / scraping.
+    "beautifulsoup4>=4.12",
+    "lxml>=5",
+    "requests>=2.32",
+
+    # Almacenamiento y datos tabulares.
+    "pandas>=2.2",
+    "pyarrow>=16",
+    "openpyxl>=3.1",
+
+    # Backbone NLP.
+    "spacy>=3.7",
+    "sentence-transformers>=3",
+    "scikit-learn>=1.5",
+    "numpy>=1.26",
+
+    # Generacion LLM.
+    "anthropic>=0.40",
+    "python-dotenv>=1",
+
+    # Producto.
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "streamlit>=1.38",
+
+    # Evaluacion.
+    "rouge-score>=0.1.2",
+    # HeidelTime se gestiona aparte (Java + TreeTagger) - ver README / Docker.
 ]
 
 [build-system]
