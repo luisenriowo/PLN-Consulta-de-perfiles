@@ -28,10 +28,13 @@ _SYSTEM = (
 class Ablacion:
     name = "ablacion"
 
+    def __init__(self, sujeto: str = SUJETO) -> None:
+        self.sujeto = sujeto
+
     def generate(self, clusters: list[EventCluster]) -> list[TimelineEntry]:
         salida: list[TimelineEntry] = []
         for c in clusters:
-            user = f"Figura: {SUJETO}. Fecha: {c.fecha_normalizada.isoformat()}."
+            user = f"Figura: {self.sujeto}. Fecha: {c.fecha_normalizada.isoformat()}."
             resumen = _llm.completar(_SYSTEM, user)
             salida.append(
                 TimelineEntry(

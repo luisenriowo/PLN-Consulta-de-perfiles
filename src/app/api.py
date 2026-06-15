@@ -1,83 +1,101 @@
-"""Producto — Backend FastAPI (OBLIGATORIO, CLAUDE.md §9).
+"""Producto — Backend FastAPI multi-figura (OBLIGATORIO, CLAUDE.md §9).
 
-Sirve la línea de tiempo generada (JSON) por condición, con las fuentes
-resueltas a URLs para la atribución. Lee las salidas precomputadas por
-`scripts/run_generation.py` (data/salidas/<cond>.json) y el mapa doc_id→url del
-corpus. No sobre-ingenierizar: expone lo justo para el frontend.
+READ-ONLY sobre outputs ya precomputados. Lee `data/figuras.json` (manifiesto)
+y, por figura, las salidas `data/salidas/<slug>/<cond>.json` + el corpus
+`data/corpus_<slug>.parquet`. Alinea las 4 condiciones por `cluster_id`
+server-side y resuelve cada fuente a {url, título, lead}. NO ejecuta el pipeline
+ni llama al LLM en el request (eso es offline; ver scripts/precompute_figura.py).
 
-Levantar:  uvicorn src.app.api:app --reload
+Sirve además el frontend estático en `src/app/web/`.
+
+Levantar:  uvicorn src.app.api:app --reload    →    http://127.0.0.1:8000
 """
 
 from __future__ import annotations
 
 import json
-from datetime import date
 from functools import lru_cache
 from pathlib import Path
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
 
-from src.assemble import assemble
-from src.schemas import TimelineEntry
+from src import manifiesto
 
-SALIDAS = Path("data/salidas")
-CORPUS = Path("data/corpus_humala.parquet")
-SUJETO = "Ollanta Humala"
+WEB = Path(__file__).parent / "web"
+# Orden de presentación de condiciones: Sistema primero (la salida "buena").
+CONDS_ORDEN = ["sistema_rag", "b1_extractive", "b0_lead", "ablacion"]
 
 app = FastAPI(title="timeline-gen", description="Líneas de tiempo de figuras políticas")
 
 
-@lru_cache(maxsize=1)
-def _mapa_urls() -> dict[str, str]:
-    """doc_id -> url, para resolver las fuentes de cada entrada."""
-    if not CORPUS.exists():
+@lru_cache(maxsize=16)
+def _fuentes_map(slug: str) -> dict[str, dict]:
+    """doc_id -> {url, titulo, lead} desde el corpus de la figura."""
+    corpus = manifiesto.corpus_path(slug)
+    if not corpus.exists():
         return {}
-    df = pd.read_parquet(CORPUS, columns=["doc_id", "url"])
-    return dict(zip(df["doc_id"], df["url"]))
+    df = pd.read_parquet(corpus, columns=["doc_id", "url", "texto"])
+    mapa: dict[str, dict] = {}
+    for r in df.itertuples():
+        lineas = str(r.texto).split("\n")
+        mapa[r.doc_id] = {
+            "url": r.url,
+            "titulo": lineas[0] if lineas else "",
+            "lead": lineas[1] if len(lineas) > 1 else "",
+        }
+    return mapa
 
 
-def _condiciones() -> list[str]:
-    return sorted(p.stem for p in SALIDAS.glob("*.json")) if SALIDAS.exists() else []
+def _cargar_cond(slug: str, cond: str) -> list[dict]:
+    ruta = manifiesto.salidas_dir(slug) / f"{cond}.json"
+    return json.loads(ruta.read_text(encoding="utf-8")) if ruta.exists() else []
 
 
-def _cargar(cond: str) -> list[TimelineEntry]:
-    ruta = SALIDAS / f"{cond}.json"
-    if not ruta.exists():
-        raise HTTPException(404, f"condición '{cond}' no encontrada")
-    crudo = json.loads(ruta.read_text(encoding="utf-8"))
-    entries = [
-        TimelineEntry(
-            fecha=date.fromisoformat(e["fecha"]),
-            resumen=e["resumen"],
-            fuentes=e.get("fuentes", []),
-            confianza=e.get("confianza"),
-        )
-        for e in crudo
-    ]
-    return assemble(entries)
+@app.get("/api/figuras")
+def figuras() -> list[dict]:
+    """Manifiesto: figuras ya procesadas (para el selector)."""
+    return manifiesto.cargar()
 
 
-@app.get("/")
-def raiz() -> dict:
-    return {"sujeto": SUJETO, "condiciones": _condiciones()}
+@app.get("/api/figuras/{slug}")
+def figura(slug: str) -> dict:
+    """Timeline de la figura: eventos alineados por cluster_id, todas las
+    condiciones, con fuentes resueltas (url/título/lead)."""
+    figs = {f["slug"]: f for f in manifiesto.cargar()}
+    if slug not in figs:
+        raise HTTPException(404, f"figura '{slug}' no está en el manifiesto")
 
+    fmap = _fuentes_map(slug)
+    conds = [c for c in CONDS_ORDEN if (manifiesto.salidas_dir(slug) / f"{c}.json").exists()]
 
-@app.get("/condiciones")
-def condiciones() -> list[str]:
-    return _condiciones()
+    indice: dict[str, dict] = {}
+    for cond in conds:
+        for e in _cargar_cond(slug, cond):
+            cid = e.get("cluster_id") or f"{e['fecha']}|{','.join(sorted(e.get('fuentes', [])))}"
+            d = indice.setdefault(
+                cid, {"cluster_id": cid, "fecha": e["fecha"], "fuentes": set(), "por_condicion": {}}
+            )
+            d["fuentes"].update(e.get("fuentes", []))
+            d["por_condicion"][cond] = e["resumen"]
 
-
-@app.get("/timeline/{cond}")
-def timeline(cond: str) -> dict:
-    """Línea de tiempo de la condición, con fuentes resueltas a URLs."""
-    urls = _mapa_urls()
-    entradas = []
-    for e in _cargar(cond):
-        entradas.append({
-            "fecha": e.fecha.isoformat(),
-            "resumen": e.resumen,
-            "confianza": e.confianza,
-            "fuentes": [{"doc_id": f, "url": urls.get(f, "")} for f in e.fuentes],
+    eventos = []
+    for d in sorted(indice.values(), key=lambda d: d["fecha"]):
+        fuentes = [
+            {"doc_id": f, **fmap.get(f, {"url": "", "titulo": "", "lead": ""})}
+            for f in sorted(d["fuentes"])
+        ]
+        eventos.append({
+            "cluster_id": d["cluster_id"],
+            "fecha": d["fecha"],
+            "fuentes": fuentes,
+            "por_condicion": d["por_condicion"],
         })
-    return {"sujeto": SUJETO, "condicion": cond, "entradas": entradas}
+
+    return {"slug": slug, "nombre": figs[slug]["nombre"], "condiciones": conds, "eventos": eventos}
+
+
+# El frontend estático se monta al final para no tapar las rutas /api/*.
+if WEB.exists():
+    app.mount("/", StaticFiles(directory=str(WEB), html=True), name="web")

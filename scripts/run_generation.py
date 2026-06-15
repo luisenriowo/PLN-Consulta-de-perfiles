@@ -24,7 +24,7 @@ from src.pipeline import cluster, salience
 from src.schemas import Documento
 
 CORPUS = Path("data/corpus_humala.parquet")
-SALIDAS = Path("data/salidas")
+SALIDAS = Path("data/salidas/humala")   # layout por-figura (slug=humala)
 
 # B0/B1 no usan LLM. Sistema/Ablación sí: solo se añaden si hay API key.
 CONDICIONES = [B0Lead(), B1Extractive()]

@@ -83,6 +83,27 @@ def _canonicalizar(superficie: str, tipo: str) -> tuple[str | None, str | None]:
     return None, None
 
 
+def _canonicalizar_generico(
+    superficie: str, tipo: str, gazetteer: dict[str, tuple[str, str]]
+) -> tuple[str | None, str | None]:
+    """Resolución genérica por figura (sin reglas específicas de Humala):
+    coincidencia exacta, luego contención de tokens (las palabras de una clave
+    del gazetteer contenidas en la mención → variantes de nombre completo)."""
+    n = _norm(superficie)
+    if n in gazetteer:
+        return gazetteer[n]
+    if tipo == "PER":
+        tokens = set(n.split())
+        mejor, mejor_len = (None, None), 0
+        for clave, val in gazetteer.items():
+            kt = set(clave.split())
+            if kt and kt <= tokens and len(kt) > mejor_len:
+                mejor, mejor_len = val, len(kt)
+        if mejor_len:
+            return mejor
+    return None, None
+
+
 @functools.lru_cache(maxsize=2)
 def cargar_modelo(nombre: str = MODELO_DEFECTO):
     """Carga (y cachea) el modelo spaCy. Solo NER: desactiva lo innecesario."""
@@ -90,12 +111,20 @@ def cargar_modelo(nombre: str = MODELO_DEFECTO):
 
 
 def link_entities(
-    docs: list[Documento], *, modelo: str = MODELO_DEFECTO
+    docs: list[Documento], *, gazetteer: dict | None = None, modelo: str = MODELO_DEFECTO
 ) -> list[Documento]:
-    """Detecta entidades y resuelve menciones de la familia Humala.
+    """Detecta entidades y resuelve menciones a entidades canónicas.
 
-    Devuelve documentos nuevos con `entidades` rellenado; no muta la entrada.
+    `gazetteer=None` usa el de Humala con sus reglas (legacy, comportamiento
+    intacto). Si se pasa un gazetteer por figura, se usa resolución genérica
+    (exacta + contención de tokens). Devuelve documentos nuevos con `entidades`
+    rellenado; no muta la entrada.
     """
+    if gazetteer is None:
+        canon = _canonicalizar
+    else:
+        canon = lambda s, t: _canonicalizar_generico(s, t, gazetteer)  # noqa: E731
+
     nlp = cargar_modelo(modelo)
     salida: list[Documento] = []
     for doc, spacy_doc in zip(docs, nlp.pipe(d.texto for d in docs)):
@@ -103,7 +132,7 @@ def link_entities(
         for ent in spacy_doc.ents:
             if ent.label_ not in _TIPOS:
                 continue
-            ent_id, ent_nombre = _canonicalizar(ent.text, ent.label_)
+            ent_id, ent_nombre = canon(ent.text, ent.label_)
             menciones.append(
                 EntidadMencion(
                     texto=ent.text,

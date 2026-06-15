@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cronologías — figuras políticas</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <h1>Cronologías</h1>
+      <p class="sub">Líneas de tiempo generadas desde noticias · cada evento, atribuido a su fuente</p>
+    </div>
+    <div class="controls">
+      <label class="ctl">
+        <span>Figura</span>
+        <select id="figura"></select>
+      </label>
+      <label class="ctl">
+        <span>Desde</span>
+        <input type="date" id="desde" />
+      </label>
+      <label class="ctl">
+        <span>Hasta</span>
+        <input type="date" id="hasta" />
+      </label>
+      <label class="ctl toggle">
+        <input type="checkbox" id="comparar" />
+        <span>Comparar condiciones</span>
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <div id="meta" class="meta"></div>
+    <p id="aviso" class="aviso" hidden>
+      Caso disputado: las descripciones van <strong>atribuidas a su fuente</strong>;
+      nada se afirma como hecho. En comparación, el <em>Sistema</em> está anclado a los
+      pasajes; la <em>Ablación</em> genera sin anclaje — el contraste es el experimento.
+    </p>
+    <section id="timeline" class="timeline" aria-live="polite"></section>
+    <p id="vacio" class="vacio" hidden>Sin eventos en el rango seleccionado.</p>
+    <p id="error" class="error" hidden></p>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

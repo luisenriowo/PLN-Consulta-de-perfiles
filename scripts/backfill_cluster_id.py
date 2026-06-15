@@ -19,7 +19,7 @@ from pathlib import Path
 import pandas as pd
 
 EVENTOS = Path("data/eventos_humala.parquet")
-SALIDAS = Path("data/salidas")
+SALIDAS = Path("data/salidas/humala")   # layout por-figura
 
 
 def main() -> None:

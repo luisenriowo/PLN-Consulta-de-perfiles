@@ -25,7 +25,9 @@ if str(_RAIZ) not in sys.path:
 
 from src.schemas import TimelineEntry  # noqa: E402  (tras ajustar sys.path)
 
-SALIDAS = _RAIZ / "data" / "salidas"
+# Visor legacy de una sola figura (Humala). El visor multi-figura es la web app
+# (src/app/web + endpoints en api.py). Apunta al layout por-figura.
+SALIDAS = _RAIZ / "data" / "salidas" / "humala"
 CORPUS = _RAIZ / "data" / "corpus_humala.parquet"
 
 # Orden de presentación: Sistema primero (es la salida "buena").

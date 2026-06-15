@@ -1,0 +1,164 @@
+/* Cronologías — estética editorial. Paleta sobria + UN acento (slate-teal).
+   El contraste fiel/alucinado es tratamiento tipográfico, no cajas de color. */
+
+:root {
+  --paper:    #FBFAF6;
+  --paper-2:  #F3F0E8;
+  --ink:      #1B1A17;
+  --ink-soft: #514C42;
+  --muted:    #8A8377;
+  --hairline: #E5E0D5;
+  --accent:   #1E4E5A;   /* único acento */
+  --accent-soft: #4E7B86;
+  --accent-wash: #EAF0F0;
+
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --sans:  system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:  ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+  --sp-1: 6px; --sp-2: 12px; --sp-3: 20px; --sp-4: 32px; --sp-5: 52px; --sp-6: 84px;
+  --maxw: 860px;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Topbar ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: saturate(1.2) blur(8px);
+  border-bottom: 1px solid var(--hairline);
+  padding: var(--sp-3) var(--sp-4);
+  display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-4);
+  align-items: flex-end; justify-content: space-between;
+}
+.brand h1 {
+  font-family: var(--serif);
+  font-size: 30px; font-weight: 700; letter-spacing: -0.01em;
+  margin: 0; line-height: 1.05;
+}
+.brand .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; max-width: 46ch; }
+
+.controls { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: flex-end; }
+.ctl { display: flex; flex-direction: column; gap: 4px; }
+.ctl > span {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.09em;
+  color: var(--muted); font-weight: 600;
+}
+.ctl select, .ctl input[type="date"] {
+  font: inherit; font-size: 15px; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--hairline);
+  border-radius: 7px; padding: 7px 10px; min-width: 150px;
+}
+.ctl select:focus, .ctl input:focus { outline: 2px solid var(--accent-soft); outline-offset: 1px; }
+
+.toggle { flex-direction: row; align-items: center; gap: 8px; cursor: pointer; }
+.toggle input { accent-color: var(--accent); width: 17px; height: 17px; }
+.toggle span { text-transform: none; letter-spacing: 0; font-size: 15px; color: var(--ink-soft); font-weight: 600; }
+
+/* ---------- Layout ---------- */
+main { max-width: var(--maxw); margin: 0 auto; padding: var(--sp-5) var(--sp-4) var(--sp-6); }
+.meta { font-family: var(--serif); font-size: 15px; color: var(--muted); margin-bottom: var(--sp-3); }
+.meta strong { color: var(--ink); font-weight: 600; }
+.aviso {
+  font-size: 14px; color: var(--ink-soft); background: var(--accent-wash);
+  border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0;
+  padding: var(--sp-2) var(--sp-3); margin: 0 0 var(--sp-5);
+}
+.aviso em { font-style: normal; font-weight: 700; color: var(--accent); }
+.vacio, .error { color: var(--muted); font-style: italic; padding: var(--sp-4) 0; }
+.error { color: #8a3b2f; }
+
+/* ---------- Timeline (espina vertical) ---------- */
+.timeline { position: relative; margin-left: 8px; padding-left: var(--sp-5); }
+.timeline::before {
+  content: ""; position: absolute; left: 0; top: 8px; bottom: 8px;
+  width: 2px; background: linear-gradient(var(--hairline), var(--hairline));
+}
+
+.evento { position: relative; padding-bottom: var(--sp-5); }
+.evento::before {  /* nodo en la espina */
+  content: ""; position: absolute; left: calc(-1 * var(--sp-5) - 1px); top: 9px;
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--paper); border: 2px solid var(--accent);
+}
+
+.fecha {
+  font-family: var(--serif); font-weight: 700; color: var(--accent);
+  font-size: 21px; letter-spacing: -0.01em; line-height: 1.1;
+  display: block; margin-bottom: 2px;
+}
+.fecha .dia { font-size: 13px; color: var(--muted); font-weight: 600; font-family: var(--sans);
+  text-transform: uppercase; letter-spacing: 0.08em; display: block; }
+
+/* ---------- Vista principal (Sistema) ---------- */
+.descripcion { font-size: 18px; line-height: 1.55; margin: var(--sp-2) 0 var(--sp-2); max-width: 62ch; }
+.descartado { color: var(--muted); font-style: italic; }
+
+/* ---------- Fuentes ---------- */
+.fuentes { margin-top: var(--sp-1); }
+.fuentes > summary {
+  list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--accent-soft);
+}
+.fuentes > summary::-webkit-details-marker { display: none; }
+.fuentes > summary::before { content: "▸"; font-size: 10px; transition: transform .15s; }
+.fuentes[open] > summary::before { transform: rotate(90deg); }
+.fuentes ol { list-style: none; margin: var(--sp-2) 0 0; padding: 0;
+  border-left: 1px solid var(--hairline); }
+.fuentes li { padding: 8px 0 8px var(--sp-2); margin: 0; }
+.fuentes a { color: var(--accent); text-decoration: none; font-weight: 600; }
+.fuentes a:hover { text-decoration: underline; }
+.fuentes .lead { color: var(--ink-soft); font-size: 14.5px; margin: 2px 0 0; max-width: 64ch; }
+.fuentes .docid { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+
+/* ---------- Comparación ---------- */
+.condiciones { display: grid; gap: var(--sp-2); margin: var(--sp-2) 0; }
+.cond {
+  padding: var(--sp-2) var(--sp-3); border-radius: 9px; background: #fff;
+  border: 1px solid var(--hairline);
+}
+.cond .etq {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em;
+  text-transform: uppercase; color: var(--muted); display: inline-flex; gap: 8px; align-items: center;
+  margin-bottom: 4px;
+}
+.cond .tag { font-size: 10px; padding: 2px 7px; border-radius: 999px; font-weight: 700; letter-spacing: 0.04em; }
+.cond .texto { font-size: 16px; line-height: 1.5; }
+
+/* Sistema = anclado (la "voz" de referencia): tinta plena, regla de acento. */
+.cond.c-sistema { border-color: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.cond.c-sistema .tag { background: var(--accent-wash); color: var(--accent); }
+.cond.c-sistema .texto { color: var(--ink); }
+
+/* Ablación = sin anclaje (la "voz" a la deriva): apagada, subrayado punteado. */
+.cond.c-ablacion { background: repeating-linear-gradient(135deg, #fff, #fff 9px, var(--paper-2) 9px, var(--paper-2) 10px); }
+.cond.c-ablacion .tag { background: var(--paper-2); color: var(--ink-soft); }
+.cond.c-ablacion .texto {
+  color: var(--ink-soft);
+  text-decoration: underline dotted color-mix(in srgb, var(--ink-soft) 55%, transparent);
+  text-underline-offset: 3px;
+}
+
+/* Baselines = voz tranquila. */
+.cond.c-base .texto { color: var(--ink-soft); font-size: 15px; }
+
+@media (max-width: 620px) {
+  .topbar { padding: var(--sp-3); }
+  main { padding: var(--sp-4) var(--sp-3) var(--sp-5); }
+  .timeline { padding-left: var(--sp-4); }
+  .evento::before { left: calc(-1 * var(--sp-4) - 1px); }
+}

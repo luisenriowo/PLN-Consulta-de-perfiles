@@ -38,7 +38,12 @@ def _prefijo_titular(texto: str) -> int:
     return len(lineas[0])
 
 
-def clasificar(doc: Documento, sujeto_id: str = SUJETO_DEFECTO) -> str:
+def clasificar(
+    doc: Documento,
+    sujeto_id: str = SUJETO_DEFECTO,
+    *,
+    familia_otros: frozenset[str] | set[str] = _FAMILIA_OTROS,
+) -> str:
     """'protagonista' | 'solo_mencionado' | 'no_mencionado'.
 
     Distingue TÍTULO (línea 0) de lead (línea 1): que Ollanta esté solo en el
@@ -54,7 +59,7 @@ def clasificar(doc: Documento, sujeto_id: str = SUJETO_DEFECTO) -> str:
     en_titulo = any(e.inicio <= len_titulo for e in menciones)
     en_lead = any(e.inicio <= prefijo for e in menciones)
     otro_familiar_en_titulo = any(
-        e.entidad_id in _FAMILIA_OTROS and e.inicio <= len_titulo
+        e.entidad_id in familia_otros and e.inicio <= len_titulo
         for e in doc.entidades
     )
 
