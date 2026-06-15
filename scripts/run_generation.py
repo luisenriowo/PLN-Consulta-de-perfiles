@@ -15,14 +15,21 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.generation import _llm
+from src.generation.ablacion import Ablacion
 from src.generation.b0_lead import B0Lead
 from src.generation.b1_extractive import B1Extractive
+from src.generation.sistema_rag import SistemaRAG
 from src.pipeline import cluster, salience
 from src.schemas import Documento
 
 CORPUS = Path("data/corpus_humala.parquet")
 SALIDAS = Path("data/salidas")
+
+# B0/B1 no usan LLM. Sistema/Ablación sí: solo se añaden si hay API key.
 CONDICIONES = [B0Lead(), B1Extractive()]
+if _llm.disponible():
+    CONDICIONES += [SistemaRAG(), Ablacion()]
 
 
 def cargar_protagonistas() -> list[Documento]:
@@ -43,16 +50,18 @@ def main() -> None:
     salientes = salience.select_salient(clusters)
     print(f"docs={len(docs)}  eventos={len(clusters)}  salientes={len(salientes)}")
 
+    nombres = [c.name for c in CONDICIONES]
+    print(f"condiciones: {nombres}")
     salidas = {cond.name: cond.generate(salientes) for cond in CONDICIONES}
 
-    print("\n== COMPARACIÓN B0 (lead) vs B1 (extractivo) ==")
-    for i, c in enumerate(salientes):
-        b0 = salidas["b0_lead"][i].resumen
-        b1 = salidas["b1_extractive"][i].resumen
-        marca = "  =" if b0 == b1 else "  ≠"
-        print(f"\n{c.fecha_normalizada} [{len(c.fuentes)}n]{marca}")
-        print(f"  B0: {b0[:100]}")
-        print(f"  B1: {b1[:100]}")
+    for nombre in nombres:
+        entries = salidas[nombre]
+        print(f"\n== {nombre} ({len(entries)} entradas) ==")
+        for e in entries[:4]:
+            print(f"  {e.fecha} | {e.resumen[:95]}")
+
+    if _llm.disponible():
+        print(f"\n== COSTO LLM ==\n  {_llm.costo()}")
 
     SALIDAS.mkdir(parents=True, exist_ok=True)
     for nombre, entries in salidas.items():
