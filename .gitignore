@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project generated / local annotation workbooks
+annotation/gold/*.xlsx
+annotation/gold/*.csv
+annotation/gold/*.parquet
