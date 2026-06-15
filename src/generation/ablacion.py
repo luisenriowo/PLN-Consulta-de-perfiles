@@ -39,6 +39,7 @@ class Ablacion:
                     resumen=resumen,
                     fuentes=list(c.fuentes),   # mismas fuentes, resumen NO anclado
                     confianza=None,
+                    cluster_id=c.cluster_id,
                 )
             )
         return salida

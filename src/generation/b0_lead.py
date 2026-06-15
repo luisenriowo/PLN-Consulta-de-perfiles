@@ -26,6 +26,7 @@ class B0Lead:
                     resumen=resumen,
                     fuentes=list(c.fuentes),
                     confianza=1.0,   # fiel por construcción (texto copiado)
+                    cluster_id=c.cluster_id,
                 )
             )
         return salida

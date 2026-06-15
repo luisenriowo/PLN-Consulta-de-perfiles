@@ -79,3 +79,8 @@ class TimelineEntry(BaseModel):
     resumen: str
     fuentes: list[str] = Field(default_factory=list)
     confianza: float | None = None
+    # Provenancia: el EventCluster que originó la entrada. Es la clave para
+    # cruzar las 4 condiciones en la comparación (cada condición emite una
+    # entrada por cluster); `fecha`/`fuentes` no son claves fiables porque
+    # condiciones distintas pueden citar subconjuntos de fuentes distintos.
+    cluster_id: str | None = None

@@ -46,6 +46,7 @@ class SistemaRAG:
                     resumen=resumen,
                     fuentes=list(c.fuentes),
                     confianza=None,
+                    cluster_id=c.cluster_id,
                 )
             )
         return salida
