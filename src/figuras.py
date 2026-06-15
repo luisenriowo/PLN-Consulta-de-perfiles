@@ -52,6 +52,27 @@ FIGURAS: dict[str, FiguraConfig] = {
         gazetteer=_GZ_HUMALA,
         familia_otros=frozenset(_FAM_HUMALA),
     ),
+    # Keiko: excluir a Alberto (padre) y Kenji (hermano) — "Fujimori" a secas es
+    # ambiguo, así que NO se enlaza solo el apellido; el protagonismo se apoya en
+    # "Keiko"/"Keiko Fujimori" en título/lead.
+    "keiko": FiguraConfig(
+        slug="keiko",
+        nombre="Keiko Fujimori",
+        sujeto_id="fujimori:keiko",
+        queries=(
+            "Keiko Fujimori", "Fuerza Popular", "Cócteles", "Lava Jato", "Fujimori",
+        ),
+        gazetteer={
+            "keiko fujimori": ("fujimori:keiko", "Keiko Fujimori"),
+            "keiko sofia fujimori higuchi": ("fujimori:keiko", "Keiko Fujimori"),
+            "keiko": ("fujimori:keiko", "Keiko Fujimori"),
+            "alberto fujimori": ("fujimori:alberto", "Alberto Fujimori"),
+            "kenji fujimori": ("fujimori:kenji", "Kenji Fujimori"),
+            "kenji": ("fujimori:kenji", "Kenji Fujimori"),
+            "fuerza popular": ("org:fuerza-popular", "Fuerza Popular"),
+        },
+        familia_otros=frozenset({"fujimori:alberto", "fujimori:kenji"}),
+    ),
 }
 
 

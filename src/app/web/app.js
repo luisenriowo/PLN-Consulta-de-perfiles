@@ -78,6 +78,86 @@ function render() {
   $("vacio").hidden = n > 0;
 }
 
+// ---------- Resumen en números (panel secundario, read-only) ----------
+const fmtMesAnio = new Intl.DateTimeFormat("es", { month: "short", year: "numeric" });
+const fechaCorta = (iso) => iso ? fmtMesAnio.format(new Date(iso + "T00:00:00")) : "—";
+
+function statHTML(valor, etiqueta, nota) {
+  return `<div class="stat"><div class="num">${esc(valor)}</div>` +
+    `<div class="lbl">${esc(etiqueta)}</div>${nota ? `<div class="nota">${esc(nota)}</div>` : ""}</div>`;
+}
+
+function eventoTipoHTML(e) {
+  const est = e.estatus ? `<span class="estatus">${esc(e.estatus)}</span>` : "";
+  const span = e.span
+    ? (e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">“${esc(e.span)}”</a>` : `“${esc(e.span)}”`)
+    : `<span class="muted">— sin span procesal</span>`;
+  return `<li><span class="ev-fecha">${esc(e.fecha)}</span>${est}<span class="ev-span">${span}</span></li>`;
+}
+
+function tipoHTML(v) {
+  const evs = v.eventos.map(eventoTipoHTML).join("");
+  return `<details class="tipo"><summary><span class="t-etq">${esc(v.etiqueta)}</span>` +
+    `<span class="t-n">${v.n}</span></summary><ul>${evs}</ul></details>`;
+}
+
+function delitoHTML(d) {
+  const span = d.url
+    ? `<a href="${esc(d.url)}" target="_blank" rel="noopener">“${esc(d.span)}”</a>`
+    : `“${esc(d.span)}”`;
+  return `<li><strong>${esc(d.delito)}</strong> ${span}</li>`;
+}
+
+function renderResumen(R) {
+  const b1 = R.bloque1, b2 = R.bloque2;
+  const cards = [
+    statHTML(b1.n_hitos, "hitos"),
+    statHTML(`${fechaCorta(b1.rango_fechas[0])} – ${fechaCorta(b1.rango_fechas[1])}`, "rango"),
+    statHTML(b1.n_notas_corpus, "notas en el corpus"),
+    statHTML(b1.n_notas_citadas, "notas citadas"),
+    statHTML(b1.descartados_sistema, "descartados (SIN_RESPALDO)"),
+    statHTML(
+      b1.tasa_alucinacion == null ? "—" : (b1.tasa_alucinacion * 100).toFixed(1) + "%",
+      "tasa de alucinación",
+      b1.tasa_alucinacion == null ? "pendiente del eval" : "Sistema vs Ablación"),
+  ].join("");
+  const porCond = Object.entries(b1.eventos_por_condicion)
+    .map(([c, n]) => `${(COND[c] && COND[c].etq) || c}: ${n}`).join(" · ");
+
+  const disclaimer = b2.fuente_clasificacion === "gold_humano"
+    ? "Tipos verificados por anotación humana (gold)."
+    : "Categorización automática del sistema sobre el corpus — auditable, no es un registro legal oficial.";
+  const tipos = Object.entries(b2.por_tipo).filter(([, v]) => v.n > 0)
+    .map(([, v]) => tipoHTML(v)).join("");
+  const delitos = b2.delitos.length
+    ? b2.delitos.map(delitoHTML).join("")
+    : `<li class="muted">ninguna imputación nombrada detectada</li>`;
+
+  $("resumen").innerHTML = `
+    <details class="resumen">
+      <summary>Resumen en números</summary>
+      <div class="bloque b1">
+        <h3>Cobertura y sistema <span class="status-tag fact">hechos del corpus</span></h3>
+        <div class="b1-grid">${cards}</div>
+        <p class="por-cond">Eventos por condición — ${esc(porCond)}</p>
+      </div>
+      <div class="bloque b2">
+        <h3>Caso, por tipo procesal <span class="status-tag infer">inferencia del sistema</span></h3>
+        <p class="disclaimer">${esc(disclaimer)} Cada tipo es clicable: muestra el <em>span-fuente</em> que disparó la etiqueta.</p>
+        <div class="tipos">${tipos}</div>
+        <h4>Delitos / imputaciones mencionadas</h4>
+        <ul class="delitos">${delitos}</ul>
+      </div>
+    </details>`;
+}
+
+async function cargarResumen(slug) {
+  try {
+    const r = await fetch(`api/figuras/${slug}/resumen`);
+    if (r.ok) renderResumen(await r.json());
+  } catch { /* panel secundario: si falla, no bloquea el visor */ }
+}
+
 async function cargarFigura(slug) {
   try {
     const r = await fetch(`api/figuras/${slug}`);
@@ -92,6 +172,7 @@ async function cargarFigura(slug) {
       $("desde").value = min; $("hasta").value = max;
     }
     render();
+    cargarResumen(slug);
   } catch (e) {
     $("error").hidden = false;
     $("error").textContent = `No se pudo cargar la figura: ${e.message}`;

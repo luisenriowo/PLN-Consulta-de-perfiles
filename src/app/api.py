@@ -22,8 +22,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 
 from src import manifiesto
+from src.app import resumen as resumen_mod
 
 WEB = Path(__file__).parent / "web"
+GOLD_PROCESAL = Path("annotation/gold")
 # Orden de presentación de condiciones: Sistema primero (la salida "buena").
 CONDS_ORDEN = ["sistema_rag", "b1_extractive", "b0_lead", "ablacion"]
 
@@ -59,10 +61,9 @@ def figuras() -> list[dict]:
     return manifiesto.cargar()
 
 
-@app.get("/api/figuras/{slug}")
-def figura(slug: str) -> dict:
-    """Timeline de la figura: eventos alineados por cluster_id, todas las
-    condiciones, con fuentes resueltas (url/título/lead)."""
+def _eventos_figura(slug: str) -> dict:
+    """Timeline alineado por cluster_id (todas las condiciones, fuentes
+    resueltas). Reutilizado por /figuras/{slug} y por el resumen en números."""
     figs = {f["slug"]: f for f in manifiesto.cargar()}
     if slug not in figs:
         raise HTTPException(404, f"figura '{slug}' no está en el manifiesto")
@@ -94,6 +95,28 @@ def figura(slug: str) -> dict:
         })
 
     return {"slug": slug, "nombre": figs[slug]["nombre"], "condiciones": conds, "eventos": eventos}
+
+
+@app.get("/api/figuras/{slug}")
+def figura(slug: str) -> dict:
+    return _eventos_figura(slug)
+
+
+def _gold_procesal(slug: str) -> dict | None:
+    """Gold procesal humano (tipo/estatus por cluster_id) si existe — hook que
+    convierte el Bloque 2 de 'categorización del sistema' a 'verificado'."""
+    ruta = GOLD_PROCESAL / f"{slug}_procesal.json"
+    return json.loads(ruta.read_text(encoding="utf-8")) if ruta.exists() else None
+
+
+@app.get("/api/figuras/{slug}/resumen")
+def resumen(slug: str) -> dict:
+    """Resumen en números (read-only, sin LLM): bloque 1 (conteos exactos) +
+    bloque 2 (categorización procesal por reglas, auditable, o gold si existe)."""
+    payload = _eventos_figura(slug)
+    return resumen_mod.computar(
+        payload, n_notas_corpus=len(_fuentes_map(slug)), gold=_gold_procesal(slug)
+    )
 
 
 # El frontend estático se monta al final para no tapar las rutas /api/*.

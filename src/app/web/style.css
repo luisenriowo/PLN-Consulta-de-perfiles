@@ -156,6 +156,76 @@ main { max-width: var(--maxw); margin: 0 auto; padding: var(--sp-5) var(--sp-4) 
 /* Baselines = voz tranquila. */
 .cond.c-base .texto { color: var(--ink-soft); font-size: 15px; }
 
+/* ---------- Resumen en números (panel secundario) ---------- */
+.resumen-wrap { margin-bottom: var(--sp-5); }
+details.resumen {
+  border: 1px solid var(--hairline); border-radius: 12px; background: #fff; overflow: hidden;
+}
+details.resumen > summary {
+  list-style: none; cursor: pointer; padding: var(--sp-3) var(--sp-3);
+  font-family: var(--serif); font-size: 18px; font-weight: 700; color: var(--ink);
+  display: flex; align-items: center; gap: 8px;
+}
+details.resumen > summary::-webkit-details-marker { display: none; }
+details.resumen > summary::before { content: "▸"; color: var(--accent-soft); font-size: 12px; transition: transform .15s; }
+details.resumen[open] > summary::before { transform: rotate(90deg); }
+
+.resumen .bloque { padding: 0 var(--sp-3) var(--sp-3); }
+.resumen h3 {
+  font-family: var(--sans); font-size: 12px; text-transform: uppercase; letter-spacing: 0.09em;
+  color: var(--ink-soft); margin: var(--sp-2) 0 var(--sp-2); display: flex; align-items: center; gap: 10px;
+}
+.status-tag {
+  font-family: var(--sans); font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: none; padding: 2px 8px; border-radius: 999px;
+}
+.status-tag.fact { background: var(--accent-wash); color: var(--accent); }
+.status-tag.infer { background: var(--paper-2); color: var(--ink-soft); border: 1px dashed var(--muted); }
+
+/* Bloque 1 — hechos */
+.b1-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: var(--sp-2); }
+.stat { border: 1px solid var(--hairline); border-radius: 9px; padding: var(--sp-2); }
+.stat .num { font-family: var(--serif); font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1.1; }
+.stat .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-top: 2px; }
+.stat .nota { font-size: 11px; font-style: italic; color: var(--muted); margin-top: 3px; }
+.por-cond { font-size: 13px; color: var(--ink-soft); margin: var(--sp-2) 0 0; }
+
+/* Bloque 2 — inferencia (subordinado y marcado, set apart) */
+.resumen .b2 {
+  background: var(--paper-2); border-top: 1px dashed var(--muted);
+  margin-top: var(--sp-2); border-radius: 0 0 12px 12px;
+}
+.disclaimer { font-size: 12.5px; font-style: italic; color: var(--ink-soft); margin: 0 0 var(--sp-2); max-width: 70ch; }
+.disclaimer em { font-style: normal; font-weight: 600; }
+.resumen h4 { font-family: var(--sans); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted); margin: var(--sp-3) 0 6px; }
+
+.tipos { display: grid; gap: 5px; }
+details.tipo { border: 1px solid var(--hairline); border-radius: 8px; background: #fff; }
+details.tipo > summary {
+  list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+  padding: 8px var(--sp-2); font-size: 14px; color: var(--ink-soft);
+}
+details.tipo > summary::-webkit-details-marker { display: none; }
+.t-etq { font-weight: 600; }
+.t-n { font-family: var(--serif); font-weight: 700; color: var(--accent); font-size: 18px; }
+details.tipo ul { list-style: none; margin: 0; padding: 0 var(--sp-2) var(--sp-2); }
+details.tipo li { padding: 7px 0; border-top: 1px solid var(--hairline); font-size: 13.5px; }
+.ev-fecha { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-right: 8px; }
+.estatus {
+  font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 999px;
+  background: var(--accent-wash); color: var(--accent); margin-right: 8px;
+}
+.ev-span { color: var(--ink-soft); }
+.ev-span a { color: var(--accent); text-decoration: none; }
+.ev-span a:hover { text-decoration: underline; }
+.delitos { list-style: none; margin: 0; padding: 0; }
+.delitos li { padding: 5px 0; font-size: 13.5px; color: var(--ink-soft); }
+.delitos a, .delitos strong { color: var(--ink); }
+.delitos a { color: var(--accent); text-decoration: none; }
+.delitos a:hover { text-decoration: underline; }
+.muted { color: var(--muted); font-style: italic; }
+
 @media (max-width: 620px) {
   .topbar { padding: var(--sp-3); }
   main { padding: var(--sp-4) var(--sp-3) var(--sp-5); }
