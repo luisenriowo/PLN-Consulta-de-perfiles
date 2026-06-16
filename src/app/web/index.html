@@ -29,8 +29,29 @@
         <input type="checkbox" id="comparar" />
         <span>Comparar condiciones</span>
       </label>
+      <button id="btn-nueva" class="btn-nueva" type="button">+ Nueva figura</button>
     </div>
   </header>
+
+  <section id="nueva" class="nueva" hidden>
+    <form id="form-nueva">
+      <h2>Procesar una figura nueva</h2>
+      <label>Nombre completo
+        <input id="n-nombre" required placeholder="Pedro Castillo" autocomplete="off" />
+      </label>
+      <label>Homónimos a excluir <span class="opt">(opcional)</span>
+        <input id="n-homonimos" placeholder="otros con el mismo apellido, separados por coma" autocomplete="off" />
+      </label>
+      <label>Términos de búsqueda extra <span class="opt">(opcional)</span>
+        <input id="n-terminos" placeholder="partido, caso… separados por coma" autocomplete="off" />
+      </label>
+      <button type="submit">Procesar</button>
+      <p class="hint">Corre el pipeline completo en <strong>background</strong> — toma unos minutos
+        (scraping + NER + clustering + generación). El nombre completo es clave para desambiguar;
+        los homónimos se excluyen para no contaminar la línea de tiempo.</p>
+    </form>
+    <div id="n-estado" class="n-estado"></div>
+  </section>
 
   <main>
     <div id="meta" class="meta"></div>

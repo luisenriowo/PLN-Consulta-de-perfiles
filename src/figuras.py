@@ -19,13 +19,19 @@ Para AÑADIR una figura nueva:
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import date
+from pathlib import Path
 
 from src.ingest._util import FECHA_CORTE_HUMALA, FECHA_INICIO_HUMALA
 # Fuente única del gazetteer/familia de Humala (definidos en el backbone):
 from src.pipeline.entities import _GAZETTEER as _GZ_HUMALA
+from src.pipeline.entities import _norm
 from src.pipeline.protagonism import _FAMILIA_OTROS as _FAM_HUMALA
+
+# Figuras creadas desde la web se persisten aquí (gitignored, en data/).
+_DINAMICAS = Path("data/figuras_dinamicas.json")
 
 
 @dataclass(frozen=True)
@@ -95,9 +101,71 @@ FIGURAS: dict[str, FiguraConfig] = {
 
 
 def cargar(slug: str) -> FiguraConfig:
-    if slug not in FIGURAS:
-        raise KeyError(
-            f"No hay config para '{slug}'. Figuras disponibles: {sorted(FIGURAS)}. "
-            "Añade un FiguraConfig en src/figuras.py."
-        )
-    return FIGURAS[slug]
+    """Config de una figura: primero el registro en código, luego las dinámicas
+    (creadas desde la web)."""
+    if slug in FIGURAS:
+        return FIGURAS[slug]
+    dinamicas = _cargar_dinamicas()
+    if slug in dinamicas:
+        return dinamicas[slug]
+    raise KeyError(f"No hay config para '{slug}'.")
+
+
+def construir_config(
+    slug: str, nombre: str, homonimos=(), terminos=()
+) -> FiguraConfig:
+    """Arma un FiguraConfig desde input de formulario.
+
+    El gazetteer exige el NOMBRE COMPLETO para enlazar (vía contención de
+    tokens), así que apellidos sueltos no enlazan (evita falsos positivos). Los
+    homónimos se registran y se excluyen del protagonismo (anti-contaminación).
+    """
+    sid = f"fig:{slug}"
+    gazetteer = {_norm(nombre): (sid, nombre)}
+    familia: set[str] = set()
+    for i, h in enumerate(homonimos):
+        h = (h or "").strip()
+        if not h:
+            continue
+        hid = f"{slug}:hom{i}"
+        gazetteer[_norm(h)] = (hid, h)
+        familia.add(hid)
+    queries = tuple([nombre] + [t.strip() for t in terminos if t and t.strip()])
+    return FiguraConfig(
+        slug=slug, nombre=nombre, sujeto_id=sid, queries=queries,
+        gazetteer=gazetteer, familia_otros=frozenset(familia),
+    )
+
+
+def _cfg_to_json(c: FiguraConfig) -> dict:
+    return {
+        "slug": c.slug, "nombre": c.nombre, "sujeto_id": c.sujeto_id,
+        "queries": list(c.queries),
+        "gazetteer": {k: list(v) for k, v in c.gazetteer.items()},
+        "familia_otros": sorted(c.familia_otros),
+        "desde": c.desde.isoformat(), "hasta": c.hasta.isoformat(),
+    }
+
+
+def _cfg_from_json(d: dict) -> FiguraConfig:
+    return FiguraConfig(
+        slug=d["slug"], nombre=d["nombre"], sujeto_id=d["sujeto_id"],
+        queries=tuple(d["queries"]),
+        gazetteer={k: tuple(v) for k, v in d["gazetteer"].items()},
+        familia_otros=frozenset(d["familia_otros"]),
+        desde=date.fromisoformat(d["desde"]), hasta=date.fromisoformat(d["hasta"]),
+    )
+
+
+def _cargar_dinamicas() -> dict[str, FiguraConfig]:
+    if not _DINAMICAS.exists():
+        return {}
+    crudo = json.loads(_DINAMICAS.read_text(encoding="utf-8"))
+    return {s: _cfg_from_json(d) for s, d in crudo.items()}
+
+
+def guardar_dinamica(cfg: FiguraConfig) -> None:
+    _DINAMICAS.parent.mkdir(parents=True, exist_ok=True)
+    data = json.loads(_DINAMICAS.read_text(encoding="utf-8")) if _DINAMICAS.exists() else {}
+    data[cfg.slug] = _cfg_to_json(cfg)
+    _DINAMICAS.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")

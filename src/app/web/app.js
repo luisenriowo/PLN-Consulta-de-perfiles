@@ -179,13 +179,69 @@ async function cargarFigura(slug) {
   }
 }
 
+// ---------- Crear figura nueva (job en background) ----------
+async function recargarFiguras(seleccionar) {
+  const figuras = await (await fetch("api/figuras")).json();
+  const sel = $("figura");
+  sel.innerHTML = figuras.map((f) =>
+    `<option value="${esc(f.slug)}">${esc(f.nombre)} (${f.n_eventos})</option>`).join("");
+  if (seleccionar) sel.value = seleccionar;
+  cargarFigura(sel.value);
+}
+
+function pollJob(slug, el) {
+  const t = setInterval(async () => {
+    try {
+      const s = await (await fetch(`api/jobs/${slug}`)).json();
+      const log = (s.log || []).slice(-3).map(esc).join("<br>");
+      if (s.estado === "running") {
+        el.innerHTML = `<span class="spin">◴</span> Procesando <strong>${esc(slug)}</strong>… ` +
+          `<div class="joblog">${log}</div>`;
+      } else if (s.estado === "done") {
+        clearInterval(t);
+        el.innerHTML = `✓ <strong>${esc(slug)}</strong> lista — cargando…`;
+        await recargarFiguras(slug);
+        $("nueva").hidden = true;
+      } else if (s.estado === "error") {
+        clearInterval(t);
+        el.innerHTML = `✗ Error procesando <strong>${esc(slug)}</strong>: ${esc(s.error || "")}`;
+      }
+    } catch { /* reintenta en el próximo tick */ }
+  }, 3000);
+}
+
+function initNueva() {
+  $("btn-nueva").addEventListener("click", () => { $("nueva").hidden = !$("nueva").hidden; });
+  $("form-nueva").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const nombre = $("n-nombre").value.trim();
+    if (!nombre) return;
+    const split = (id) => $(id).value.split(",").map((s) => s.trim()).filter(Boolean);
+    const el = $("n-estado");
+    el.textContent = "Lanzando…";
+    try {
+      const r = await fetch("api/figuras", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre, homonimos: split("n-homonimos"), terminos: split("n-terminos") }),
+      });
+      const s = await r.json();
+      if (s.estado === "done") {
+        el.innerHTML = `Ya existía — cargando…`;
+        await recargarFiguras(s.slug); $("nueva").hidden = true; return;
+      }
+      pollJob(s.slug, el);
+    } catch (e) { el.textContent = "Error al lanzar: " + e.message; }
+  });
+}
+
 async function init() {
+  initNueva();
   try {
     const r = await fetch("api/figuras");
     const figuras = await r.json();
     if (!figuras.length) {
       $("error").hidden = false;
-      $("error").textContent = "No hay figuras procesadas. Precomputa una con scripts/precompute_figura.py.";
+      $("error").textContent = "No hay figuras procesadas. Usa “+ Nueva figura” para crear una.";
       return;
     }
     const sel = $("figura");

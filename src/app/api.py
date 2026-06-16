@@ -20,8 +20,10 @@ from pathlib import Path
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from src import manifiesto
+from src.app import jobs
 from src.app import resumen as resumen_mod
 
 WEB = Path(__file__).parent / "web"
@@ -124,6 +126,37 @@ def resumen(slug: str) -> dict:
     return resumen_mod.computar(
         payload, n_notas_corpus=len(_fuentes_map(slug)), gold=_gold_procesal(slug)
     )
+
+
+class CrearFigura(BaseModel):
+    nombre: str
+    homonimos: list[str] = []
+    terminos: list[str] = []
+
+
+@app.post("/api/figuras")
+def crear_figura(body: CrearFigura) -> dict:
+    """Lanza el precómputo de una figura nueva como JOB en background (nunca en
+    el request). Devuelve el slug y el estado para que la web haga polling."""
+    nombre = body.nombre.strip()
+    if not nombre:
+        raise HTTPException(400, "El nombre no puede estar vacío.")
+    slug = jobs.slugify(nombre)
+    if not slug:
+        raise HTTPException(400, "Nombre inválido.")
+    if slug in {f["slug"] for f in manifiesto.cargar()}:
+        return {"slug": slug, "estado": "done", "nota": "ya existe"}
+    est = jobs.leer_estado(slug)
+    if est and est.get("estado") == "running":
+        return {"slug": slug, "estado": "running"}
+    jobs.lanzar(slug, nombre, body.homonimos, body.terminos)
+    return {"slug": slug, "estado": "running"}
+
+
+@app.get("/api/jobs/{slug}")
+def estado_job(slug: str) -> dict:
+    """Estado del job de precómputo (running/done/error) + cola del log."""
+    return jobs.estado(slug)
 
 
 # El frontend estático se monta al final para no tapar las rutas /api/*.
