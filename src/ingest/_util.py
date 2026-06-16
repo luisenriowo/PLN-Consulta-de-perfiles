@@ -14,14 +14,14 @@ from urllib.parse import urlparse
 
 import requests
 
-# Ventana FIJA de la evaluación sobre Ollanta Humala ( §1).
-# Congelada para reproducibilidad: el corpus no incluye nada fuera de ella.
-# Inicio en 2021: es el piso REAL alcanzable por la búsqueda de Andina para el
-# sujeto (medido: 2021-06 … 2026-05, ver memoria andina-search-feasibility).
-# Cubre toda la era judicial Odebrecht (juicio 2022→, condena 2025), que es el
-# núcleo del caso disputado. 2006/2011 no son alcanzables sin BigQuery.
+# Ventana del proyecto (default `hasta`/`desde` de cada FiguraConfig).
+# Inicio en 2021: piso REAL alcanzable por la búsqueda de Andina (2006/2011 no,
+# sin BigQuery; ver memoria andina-search-feasibility).
+# Corte EXTENDIDO a 2026-12-31 (antes 2025-12-31) para incluir el año electoral
+# 2026 — legítimo porque el gold aún no se congela; RE-DECLARAR este corte en la
+# nota metodológica del informe. Andina llega de hecho hasta ~mediados de 2026.
 FECHA_INICIO_HUMALA: date = date(2021, 1, 1)
-FECHA_CORTE_HUMALA: date = date(2025, 12, 31)
+FECHA_CORTE_HUMALA: date = date(2026, 12, 31)
 
 # Identificación honesta del bot (uso académico). Permite que los sitios nos
 # distingan y que respetemos su política.

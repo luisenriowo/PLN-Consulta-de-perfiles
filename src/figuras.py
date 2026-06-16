@@ -73,6 +73,24 @@ FIGURAS: dict[str, FiguraConfig] = {
         },
         familia_otros=frozenset({"fujimori:alberto", "fujimori:kenji"}),
     ),
+    # Roberto Sánchez: apellido común. NO se enlaza "Sánchez" a secas; se exige
+    # "Roberto Sánchez". Homónimo a excluir: Pedro Sánchez (presidente de España,
+    # aparece en notas internacionales).
+    "roberto-sanchez": FiguraConfig(
+        slug="roberto-sanchez",
+        nombre="Roberto Sánchez",
+        sujeto_id="sanchez:roberto",
+        queries=(
+            "Roberto Sánchez", "Sánchez Palomino", "Juntos por el Perú", "Mincetur",
+        ),
+        gazetteer={
+            "roberto sanchez": ("sanchez:roberto", "Roberto Sánchez"),
+            "roberto sanchez palomino": ("sanchez:roberto", "Roberto Sánchez"),
+            "pedro sanchez": ("sanchez:pedro", "Pedro Sánchez"),
+            "juntos por el peru": ("org:juntos-peru", "Juntos por el Perú"),
+        },
+        familia_otros=frozenset({"sanchez:pedro"}),
+    ),
 }
 
 

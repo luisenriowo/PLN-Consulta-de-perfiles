@@ -33,8 +33,9 @@ app = FastAPI(title="timeline-gen", description="Líneas de tiempo de figuras po
 
 
 @lru_cache(maxsize=16)
-def _fuentes_map(slug: str) -> dict[str, dict]:
-    """doc_id -> {url, titulo, lead} desde el corpus de la figura."""
+def _fuentes_map_cached(slug: str, _mtime: float) -> dict[str, dict]:
+    """doc_id -> {url, titulo, lead}. `_mtime` está en la clave de caché para que
+    se invalide sola al reescribir el parquet (p. ej. tras re-precomputar)."""
     corpus = manifiesto.corpus_path(slug)
     if not corpus.exists():
         return {}
@@ -48,6 +49,12 @@ def _fuentes_map(slug: str) -> dict[str, dict]:
             "lead": lineas[1] if len(lineas) > 1 else "",
         }
     return mapa
+
+
+def _fuentes_map(slug: str) -> dict[str, dict]:
+    corpus = manifiesto.corpus_path(slug)
+    mtime = corpus.stat().st_mtime if corpus.exists() else 0.0
+    return _fuentes_map_cached(slug, mtime)
 
 
 def _cargar_cond(slug: str, cond: str) -> list[dict]:

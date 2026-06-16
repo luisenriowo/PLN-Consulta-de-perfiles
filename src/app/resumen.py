@@ -103,7 +103,12 @@ def _clasificar(ev: dict) -> dict:
             if pat.search(frase):
                 est = _estatus(frase) if tipo in ("sentencia", "apelacion") else None
                 return {"tipo": tipo, "span": frase, "doc_id": doc_id, "url": url, "estatus": est}
-    return {"tipo": "otro", "span": None, "doc_id": None, "url": None, "estatus": None}
+    # "Otro": no se detectó acto procesal (típico de eventos políticos, no
+    # judiciales). Mostramos el titular representativo como CONTEXTO del evento
+    # — no es un trigger procesal, solo dice de qué trata.
+    f0 = ev["fuentes"][0] if ev.get("fuentes") else {}
+    return {"tipo": "otro", "span": f0.get("titulo") or None,
+            "doc_id": f0.get("doc_id"), "url": f0.get("url"), "estatus": None}
 
 
 def _delitos(eventos: list[dict]) -> list[dict]:
