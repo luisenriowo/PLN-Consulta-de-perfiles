@@ -40,8 +40,14 @@ python scripts/smoke_ingest.py
 ```
 
 Environment variables (in a `.env` file, gitignored):
-- `ANTHROPIC_API_KEY` — required for SistemaRAG and Ablación conditions; B0/B1 run without it.
-- `TIMELINE_LLM_MODEL` — overrides the default LLM (`claude-haiku-4-5`).
+- `RELATIONS_LLM_PROVIDER` — proveedor LLM: `anthropic` | `openai` | `groq` | `gemini` (default: `anthropic`). Governa tanto la clasificación de relaciones como la generación de timeline. Cambiar aquí es suficiente para migrar de proveedor sin tocar código.
+- API key del proveedor elegido — solo se necesita para SistemaRAG y Ablación; B0/B1 no llaman a ningún LLM:
+  - `ANTHROPIC_API_KEY` (si `RELATIONS_LLM_PROVIDER=anthropic`)
+  - `OPENAI_API_KEY`    (si `RELATIONS_LLM_PROVIDER=openai`)
+  - `GROQ_API_KEY`      (si `RELATIONS_LLM_PROVIDER=groq`)
+  - `GEMINI_API_KEY`    (si `RELATIONS_LLM_PROVIDER=gemini`)
+- `TIMELINE_LLM_MODEL` — sobreescribe el modelo de generación (defaults por proveedor: `claude-haiku-4-5`, `gpt-4o-mini`, `llama-3.3-70b-versatile`, `gemini-flash-latest`).
+- `RELATIONS_LLM_MODEL` — sobreescribe el modelo de clasificación de relaciones.
 - `TIMELINE_API` — Streamlit frontend target (default `http://127.0.0.1:8000`).
 
 ## Architecture
@@ -130,7 +136,7 @@ A cluster is salient if ≥2 of 5 signals are true:
 
 ### LLM client (`src/generation/_llm.py`)
 
-Shared by SistemaRAG and Ablación. Default model: `claude-haiku-4-5` at `temperature=0.7` (fixed per §5). Call count and USD cost are accumulated per-process via `_llm.costo()`. The Anthropic API has no `seed` parameter — run-to-run variation is inherent.
+Shared by SistemaRAG and Ablación. Delegates to `src/llm/_config.py` — the provider is resolved from `RELATIONS_LLM_PROVIDER` at startup (anthropic / openai / groq / gemini). Default model per provider configured in `_DEFAULTS`. Temperature fixed at 0.7 per §5. Call count and USD cost accumulated per-process via `_llm.costo()`. Run-to-run variation is inherent (no seed parameter across providers).
 
 ### Evaluation (`eval/`)
 

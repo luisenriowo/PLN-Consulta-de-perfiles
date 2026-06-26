@@ -8,32 +8,33 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">
-      <h1>Cronologías</h1>
-      <p class="sub">Líneas de tiempo generadas desde noticias · cada evento, atribuido a su fuente</p>
-    </div>
-    <div class="controls">
-      <label class="ctl">
+    <h1 class="brand">Cronologías</h1>
+    <div class="toolbar">
+      <label class="ctl ctl-lg">
         <span>Figura</span>
         <select id="figura"></select>
       </label>
-      <label class="ctl">
+      <label class="ctl ctl-lg" id="ctl-condicion">
+        <span>Condición</span>
+        <select id="condicion"></select>
+      </label>
+      <label class="ctl ctl-sm">
         <span>Desde</span>
         <input type="date" id="desde" />
       </label>
-      <label class="ctl">
+      <label class="ctl ctl-sm">
         <span>Hasta</span>
         <input type="date" id="hasta" />
       </label>
       <label class="ctl toggle">
         <input type="checkbox" id="comparar" />
-        <span>Comparar condiciones</span>
+        <span>Comparar</span>
       </label>
       <button id="btn-nueva" class="btn-nueva" type="button">+ Nueva figura</button>
     </div>
   </header>
 
-  <section id="nueva" class="nueva" hidden>
+  <section id="nueva" class="nueva oculto">
     <form id="form-nueva">
       <h2>Procesar una figura nueva</h2>
       <label>Nombre completo
@@ -47,24 +48,37 @@
       </label>
       <button type="submit">Procesar</button>
       <p class="hint">Corre el pipeline completo en <strong>background</strong> — toma unos minutos
-        (scraping + NER + clustering + generación). El nombre completo es clave para desambiguar;
-        los homónimos se excluyen para no contaminar la línea de tiempo.</p>
+        (scraping + NER + clustering + generación).</p>
     </form>
     <div id="n-estado" class="n-estado"></div>
   </section>
 
   <main>
-    <div id="meta" class="meta"></div>
-    <p id="aviso" class="aviso" hidden>
+    <div id="cargando" class="cargando">Cargando figura…</div>
+    <div id="meta" class="meta oculto"></div>
+    <p id="aviso" class="aviso oculto">
       Caso disputado: las descripciones van <strong>atribuidas a su fuente</strong>;
       nada se afirma como hecho. En comparación, el <em>Sistema</em> está anclado a los
       pasajes; la <em>Ablación</em> genera sin anclaje — el contraste es el experimento.
     </p>
-    <section id="resumen" class="resumen-wrap" aria-label="Resumen en números"></section>
-    <section id="timeline" class="timeline" aria-live="polite"></section>
-    <p id="vacio" class="vacio" hidden>Sin eventos en el rango seleccionado.</p>
-    <p id="error" class="error" hidden></p>
+    <section id="resumen" class="resumen-wrap oculto" aria-label="Resumen en números"></section>
+    <section id="timeline" class="timeline oculto" aria-live="polite"></section>
+    <p id="vacio" class="vacio oculto">Sin eventos en el rango seleccionado.</p>
+    <p id="error" class="error oculto"></p>
   </main>
+
+  <div id="fuentes-modal" class="modal-fondo oculto" role="dialog" aria-modal="true">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <div class="modal-meta">
+          <p id="modal-titulo" class="modal-titulo"></p>
+          <p id="modal-n" class="modal-n"></p>
+        </div>
+        <button id="modal-cerrar" class="modal-cerrar" aria-label="Cerrar">✕</button>
+      </div>
+      <div id="modal-cuerpo" class="modal-cuerpo"></div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
