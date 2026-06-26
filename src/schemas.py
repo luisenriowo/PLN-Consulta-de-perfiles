@@ -13,6 +13,20 @@ from datetime import date
 
 from pydantic import BaseModel, Field
 
+# ---------------------------------------------------------------------------
+# Taxonomía de relaciones — fuente única de verdad.
+# Importar desde aquí; no redefinir en otros módulos.
+# ---------------------------------------------------------------------------
+TIPOS_RELACION: dict[str, str] = {
+    "alianza":          "Apoyo, colaboración o respaldo mutuo",
+    "conflicto":        "Oposición, enfrentamiento o rechazo",
+    "pertenencia":      "Miembro de, afiliado a, parte de",
+    "nombramiento":     "Designación, nombramiento o elección de un cargo",
+    "acusacion":        "Imputación, acusación o investigación judicial",
+    "ruptura":          "Alejamiento, renuncia o expulsión de una relación previa",
+    "mencion":          "Co-aparición sin relación claramente identificable",
+}
+
 
 class EntidadMencion(BaseModel):
     """Una mención de entidad detectada por NER y resuelta por entity linking.
@@ -65,6 +79,57 @@ class EventCluster(BaseModel):
     # Aditivo: fechas de publicación de las notas miembro. Lo usa salience.py
     # para la señal "cobertura sostenida" (§2). No afecta la interfaz del swap.
     fechas_evidencia: list[date] = Field(default_factory=list)
+
+
+class EntityNode(BaseModel):
+    """Entidad descubierta del corpus — nodo del grafo de conocimiento.
+
+    `entity_id` es el identificador canónico: QID de Wikidata cuando se pudo
+    enlazar ("Q6093206"), slug normalizado cuando no ("castillo-pedro").
+    `metadata` almacena datos extra de Wikidata (cargo, partido, etc.) sin
+    forzar un schema rígido que rompería si Wikidata amplía sus datos.
+    """
+
+    entity_id:   str
+    nombre:      str
+    tipo:        str                                    # PER | ORG | LOC
+    alias:       list[str]               = Field(default_factory=list)
+    wikidata_id: str | None               = None
+    n_docs:      int                      = 0
+    n_menciones: int                      = 0
+    metadata:    dict                     = Field(default_factory=dict)
+
+
+class RelationResult(BaseModel):
+    """Resultado de clasificar la relación entre dos entidades en una oración.
+
+    Es la salida del RelationClassifier y la entrada para construir RelationEdge.
+    `metodo` preserva la trazabilidad: saber si fue reglas o LLM permite
+    filtrar por calidad al analizar los resultados.
+    """
+
+    tipo:       str     # clave de TIPOS_RELACION
+    confianza:  float   # 0.0 – 1.0
+    evidencia:  str     # oración de respaldo
+    metodo:     str     # "rules" | "llm" | "hybrid"
+
+
+class RelationEdge(BaseModel):
+    """Arista del grafo: relación tipificada entre dos entidades en un período.
+
+    `cluster_id` enlaza de vuelta al EventCluster que generó la relación,
+    permitiendo cruzar el grafo con la línea de tiempo existente.
+    """
+
+    origen_id:  str
+    destino_id: str
+    tipo:       str
+    fecha:      date
+    evidencia:  list[str] = Field(default_factory=list)   # oraciones de respaldo
+    fuentes:    list[str] = Field(default_factory=list)   # doc_ids
+    confianza:  float
+    metodo:     str
+    cluster_id: str | None = None
 
 
 class TimelineEntry(BaseModel):

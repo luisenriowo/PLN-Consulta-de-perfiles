@@ -14,25 +14,36 @@ Levantar:  uvicorn src.app.api:app --reload    →    http://127.0.0.1:8000
 from __future__ import annotations
 
 import json
+import logging
+import os
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
+from typing import Optional
 
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from src import manifiesto
 from src.app import jobs
 from src.app import resumen as resumen_mod
+from src.storage import KnowledgeGraph
+
+log = logging.getLogger(__name__)
 
 WEB = Path(__file__).parent / "web"
 GOLD_PROCESAL = Path("annotation/gold")
+_DATA = Path(os.environ.get("TIMELINE_DATA_DIR", "data"))
+
 # Orden de presentación de condiciones: Sistema primero (la salida "buena").
 CONDS_ORDEN = ["sistema_rag", "b1_extractive", "b0_lead", "ablacion"]
 
 app = FastAPI(title="timeline-gen", description="Líneas de tiempo de figuras políticas")
 
+
+# ── Helpers internos ───────────────────────────────────────────────────────────
 
 @lru_cache(maxsize=16)
 def _fuentes_map_cached(slug: str, _mtime: float) -> dict[str, dict]:
@@ -61,14 +72,50 @@ def _fuentes_map(slug: str) -> dict[str, dict]:
 
 def _cargar_cond(slug: str, cond: str) -> list[dict]:
     ruta = manifiesto.salidas_dir(slug) / f"{cond}.json"
-    return json.loads(ruta.read_text(encoding="utf-8")) if ruta.exists() else []
+    if not ruta.exists():
+        return []
+    try:
+        return json.loads(ruta.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        log.warning("No se pudo leer %s: %s", ruta, exc)
+        return []
 
 
-@app.get("/api/figuras")
-def figuras() -> list[dict]:
-    """Manifiesto: figuras ya procesadas (para el selector)."""
-    return manifiesto.cargar()
+def _check_slug(slug: str) -> None:
+    figs = {f["slug"] for f in manifiesto.cargar()}
+    if slug not in figs:
+        raise HTTPException(404, f"figura '{slug}' no está en el manifiesto")
 
+
+def _check_grafo(slug: str) -> Path:
+    """Valida que el grafo DuckDB de la figura exista."""
+    ruta = _DATA / f"graph_{slug}.duckdb"
+    if not ruta.exists():
+        raise HTTPException(
+            404,
+            f"Grafo de '{slug}' no existe — corre primero: "
+            f"python scripts/precompute_figura.py {slug}",
+        )
+    return ruta
+
+
+def _abrir_grafo(slug: str):
+    """Context manager wrapper con error HTTP útil si el DuckDB está corrupto."""
+    import contextlib
+
+    @contextlib.contextmanager
+    def _cm():
+        try:
+            with KnowledgeGraph(slug, read_only=True) as g:
+                yield g
+        except Exception as exc:
+            log.error("Error abriendo grafo de '%s': %s", slug, exc)
+            raise HTTPException(503, f"Grafo de '{slug}' no disponible temporalmente") from exc
+
+    return _cm()
+
+
+# ── Timeline ───────────────────────────────────────────────────────────────────
 
 def _eventos_figura(slug: str) -> dict:
     """Timeline alineado por cluster_id (todas las condiciones, fuentes
@@ -106,6 +153,14 @@ def _eventos_figura(slug: str) -> dict:
     return {"slug": slug, "nombre": figs[slug]["nombre"], "condiciones": conds, "eventos": eventos}
 
 
+# ── Rutas: timeline ────────────────────────────────────────────────────────────
+
+@app.get("/api/figuras")
+def figuras() -> list[dict]:
+    """Manifiesto: figuras ya procesadas (para el selector)."""
+    return manifiesto.cargar()
+
+
 @app.get("/api/figuras/{slug}")
 def figura(slug: str) -> dict:
     return _eventos_figura(slug)
@@ -115,7 +170,13 @@ def _gold_procesal(slug: str) -> dict | None:
     """Gold procesal humano (tipo/estatus por cluster_id) si existe — hook que
     convierte el Bloque 2 de 'categorización del sistema' a 'verificado'."""
     ruta = GOLD_PROCESAL / f"{slug}_procesal.json"
-    return json.loads(ruta.read_text(encoding="utf-8")) if ruta.exists() else None
+    if not ruta.exists():
+        return None
+    try:
+        return json.loads(ruta.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        log.warning("No se pudo leer gold %s: %s", ruta, exc)
+        return None
 
 
 @app.get("/api/figuras/{slug}/resumen")
@@ -127,6 +188,106 @@ def resumen(slug: str) -> dict:
         payload, n_notas_corpus=len(_fuentes_map(slug)), gold=_gold_procesal(slug)
     )
 
+
+# ── Rutas: grafo de relaciones ─────────────────────────────────────────────────
+
+@app.get("/api/figuras/{slug}/grafo/entidades")
+def grafo_entidades(slug: str) -> list[dict]:
+    """Nodos del grafo de relaciones: entidades descubiertas y sus métricas."""
+    _check_slug(slug)
+    _check_grafo(slug)
+    with _abrir_grafo(slug) as g:
+        return g.entities()
+
+
+@app.get("/api/figuras/{slug}/grafo/relaciones")
+def grafo_relaciones(
+    slug: str,
+    desde: Optional[str] = Query(None, description="Fecha inicio ISO (YYYY-MM-DD)"),
+    hasta: Optional[str] = Query(None, description="Fecha fin ISO (YYYY-MM-DD)"),
+    tipo: Optional[str] = Query(None, description="Tipo de relación"),
+    origen_id: Optional[str] = Query(None),
+    destino_id: Optional[str] = Query(None),
+    min_confianza: float = Query(0.0, ge=0.0, le=1.0),
+) -> list[dict]:
+    """Aristas del grafo con filtros opcionales. Incluye nombres resueltos de entidades."""
+    _check_slug(slug)
+    _check_grafo(slug)
+
+    def _parse_date(s: str | None) -> date | None:
+        if not s:
+            return None
+        try:
+            return date.fromisoformat(s)
+        except ValueError:
+            raise HTTPException(400, f"Fecha inválida: {s!r} — usa formato YYYY-MM-DD")
+
+    with _abrir_grafo(slug) as g:
+        return g.relations(
+            desde=_parse_date(desde),
+            hasta=_parse_date(hasta),
+            tipo=tipo,
+            origen_id=origen_id,
+            destino_id=destino_id,
+            min_confianza=min_confianza,
+        )
+
+
+@app.get("/api/figuras/{slug}/grafo/centralidad")
+def grafo_centralidad(
+    slug: str,
+    desde: Optional[str] = Query(None),
+    hasta: Optional[str] = Query(None),
+    min_confianza: float = Query(0.0, ge=0.0, le=1.0),
+) -> dict[str, float]:
+    """PageRank de cada entidad en el grafo — las más influyentes en el período."""
+    _check_slug(slug)
+    _check_grafo(slug)
+
+    def _d(s: str | None) -> date | None:
+        return date.fromisoformat(s) if s else None
+
+    with _abrir_grafo(slug) as g:
+        return g.centralidad(
+            desde=_d(desde), hasta=_d(hasta), min_confianza=min_confianza
+        )
+
+
+@app.get("/api/figuras/{slug}/grafo/comunidades")
+def grafo_comunidades(
+    slug: str,
+    desde: Optional[str] = Query(None),
+    hasta: Optional[str] = Query(None),
+    min_confianza: float = Query(0.0, ge=0.0, le=1.0),
+) -> list[list[str]]:
+    """Comunidades Louvain en el grafo no dirigido — grupos de entidades afines."""
+    _check_slug(slug)
+    _check_grafo(slug)
+
+    def _d(s: str | None) -> date | None:
+        return date.fromisoformat(s) if s else None
+
+    with _abrir_grafo(slug) as g:
+        comunidades = g.comunidades(
+            desde=_d(desde), hasta=_d(hasta), min_confianza=min_confianza
+        )
+        return [sorted(c) for c in comunidades]
+
+
+@app.get("/api/figuras/{slug}/grafo/camino")
+def grafo_camino(
+    slug: str,
+    origen: str = Query(..., description="entity_id origen"),
+    destino: str = Query(..., description="entity_id destino"),
+) -> list[str]:
+    """Camino más corto entre dos entidades. Lista vacía si no hay conexión."""
+    _check_slug(slug)
+    _check_grafo(slug)
+    with _abrir_grafo(slug) as g:
+        return g.camino(origen, destino)
+
+
+# ── Rutas: figuras dinámicas ───────────────────────────────────────────────────
 
 class CrearFigura(BaseModel):
     nombre: str
@@ -150,6 +311,7 @@ def crear_figura(body: CrearFigura) -> dict:
     if est and est.get("estado") == "running":
         return {"slug": slug, "estado": "running"}
     jobs.lanzar(slug, nombre, body.homonimos, body.terminos)
+    log.info("job lanzado: slug=%s nombre=%r", slug, nombre)
     return {"slug": slug, "estado": "running"}
 
 

@@ -17,13 +17,13 @@ dependencies = [
     "openpyxl>=3.1",
 
     # Backbone NLP.
-    "spacy>=3.7",
+    "spacy>=3.8",
     "sentence-transformers>=3",
     "scikit-learn>=1.5",
     "numpy>=1.26",
 
     # Generacion LLM.
-    "anthropic>=0.40",
+    "anthropic>=0.80",
     "python-dotenv>=1",
 
     # Producto.
@@ -34,6 +34,19 @@ dependencies = [
     # Evaluacion.
     "rouge-score>=0.1.2",
     # HeidelTime se gestiona aparte (Java + TreeTagger) - ver README / Docker.
+
+    # Grafo de conocimiento y análisis de relaciones.
+    "duckdb>=1.2",
+    "networkx>=3.4",
+
+    # NER transformer (producción) — modelo roberta-base-bne-capiter.
+    # Para CPU: instalar torch CPU-only antes: pip install torch --index-url https://download.pytorch.org/whl/cpu
+    # Nota: transformers 5.x disponible; API de pipeline NER compatible con 4.x y 5.x.
+    "transformers>=4.44",
+
+    # Proveedores LLM opcionales (solo instalar el que se use).
+    "openai>=1.60",      # para RELATIONS_LLM_PROVIDER=openai|gemini (endpoint compatible)
+    # groq>=0.15         # para RELATIONS_LLM_PROVIDER=groq
 ]
 
 [build-system]

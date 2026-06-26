@@ -37,7 +37,10 @@ class SistemaRAG:
         salida: list[TimelineEntry] = []
         for c in clusters:
             pasajes = "\n".join(f"- {p}" for p in c.pasajes_evidencia)
-            resumen = _llm.completar(_SYSTEM, f"PASAJES:\n{pasajes}")
+            try:
+                resumen = _llm.completar(_SYSTEM, f"PASAJES:\n{pasajes}")
+            except Exception:
+                continue   # cuota agotada u otro error → descarta
             if not resumen or _SIN_RESPALDO in resumen:
                 continue   # descarta lo no respaldado (§2.6)
             salida.append(
