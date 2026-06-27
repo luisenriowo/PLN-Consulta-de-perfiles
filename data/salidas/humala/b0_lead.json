@@ -1,0 +1,209 @@
+[
+  {
+    "fecha": "2021-01-26",
+    "resumen": "Elecciones 2021: conoce el perfil de Ollanta Humala, candidato del Partido Nacionalista Ollanta Moisés Humala Tasso es el candidato a la Presidencia de la República por el Partido Nacionalista Peruano.",
+    "fuentes": [
+      "andina:831345",
+      "andina:837020"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:000"
+  },
+  {
+    "fecha": "2021-02-01",
+    "resumen": "Ollanta Humala: Poder Judicial realizó audiencia de control de acusación El Primer Juzgado de Investigación Preparatoria de la Corte Superior Nacional Penal realizó esta mañana la audiencia virtual de control de acusación contra Ollanta Humala, Nadine Heredia y otros, investigados por el presunto delito de lavado de activos.",
+    "fuentes": [
+      "andina:832054",
+      "andina:870264",
+      "andina:871162",
+      "andina:876273",
+      "andina:881958",
+      "andina:883431",
+      "andina:886252",
+      "andina:888532",
+      "andina:889423",
+      "andina:891631",
+      "andina:893212",
+      "andina:896130",
+      "andina:901921",
+      "andina:906825",
+      "andina:922278",
+      "andina:925553",
+      "andina:934489",
+      "andina:946856",
+      "andina:948613",
+      "andina:962681",
+      "andina:1006623",
+      "andina:1013821",
+      "andina:1014034",
+      "andina:1016002",
+      "andina:1022164",
+      "andina:1023540",
+      "andina:1024544",
+      "andina:1024540",
+      "andina:1025972",
+      "andina:1025376",
+      "andina:1027738"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:001"
+  },
+  {
+    "fecha": "2021-03-17",
+    "resumen": "Elecciones 2021: Humala plantea retomar la construcción del Gasoducto Sur Peruano El candidato a la Presidencia por el Partido Nacionalista Peruano, Ollanta Humala, indicó que se debe reanudar el proyecto del Gasoducto Sur Peruano, para disminuir el precio del balón de gas.",
+    "fuentes": [
+      "andina:837813",
+      "andina:838036",
+      "andina:839301"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:002"
+  },
+  {
+    "fecha": "2022-02-21",
+    "resumen": "Juzgado rechaza pedido para postergar inicio del juicio a Ollanta Humala El Tercer Juzgado Penal Colegio Nacional de la Corte Superior de Justicia Penal Especializada (CSN) rechazó suspender el juicio oral al expresidente Ollanta Humala, su esposa Nadine Heredia y otros por el delito de lavado de activos en agravio del Estado.",
+    "fuentes": [
+      "andina:881788",
+      "andina:979453",
+      "andina:1026434"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:007"
+  },
+  {
+    "fecha": "2022-02-21",
+    "resumen": "Fiscalía presentará mañana alegatos en juicio oral contra Ollanta Humala La Fiscalía presentará mañana los alegatos de apertura en el juicio oral contra el expresidente Ollanta Humala y sus coinvestigados, por el delito de lavado de activos en agravio del Estado.",
+    "fuentes": [
+      "andina:881805",
+      "andina:890164"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:008"
+  },
+  {
+    "fecha": "2022-09-13",
+    "resumen": "Ollanta Humala: Marcelo Odebrecht y Jorge Barata declararán en juicio Los testimonios de los exejecutivos de la constructora brasileña Odebrecht, Marcelo Odebrecht y Jorge Barata, serán escuchados en noviembre en el juicio oral contra el expresidente Ollanta Humala Tasso, por el caso del financiamiento al Partido Nacionalista, a cargo del fiscal Germán Juárez Atoche, del equipo especial Lava Jato.",
+    "fuentes": [
+      "andina:909755",
+      "andina:952390",
+      "andina:953966",
+      "andina:954125",
+      "andina:958416"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:010"
+  },
+  {
+    "fecha": "2022-11-07",
+    "resumen": "Reprograman para enero de 2023 declaraciones de Marcelo Odebrecht y Jorge Barata Las declaraciones testimoniales de Marcelo Odebrecht, Jorge Barata, entre otros testigos, en marco del juicio al expresidente Ollanta Humala, fueron reprogramadas para enero de 2023.",
+    "fuentes": [
+      "andina:916754",
+      "andina:936928"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:012"
+  },
+  {
+    "fecha": "2023-01-04",
+    "resumen": "Caso Odebrecht: Fiscalía está a la espera de decisión judicial en casos emblemáticos El fiscal coordinador de las fiscalías especializadas en delitos de lavado de activo Rafael Vela señaló que en varios casos emblemáticos vinculados al tema Lava Jato, como los correspondientes al expresidente Ollanta Humala y la exprimera dama, Keiko Fujimori, la fiscalía ha cumplido con su trabajo de presentar las acusaciones correspondientes.",
+    "fuentes": [
+      "andina:923978",
+      "andina:954048"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:014"
+  },
+  {
+    "fecha": "2023-01-12",
+    "resumen": "Odebrecht: suspensión de cooperación en Brasil es una medida dilatoria de Ollanta Humala El fiscal superior Rafael Vela, coordinador de las Fiscalías Especializadas en Lavado de Activos, sostuvo que la suspensión del proceso de cooperación entre Brasil y Perú en el juicio oral contra Ollanta Humala por el caso Odebrecht es una medida obstructiva y dilatoria por parte del exmandatario.",
+    "fuentes": [
+      "andina:924991",
+      "andina:924974"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:015"
+  },
+  {
+    "fecha": "2023-04-29",
+    "resumen": "Estos son los cuatro expresidentes que han sido recluidos en el penal Barbadillo [Podcast] En los últimos años, cuatro expresidentes del Perú han sido recluidos en el centro penitenciario Barbadillo tanto para cumplir una condena como la medida de prisión preventiva.",
+    "fuentes": [
+      "andina:938362",
+      "andina:1026431"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:019"
+  },
+  {
+    "fecha": "2023-10-12",
+    "resumen": "Ollanta Humala: Fiscalía Anticorrupción presenta acusación y pide 10 años de prisión El Primer Despacho de la Fiscalía Provincial Corporativa Especializada en Delitos de Corrupción de Funcionarios de Lima Sur presentó acusación fiscal y solicitó 10 años y cuatro meses de prisión contra el expresidente Ollanta Humala Tasso, por la presunta comisión del delito de colusión agravada en perjuicio del Estado.",
+    "fuentes": [
+      "andina:958730",
+      "andina:1026193",
+      "andina:1026177",
+      "andina:1026167",
+      "andina:1026141",
+      "andina:1026099",
+      "andina:1026120",
+      "andina:1027830",
+      "andina:1059393"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:022"
+  },
+  {
+    "fecha": "2024-02-08",
+    "resumen": "PJ: Sentencia a Lula da Silva del 2021 no se incluirá en juicio contra Ollanta Humala El Tercer Juzgado Penal Colegiado Nacional resolvió por unanimidad no incluir como medios probatorios la sentencia judicial dictada el 22 de enero del 2021 al presidente de Brasil, Luiz Inácio Lula da Silva, en el juicio contra el exmandatario Ollanta Humala y otros por lavado de activos.",
+    "fuentes": [
+      "andina:973638"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:024"
+  },
+  {
+    "fecha": "2024-04-25",
+    "resumen": "Procuraduría Lava Jato pide a Toledo, Humala y PPK pago de US$ 181 millones El Poder Judicial declaró fundado el pedido de la procuraduría ad hoc para el caso Lava Jato para constituirse como actor civil en la investigación preparatoria referida al caso Olmos; solicitud en la que se establece el pago por parte de los expresidentes Alejandro Toledo, Ollanta Humala y Pedro Pablo Kuczynski, de una reparación del orden de los 181 millones de dólares.",
+    "fuentes": [
+      "andina:983359",
+      "andina:1032237"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:026"
+  },
+  {
+    "fecha": "2024-11-06",
+    "resumen": "Ollanta Humala rechaza acusaciones de fiscalía sobre aportes a sus campañas electorales El expresidente Ollanta Humala Tasso dijo hoy que rechaza “en todos los extremos” las acusaciones del Ministerio Público en su contra sobre presuntos aportes indebidos de Venezuela y de la empresa Odebrecht para sus campañas presidenciales de 2006 y 2011.",
+    "fuentes": [
+      "andina:1006658"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:028"
+  },
+  {
+    "fecha": "2025-02-19",
+    "resumen": "Fiscalía presenta acusación contra 29 personas por caso Club de la Construcción El Equipo Especial Lava Jato del Ministerio Público presentó acusación contra 29 personas naturales, entre ellas, el expresidente Ollanta Humala, y 14 personas jurídicas por el Caso Club de la Construcción.",
+    "fuentes": [
+      "andina:1019392"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:029"
+  },
+  {
+    "fecha": "2025-04-15",
+    "resumen": "Fiscal Germán Juárez: sentencia contra Ollanta Humala y Nadine Heredia es histórica El fiscal Germán Juárez Atoche, integrante del Equipo Especial Lava Jato del Ministerio Público, se mostró satisfecho con la sentencia de 15 años de pena privativa de la libertad para el expresidente Ollanta Humala y Nadine Heredia, calificándola de histórica.",
+    "fuentes": [
+      "andina:1026124"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:030"
+  },
+  {
+    "fecha": "2025-10-20",
+    "resumen": "Humala anuncia que peleará por su libertad, tras conocerse fallo a favor de Keiko Fujimori El expresidente Ollanta Humala anunció que va a \"pelear\" por su libertad, luego de que el Tribunal Constitucional (TC) declarara fundada la demanda de Keiko Fujimori para dejar sin efecto el proceso en su contra por la presunta comisión de los delitos de lavado de activos y organización criminal.",
+    "fuentes": [
+      "andina:1049056",
+      "andina:1066608"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:032"
+  }
+]

@@ -25,6 +25,10 @@ def corpus_path(slug: str) -> Path:
     return DATA / f"corpus_{slug}.parquet"
 
 
+def grafo_path(slug: str) -> Path:
+    return DATA / f"graph_{slug}.duckdb"
+
+
 def _resumen_figura(slug: str) -> dict | None:
     """rango_fechas y n_eventos (clusters distintos) desde las salidas de la figura."""
     fechas: set[str] = set()

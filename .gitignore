@@ -217,6 +217,17 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Datos intermedios/crudos — NO subir al repositorio
+data/*.parquet
+data/*.duckdb
+data/*.csv
+data/*.xlsx
+data/figuras_dinamicas.json
+data/jobs/
+data/wikidata_cache.json
+data/corpus_metrics.json
+# Salidas finales (data/salidas/ y data/figuras.json) SÍ se suben
+
 # Project generated / local annotation workbooks
 annotation/gold/*.xlsx
 annotation/gold/*.csv

@@ -1,138 +1,103 @@
-# PLN Consulta de Perfiles
+# PLN — Consulta de Perfiles
 
-## Configuracion inicial
+Pipeline NLP (T02 — Generación de lenguaje) que construye cronologías de figuras políticas a partir del corpus de noticias de Agencia Andina. Compara cuatro condiciones de generación (B0Lead, B1Extractive, SistemaRAG, Ablación) sobre los mismos clusters de eventos, y sirve los resultados vía una API FastAPI + frontend web estático.
 
-### 1. Entrar a la raiz del proyecto
+---
+
+## Configuración inicial
+
+### 1. Entrar al proyecto y crear entorno virtual
 
 ```powershell
 cd PLN-Consulta-de-perfiles
-```
-
-### 2. Crear entorno virtual
-
-```powershell
 python -m venv .venv
-```
-
-### 3. Activar entorno virtual
-
-```powershell
 .\.venv\Scripts\Activate.ps1
 ```
 
-Si PowerShell bloquea la activacion:
+Si PowerShell bloquea la activación:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\.venv\Scripts\Activate.ps1
 ```
 
-El prompt debe mostrar:
+El prompt debe mostrar `(.venv)`.
 
-```text
-(.venv) PS ...\PLN-Consulta-de-perfiles>
-```
-
-### 4. Actualizar pip
+### 2. Instalar dependencias
 
 ```powershell
 python -m pip install --upgrade pip
-```
-
-### 5. Instalar dependencias del proyecto
-
-```powershell
 python -m pip install -e .
-```
-
-### 6. Instalar modelo spaCy requerido
-
-```powershell
 python -m spacy download es_core_news_md
 ```
 
-### 7. Verificar instalacion
+### 3. Configurar variables de entorno
 
 ```powershell
-python -c "import pandas, pyarrow, bs4, lxml, requests, spacy, sentence_transformers, sklearn, fastapi, streamlit, rouge_score, anthropic; spacy.load('es_core_news_md'); print('OK')"
+copy .env.example .env
 ```
 
-### 8. Generar corpus
+Edita `.env` y completa la API key del proveedor LLM que el equipo usa (solo necesaria para SistemaRAG y Ablación; B0/B1 no hacen ninguna llamada LLM). Ver `.env.example` para opciones de proveedor.
+
+### 4. Obtener los datos
+
+Las salidas ya generadas están en el repositorio (`data/salidas/`). No hace falta reprocesar nada para ver la aplicación.
+
+Si en algún momento necesitas regenerar una figura desde cero:
 
 ```powershell
-python scripts/build_corpus.py
+python scripts/precompute_figura.py humala
 ```
 
-Genera:
-
-```text
-data/corpus_humala.parquet
-data/corpus_metrics.json
-```
-
-### 9. Generar eventos
+### 5. Levantar el backend
 
 ```powershell
-python scripts/build_events.py
+uvicorn src.app.api:app --reload
 ```
 
-Genera:
+Abre `http://127.0.0.1:8000` — muestra el frontend con las cronologías ya cargadas.
 
-```text
-data/eventos_humala.parquet
+---
+
+## Estructura de datos
+
+```
+data/
+  figuras.json              # manifiesto de figuras disponibles (en git)
+  salidas/<slug>/           # salidas generadas por condición (en git)
+    b0_lead.json
+    b1_extractive.json
+    sistema_rag.json
+    ablacion.json
+  corpus_<slug>.parquet     # corpus crudo (gitignoreado — regenerable)
+  graph_<slug>.duckdb       # grafo de relaciones (gitignoreado — regenerable)
 ```
 
-### 10. Generar salidas B0/B1
+---
+
+## Comandos útiles
 
 ```powershell
-python scripts/run_generation.py
-```
+# Verificar entorno
+python -c "import pandas, spacy; spacy.load('es_core_news_md'); print('OK')"
 
-Genera:
-
-```text
-data/salidas/b0_lead.json
-data/salidas/b1_extractive.json
-```
-
-### 11. Exportar spreadsheet para anotadores
-
-```powershell
-python scripts/export_corpus_spreadsheet.py
-```
-
-Genera:
-
-```text
-data/corpus_humala_anotacion.xlsx
-data/corpus_humala_anotacion.csv
-```
-
-## Comandos utiles
-
-### Verificar Python activo
-
-```powershell
-where python
-python -c "import sys; print(sys.executable)"
-python -m pip -V
-```
-
-Debe apuntar a:
-
-```text
-...\PLN-Consulta-de-perfiles\.venv\Scripts\python.exe
-```
-
-### Validar sintaxis del proyecto
-
-```powershell
+# Validar sintaxis del proyecto
 python -m compileall -q src scripts eval
+
+# Evaluar condiciones (requiere gold en annotation/gold/)
+python -m eval.run_experiment 3
+
+# Smoke test ingest (sin scraping completo)
+python scripts/smoke_ingest.py
+
+# Frontend legacy Streamlit (requiere backend activo)
+streamlit run src/app/streamlit_app.py
 ```
+
+---
 
 ## Notas
 
-- `data/` esta ignorado por git.
-- Los archivos `.parquet` y `.json` generados no se suben al repositorio.
-- `es_core_news_lg` es opcional por ahora.
-- `scripts/build_corpus.py` requiere internet.
+- Las condiciones B0 y B1 no requieren API key de ningún proveedor LLM.
+- Cambiar de proveedor LLM es solo cambiar `RELATIONS_LLM_PROVIDER` en `.env` — cero cambios de código.
+- Para investigación: todos los experimentos de evaluación deben usar el mismo proveedor y modelo para que la comparación sea válida.

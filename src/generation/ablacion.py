@@ -35,7 +35,10 @@ class Ablacion:
         salida: list[TimelineEntry] = []
         for c in clusters:
             user = f"Figura: {self.sujeto}. Fecha: {c.fecha_normalizada.isoformat()}."
-            resumen = _llm.completar(_SYSTEM, user)
+            try:
+                resumen = _llm.completar(_SYSTEM, user)
+            except Exception:
+                continue   # cuota agotada u otro error → descarta
             salida.append(
                 TimelineEntry(
                     fecha=c.fecha_normalizada,
