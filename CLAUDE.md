@@ -56,6 +56,11 @@ python scripts/export_relaciones_gold.py <slug> [--n 140]   # → annotation/gol
 python -m eval.relations annotation/gold_relaciones/<slug>.csv [--llm]   # P/R/F1 per relation type
 python scripts/test_relations.py            # validate the relation harness with known-answer fixtures (no gold/network)
 
+# Entity resolution evaluation (graph node quality)
+python scripts/export_entidades_gold.py <slug> [--top 60]   # → annotation/gold_entidades/<slug>.csv (fill es_actor_gold, tipo_correcto, nombre_canonico)
+python -m eval.entities annotation/gold_entidades/<slug>.csv   # actor precision/recall, type accuracy, splits
+python scripts/test_entities.py             # validate the entity harness with known-answer fixtures (no gold/network)
+
 # Smoke test ingest (lightweight, no full scrape)
 python scripts/smoke_ingest.py
 ```
@@ -152,7 +157,8 @@ knowledge graph, not a timeline.
 ```
 ingest (topic queries) → preprocess (dedup, incl. cross-source)
   → entity discovery (pipeline/entity_discovery.py — NER over the WHOLE corpus,
-       token-containment grouping, Wikidata linking → top-N EntityNode)
+       token-containment grouping, ACTOR filter (PER+ORG, generic denylist,
+       applied BEFORE the top-N cut), Wikidata linking → top-N EntityNode)
     → co-occurrence extraction (pipeline/relations.py — sentences where ≥2
          entities appear; shallow dep-triple subject-verb-object)
       → relation classification (pipeline/relation_classifier.py — Hybrid:
@@ -165,6 +171,14 @@ Orchestrator: `scripts/precompute_tema.py <slug>`. It reuses
 `data/corpus_<slug>.parquet` if present (so you can build a topic graph over an
 existing figure's corpus by passing its slug), else scrapes from the topic's
 `queries`. Output: `data/graph_<slug>.duckdb` + manifest registration.
+
+**Entity resolution (actor-focused).** `descubrir_entidades` defaults to keeping
+only ACTORS (`_TIPOS_ACTOR` = PER+ORG) and dropping generic terms (`_GENERICOS`,
+e.g. "Estado", "Gobierno"), filtering BEFORE the `top_n` cut so `top_n=20` yields
+20 actors. This removed the LOC/MISC noise that dominated the first graphs
+("Lima", "Cusco", "Estado", "Ley"). Override with `tipos=`/`excluir=` to keep
+locations. Residual acronym noise (e.g. "NDP", "FHG") is left for the human gold
+to flag, not hard-filtered. Quality is measured by `eval/entities.py`.
 
 **Config:** `TemaConfig` / `TEMAS` in `src/figuras.py` (no `sujeto_id`,
 `gazetteer`, or `familia_otros` — just `queries`, window, `top_n`, `pais`).
@@ -221,6 +235,7 @@ Shared by SistemaRAG and Ablación. Delegates to `src/llm/_config.py` — the pr
 - `metrics.py` — Date F1, ROUGE (aligned), hallucination rate (injecting a `verificador(resumen, premisa) -> bool`)
 - `nli.py` — default NLI/entailment judge in Spanish (torch-backed; lazy import)
 - `run_experiment.py` — 4 conditions × N≥3 runs, aggregates mean ± stdev; requires gold CSV in `annotation/gold/`
+- `entities.py` — **entity-resolution evaluation**: actor precision (noise that survives the filter), actor recall (real actors wrongly dropped), type accuracy, and split detection (one actor spread across nodes). Gold CSV in `annotation/gold_entidades/<slug>.csv`; generate it with `scripts/export_entidades_gold.py` (exports the RAW discovered set marking which survive the actor filter), validate with `scripts/test_entities.py`.
 - `relations.py` — **relation-classifier evaluation (topic-centric headline metric)**. Per-type precision/recall/F1, accuracy, macro-F1, confusion matrix; `comparar(..., con_llm=True)` runs rules vs hybrid vs LLM on the same examples to pick the hybrid threshold. Gold CSV in `annotation/gold_relaciones/<slug>.csv` (columns: `entity_a, entity_b, oracion, doc_id, fecha, triple_*, tipo_sugerido, tipo_gold`; rows with empty `tipo_gold` are skipped). Generate the unlabeled CSV with `scripts/export_relaciones_gold.py` (stratified by suggested type), validate the harness with `scripts/test_relations.py` before the gold arrives.
 
 In the topic-centric pivot, **relation classification quality replaces the

@@ -1,0 +1,56 @@
+nombre,tipo,n_docs,n_menciones,alias,rank_crudo,retenida,es_actor_gold,tipo_correcto,nombre_canonico,notas
+Lima,LOC,805,1257,Municipalidad de Lima La organización | Municipalidad Metropolitana de Lima | Lima Metropolitana | | Lima | Municipalidad de Lima | lima,1,0,0,LOC,,ciudad
+Roberto Sánchez,PER,348,785,Roberto Sánchez Palomino | Sánchez | Sánchez Palomino | Roberto Sánchez. | Roberto Helbert Sánchez Palomino | Sanchez,2,1,1,PER,Roberto Sánchez,
+NDP,ORG,321,321,,3,1,0,MISC,,"byline/sección, no actor"
+Congreso,ORG,159,295,Congreso de la República | ministro de Defensa de la República del Ecuador | ministro de Defensa | Ministro de Defensa | Defensa | Orden Interno del Congreso de la República,4,1,1,ORG,Congreso de la República,
+Keiko Fujimori,PER,115,281,señora Keiko Fujimori | Fujimori,5,1,1,PER,Keiko Fujimori,
+Comercio Exterior y Turismo,LOC,218,340,Comercio Exterior | Ministro de Comercio Exterior y Turismo | Comercio Exterior y Turismo. | Ministerio de Comercio Exterior y Turismo | Ministerio de Exterior y Turismo | Cusco El Ministerio de Comercio Exterior y Turismo,6,0,1,ORG,Ministerio de Comercio Exterior y Turismo,fragmento mal tipado (LOC); = idx44 (split)
+Pedro Castillo,PER,95,214,Castillo | Pedro Castillo Terrones | Pedro Castillo Terrones El Ministerio Público | Pedro castillo | Pedro Castillo.,7,1,1,PER,Pedro Castillo,
+Estado,LOC,144,226,Estado. | Estado de derecho | Estado . | Estado de Derecho,8,0,0,MISC,,genérico 'el Estado'
+Cusco,LOC,138,259,Callao 69 Cusco | Callao | Callao. | Callao 5 | Callao “ A | | Cusco,9,0,0,LOC,,merge erróneo con Callao (alias)
+José Reyes,PER,62,110,José Fernando Reyes Llanos | Reyes Llanos | José Reyes Llanos | José Fernando Reyes | Fernando Reyes Llanos,10,1,1,PER,Fernando Reyes Llanos,es Fernando Reyes Llanos (ministro)
+FHG,ORG,73,73,FHG JRA Publicado,11,1,0,MISC,,byline (FHG...Publicado)
+may,LOC,109,109,,12,0,0,MISC,,"'mayo' cortado, basura NER"
+Consejo de Ministros,ORG,70,113,Presidencia del Consejo de Ministros | Consejo de Ministros Descentralizado | Consejo | Consejo de Ministros La | Secretaría de Descentralización de la Presidencia del Consejo de Ministros,13,1,1,ORG,Consejo de Ministros,
+HTC,ORG,64,64,HTC Publicado | HTC JRA Publicado,14,1,0,MISC,,byline (HTC...Publicado)
+Fuerza Popular,ORG,63,135,Fuerza Popular Keiko Fujimori | Fuerza Popular. | DJHV Fuerza Popular Keiko | DJHV Fuerza | DJHV | Fuerza Popular - Presidenta: Keiko Sofía Fujimori Higuchi,15,1,1,ORG,Fuerza Popular,
+Libertad,LOC,83,133,departamento de La Libertad | Libertad 9 | departamento de | Cuna de la Libertad Americana,16,0,0,LOC,,La Libertad (región)
+Ley,LOC,81,120,República | Congreso de la República | Presidencia de la República | Congreso de la República Modifican Ley de Reforma Magisterial | Congreso | Congreso de la República.,17,0,0,MISC,,genérico 'Ley'; merge sucio
+Policía Nacional,ORG,53,87,Policía Nacional del Perú | Policía | Policía de Investigaciones del Perú | FFAA El Fondo de Aseguramiento en Salud de la Policía Nacional del Perú | Salud | Fondo Nacional de Agua,18,1,1,ORG,Policía Nacional del Perú,
+Arequipa,LOC,78,139,Arequipa. | Arequipa Avancemos,19,0,0,LOC,,
+Rafael López Aliaga,PER,38,66,López Aliaga | Lopez Aliaga | Rafael López Aliaga Primera | Rafael López Aliaga Cazorla Inscripción | Rafael Bernardo López Aliaga Cazorla | Rafael López Aliaga Cazorla,20,1,1,PER,Rafael López Aliaga,
+JCR,ORG,50,50,JCR GRM Publicado | JCR Publicado | JCR GRM,21,1,0,MISC,,byline (JCR...Publicado)
+Gobierno,ORG,49,61,Partido del Buen Gobierno | Partido del Bueno Gobierno | Partido de l Buen Gobierno | Partido del Buen | Partido del Buen Gobierno Terna | Partido del Buen Gobierno 8,22,0,0,MISC,,genérico; absorbió 'Partido del Buen Gobierno'
+CVC JRA Publicado,ORG,49,49,CVC JRA : Publicado | CVC JRA Más Andin Publicado | CVC JRA,23,1,0,MISC,,byline (CVC JRA Publicado)
+Renovación Popular,ORG,47,67,Renovación Popular Grupo | Grupo 1 | Renovación Popular Grupo 4 Mesías Guevara | Renovación Popular 7 | Grupo,24,1,1,ORG,Renovación Popular,
+Betssy Chávez Chino,PER,35,44,Chávez Chino | Betssy Betzabet Chavez Chino | Betssy Chavez Chino | Chavez Chino | Betssy Betzabet Chávez Chino | Betssy Chávez Chino Producción,25,1,1,PER,Betssy Chávez,mismo actor que idx53 (split)
+Centro de Convenciones de Lima,LOC,69,87,Centro Histórico de Lima | Centro | Lima Centro | Centro Histórico | Centro Histórico de Arequipa | Centro Histórico de Lima Metropolitana,26,0,0,LOC,,venue
+ETA,ORG,46,46,ETA JRA Publicado,27,1,0,MISC,,"byline (ETA...Publicado), NO la org vasca"
+Partido Político Nacional Perú Libre,ORG,45,134,Partido Perú Libre | Partido Político Perú Acción | Partido Político Perú Primero | Partido Político Perú Primero 9 | Partido Político | Partido Político Nacional Perú Libre 11,28,1,1,ORG,Perú Libre,
+Piura,LOC,66,153,Alto Piura,29,0,0,LOC,,
+Presidencia de la República,MISC,129,187,Presidencia de la República por Juntos | Presidencia | presidente de la república | presidente de la | Presidente de la República | Presidente,30,0,1,ORG,Presidencia de la República,institución; tipado MISC
+MCA,ORG,43,43,MCA GRM Publicado: 7/10/2025,31,1,0,MISC,,byline (MCA...Publicado)
+Aníbal Torres,PER,32,50,Aníbal Torres Vásquez | Torres Vásquez | Aníbal Torres Vásquez Educación,32,1,1,PER,Aníbal Torres,
+Elecciones 2026,MISC,127,178,Elecciones Generales 2026 | Elecciones Generales | Elecciones | Elecciones Generales 2026 de Andina Canal Online | Andina | Andina Canal Online,33,0,0,MISC,,"evento, no actor"
+Ejecutivo,ORG,41,70,Poder Ejecutivo | Poder Ejecutivo El pleno del | Ejecutivo.,34,0,1,ORG,Poder Ejecutivo,denylist 'ejecutivo' lo descartó (pérdida recall)
+Partido Cívico Obras,ORG,41,52,Partido Obras | partido Obras | Cívico Obras | Partido Cívico Obras Terna | Partido Cívico Obras 2 | Partido Cívico Obras Roberto Sánchez,35,1,1,ORG,Partido Cívico Obras,incierto; posible merge de partidos
+Partido Democrático,ORG,41,60,Somos Perú | Partido Democrático Somos Perú | Democrático Somos Perú | Somos | Alianza Electoral Partido Democrático Somos Perú | Partido Político Democrático Somos Perú,36,1,1,ORG,Somos Perú,alias 'Somos Perú'
+Asimismo,PER,29,31,Roberto Sánchez Asimismo,37,1,0,MISC,,"conector 'Asimismo', basura NER"
+José María Balcázar,PER,29,50,Balcázar | Presidente José María Balcázar | Presidente Balcázar | Presidente | José María Balcázar Zelada | José Mará Balcázar Zelada,38,1,1,PER,José María Balcázar,
+República,LOC,56,71,Argentina | República Argentina,39,0,0,LOC,,'República'≈Argentina
+MDV,ORG,37,37,MDV JRA Publicado | MDV Publicado,40,1,0,MISC,,byline (MDV...Publicado)
+Cajamarca,LOC,55,94,Zofra Cajamarca,41,0,0,LOC,,
+Dina Boluarte,PER,27,57,Dina Boluarte Zegarra | Boluarte Zegarra | Boluarte | Dina Ercilia Boluarte Zegarra | Gisela Ortiz Perea Desarrollo e Inclusión Social: Dina Boluarte Zegarra | Gisela Ortiz Perea Desarrollo e Inclusión Social : Dina Boluarte Zegarra,42,1,1,PER,Dina Boluarte,
+Partido Frente de la Esperanza,ORG,36,41,Frente | Frente de la Esperanza | Partido Frente de la Esperanza 2021 Wolfgang Grozo | Partido Frente de la Esperanza 2021 Presidencia | Partido Frente de la Esperanza 2021 | Partido Frente de la Esperanza 2021 Presidente,43,1,1,ORG,Frente de la Esperanza,
+Perú para la Exportación y el Turismo,LOC,54,92,Perú para la Exportación | Lima Este La Comisión de Promoción del Perú para la Exportación y el Turismo | Lima Este | Callao La Comisión de Promoción del Perú para la Exportación y el Turismo | Perú para la Exportación y el Turismo - Promperú | Perú para la Exportación y el Turismo – Promperú,44,0,1,ORG,PromPerú,fragmento Comisión PromPerú; tipado LOC
+Ministerio de Comercio Exterior y Turismo,MISC,103,145,ministro de Comercio Exterior y Turismo | Educación El ministro de Comercio Exterior y Turismo | ministro de Comercio Exterior | e-Turismo TEC 2026 El Ministerio de Comercio Exterior y Turismo | Tratado de Libre Comercio El ministro de Comercio Exterior y Turismo | Tratado de Libre Comercio,45,0,1,ORG,Ministerio de Comercio Exterior y Turismo,= idx5 (split); tipado MISC
+Partido Morado,ORG,34,45,Partido Morado Segundo | Partido Morado 6 | Partido Morado 8 | partido Morado | Morado,46,1,1,ORG,Partido Morado,
+Ayacucho,LOC,50,104,Ayacucho El Poder Ejecutivo | Ecuador El Poder Ejecutivo | Challhuahuacho El Poder Ejecutivo | Challhuahuacho,47,0,0,LOC,,
+Partido Demócrata Unido,ORG,33,59,Partido Demócrata Unido Perú | Partido Demócrata Unido Perú Bloque | Demócrata Unido | Partido Demócrata Unido Perú Presidente | Partido Demócrata Verde Presidente | Partido Demócrata Verde,48,1,1,ORG,Partido Demócrata Unido,
+Ruth Luque,PER,24,28,Ruth Luque Ibarra | Luque Ibarra | Ruth | Ibarra Ruth,49,1,1,PER,Ruth Luque,
+Fuerzas Armadas,ORG,32,43,Fuerzas Armadas del Perú | Fuerzas Armadas.,50,1,1,ORG,Fuerzas Armadas del Perú,
+Chancay,LOC,48,81,Turismo de Chancay | Industria y Turismo de Chancay | Turismo,51,0,0,LOC,,puerto/distrito
+Mesías Guevara,PER,24,29,Guevara | Mesías Antonio Guevara Amasifuén | Mesías Antonio Guevara Amasifuén Primera | Mesías Antonio Guevara Amasifuen | Mesías Antonio Guevara Amasifuen Plan de Gobierno | Mesías Antonio Guevara Amasifuen Primera,52,1,1,PER,Mesías Guevara,
+MAO JRA,ORG,32,32,MAO JRA Publicado,53,1,0,MISC,,byline (MAO JRA Publicado)
+Betssy Chávez,PER,23,44,Betssy Chávez La Comisión Permanente del | Betssy Chavez,54,1,1,PER,Betssy Chávez,mismo actor que idx24 (split)
+Loreto,LOC,45,71,Lima 924 Loreto 25 Madre de Dios | Madre de Dios | río Madre de Dios,55,0,0,LOC,,

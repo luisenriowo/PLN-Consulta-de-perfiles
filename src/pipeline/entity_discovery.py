@@ -44,8 +44,30 @@ _WIKIDATA_WORKERS = int(os.environ.get("WIKIDATA_WORKERS", "5"))
 # Peso por tipo de entidad para el ranking (PER > ORG > LOC > MISC).
 _PESO_TIPO: dict[str, int] = {"PER": 4, "ORG": 3, "LOC": 2, "MISC": 1}
 
+# Tipos que cuentan como ACTOR político (personas, partidos, instituciones,
+# organismos). Erasmo: las entidades de interés son actores, no contexto
+# geográfico. El ruido observado en el grafo ("Lima", "Estado", "Cusco", "Ley")
+# era LOC/MISC; restringir a PER+ORG lo elimina sin un denylist subjetivo.
+_TIPOS_ACTOR: frozenset[str] = frozenset({"PER", "ORG"})
+
+# Términos genéricos que NER a veces etiqueta como PER/ORG pero que no son
+# actores específicos (nodos demasiado generales para el grafo). Conservador y
+# overridable vía `excluir`. Normalizados (minúsculas, sin acentos).
+_GENERICOS: frozenset[str] = frozenset({
+    "estado", "gobierno", "nacion", "pais", "peru", "republica",
+    "el estado", "el gobierno", "el peru", "ejecutivo",
+})
+
 # Mínimo de tokens válidos (len > 1) para considerar una mención.
 _MIN_TOKENS = 1
+
+
+def _es_actor(
+    info: dict, tipos: frozenset[str], excluir: frozenset[str]
+) -> bool:
+    """True si el grupo de entidad es un actor retenible (tipo permitido y no
+    genérico). Aísla el criterio de filtrado para poder testearlo."""
+    return info["tipo"] in tipos and _norm(info["nombre"]) not in excluir
 
 # ── Limpieza de spans NER ─────────────────────────────────────────────────
 
@@ -215,14 +237,26 @@ def descubrir_entidades(
     top_n: int = 20,
     pais: str = "Perú",
     enriquecer_wikidata: bool = True,
+    tipos: frozenset[str] | set[str] | None = None,
+    excluir: frozenset[str] | set[str] | None = None,
 ) -> list[EntityNode]:
     """Descubre y rankea las entidades más relevantes del corpus.
+
+    Por defecto retiene solo ACTORES (PER+ORG) y descarta términos genéricos:
+    el grafo tema-céntrico modela actores (personas, partidos, instituciones),
+    no contexto geográfico. El filtro se aplica ANTES del corte `top_n`, así que
+    `top_n=20` devuelve 20 actores, no 20 entidades mixtas reducidas luego.
 
     Args:
         docs:                Lista de documentos a analizar.
         top_n:               Número máximo de entidades a devolver.
         pais:                Contexto geográfico para el lookup de Wikidata.
         enriquecer_wikidata: Si True, consulta Wikidata en paralelo.
+        tipos:               Tipos NER a retener (default `_TIPOS_ACTOR` = PER+ORG;
+                             pasa {"PER","ORG","LOC","MISC"} para no filtrar).
+        excluir:             Formas canónicas (se normalizan) a descartar como
+                             genéricas (default `_GENERICOS`; pasa `set()` para
+                             no excluir ninguna).
 
     Returns:
         Lista de EntityNode ordenada por relevancia (n_docs × peso de tipo).
@@ -230,6 +264,11 @@ def descubrir_entidades(
         detectadas en el corpus, para que `_menciona` en relations.py
         pueda identificar más co-ocurrencias.
     """
+    tipos_keep   = frozenset(tipos) if tipos is not None else _TIPOS_ACTOR
+    excluir_norm = (
+        frozenset(_norm(e) for e in excluir) if excluir is not None else _GENERICOS
+    )
+
     ner    = get_ner_model()
     textos = [d.texto for d in docs]
 
@@ -238,7 +277,11 @@ def descubrir_entidades(
         for m in menciones:
             menciones_raw.append((m.texto, m.tipo, doc.doc_id))
 
-    grupos    = _agrupar(menciones_raw)
+    grupos = _agrupar(menciones_raw)
+    grupos = {
+        slug: info for slug, info in grupos.items()
+        if _es_actor(info, tipos_keep, excluir_norm)
+    }
     ordenados = sorted(
         grupos.items(),
         key=lambda kv: kv[1]["n_docs"] * _PESO_TIPO.get(kv[1]["tipo"], 1),
