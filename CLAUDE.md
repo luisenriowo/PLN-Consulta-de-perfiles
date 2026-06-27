@@ -51,6 +51,11 @@ python -m eval.run_experiment [N]
 # Validate eval harness with known-answer fixtures (no gold needed)
 python scripts/test_eval.py
 
+# Relation classifier evaluation (topic-centric headline metric)
+python scripts/export_relaciones_gold.py <slug> [--n 140]   # → annotation/gold_relaciones/<slug>.csv (fill tipo_gold by hand)
+python -m eval.relations annotation/gold_relaciones/<slug>.csv [--llm]   # P/R/F1 per relation type
+python scripts/test_relations.py            # validate the relation harness with known-answer fixtures (no gold/network)
+
 # Smoke test ingest (lightweight, no full scrape)
 python scripts/smoke_ingest.py
 ```
@@ -216,6 +221,13 @@ Shared by SistemaRAG and Ablación. Delegates to `src/llm/_config.py` — the pr
 - `metrics.py` — Date F1, ROUGE (aligned), hallucination rate (injecting a `verificador(resumen, premisa) -> bool`)
 - `nli.py` — default NLI/entailment judge in Spanish (torch-backed; lazy import)
 - `run_experiment.py` — 4 conditions × N≥3 runs, aggregates mean ± stdev; requires gold CSV in `annotation/gold/`
+- `relations.py` — **relation-classifier evaluation (topic-centric headline metric)**. Per-type precision/recall/F1, accuracy, macro-F1, confusion matrix; `comparar(..., con_llm=True)` runs rules vs hybrid vs LLM on the same examples to pick the hybrid threshold. Gold CSV in `annotation/gold_relaciones/<slug>.csv` (columns: `entity_a, entity_b, oracion, doc_id, fecha, triple_*, tipo_sugerido, tipo_gold`; rows with empty `tipo_gold` are skipped). Generate the unlabeled CSV with `scripts/export_relaciones_gold.py` (stratified by suggested type), validate the harness with `scripts/test_relations.py` before the gold arrives.
+
+In the topic-centric pivot, **relation classification quality replaces the
+hallucination rate as the headline metric** (the 4-condition generation is now an
+optional narrative layer). Known rule-lexicon gap surfaced by the harness: the
+`militan` pattern misses the verb conjugation "milita" (militar→milita); tune the
+lexicon (`relation_classifier.py` `_LEXICON`) against real gold, not blindly.
 
 Gold format: CSV with columns `fecha`, `descripcion`, `fuentes` (comma-separated doc_ids). Gold is frozen before the experiment runs.
 
