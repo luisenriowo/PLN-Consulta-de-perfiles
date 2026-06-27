@@ -99,6 +99,7 @@ function observarEventos() {
 // ── Render ────────────────────────────────────────────────────────────────────
 
 function render() {
+  if (window.__vistaGrafo) return;   // la vista grafo se gestiona en grafo.js
   if (!FIGURA) return;
 
   const desde    = $("desde").value;
@@ -226,6 +227,7 @@ async function cargarResumen(slug) {
 // ── Carga de figura ───────────────────────────────────────────────────────────
 
 async function cargarFigura(slug) {
+  if (window.__vistaGrafo) return;   // en vista grafo, grafo.js maneja la carga
   // Estado de carga: solo el spinner visible
   mostrar("cargando");
   ocultar("meta");

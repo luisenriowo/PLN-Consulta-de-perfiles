@@ -287,6 +287,21 @@ def grafo_camino(
         return g.camino(origen, destino)
 
 
+@app.get("/api/figuras/{slug}/grafo/relaciones/{rel_id}/evidencia")
+def grafo_evidencia(slug: str, rel_id: int) -> dict:
+    """Evidencia (oraciones) y fuentes resueltas {doc_id,url,titulo} de una arista."""
+    _check_slug(slug)
+    _check_grafo(slug)
+    fmap = _fuentes_map(slug)
+    with _abrir_grafo(slug) as g:
+        ev = g.evidencia(rel_id)
+    ev["fuentes"] = [
+        {"doc_id": d, **fmap.get(d, {"url": "", "titulo": "", "lead": ""})}
+        for d in ev["fuentes"]
+    ]
+    return ev
+
+
 # ── Rutas: figuras dinámicas ───────────────────────────────────────────────────
 
 class CrearFigura(BaseModel):

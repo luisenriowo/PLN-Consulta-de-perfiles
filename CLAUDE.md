@@ -229,7 +229,9 @@ Wikidata QID when linked, else a slug), `RelationResult` (classifier output),
 type / confidence / entity); NetworkX for `centralidad` (PageRank),
 `comunidades` (Louvain), `camino` (shortest path). Open `read_only=True` in the
 API. Exposed read-only at `/api/figuras/{slug}/grafo/{entidades,relaciones,
-centralidad,comunidades,camino}`.
+centralidad,comunidades,camino}` and `/grafo/relaciones/{rel_id}/evidencia`
+(passages + sources resolved to {doc_id,url,titulo}; relations don't carry
+evidence inline, fetched on demand per edge).
 
 The manifest (`data/figuras.json`) now tags each entry with `tipo`:
 `"figura"` (4-condition timeline) or `"tema"` (graph; carries `n_entidades`,
@@ -242,6 +244,15 @@ The FastAPI backend (`api.py`) is **read-only at request time** — it never run
 When a new figure is created from the web (POST `/api/figuras`), `jobs.py` launches `precompute_figura` as a **detached subprocess** (`python -m src.app.jobs <slug>`). The web polls `GET /api/jobs/{slug}` for state. `jobs.py` is intentionally lightweight (no spaCy/torch imports at module level).
 
 The static web frontend lives in `src/app/web/` and is mounted at `/` after all `/api/*` routes.
+
+Two views, switched by the topbar toggle (`grafo.js`, independent of `app.js`
+via `window.__vistaGrafo`): **Cronología** (the timeline, `app.js`) and **Grafo**
+(the topic-centric relation network, `grafo.js`). The graph view uses cytoscape
+(CDN), colours nodes by type (PER/ORG) and edges by relation type, filters by
+relation type / min-confidence / date range, shows per-edge evidence + sources on
+edge click, and a node's relations in chronological order (the derived
+figure-timeline view) on node click. A figure without a graph shows a "run
+precompute_tema" message.
 
 ### Saliency signals (`src/pipeline/salience.py`)
 

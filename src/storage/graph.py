@@ -196,6 +196,22 @@ class KnowledgeGraph:
         """Evolución temporal de la relación entre dos entidades."""
         return self.relations(origen_id=origen_id, destino_id=destino_id)
 
+    def evidencia(self, relation_id: int) -> dict:
+        """Pasajes de evidencia y doc_ids fuente de una arista (por su id)."""
+        pasajes = [
+            r[0] for r in self._conn.execute(
+                "SELECT pasaje FROM relation_evidence WHERE relation_id = ?",
+                [relation_id],
+            ).fetchall()
+        ]
+        fuentes = [
+            r[0] for r in self._conn.execute(
+                "SELECT doc_id FROM relation_sources WHERE relation_id = ?",
+                [relation_id],
+            ).fetchall()
+        ]
+        return {"pasajes": pasajes, "fuentes": fuentes}
+
     def resumen_por_tipo(self) -> list[dict]:
         """Conteo de relaciones agrupado por tipo."""
         return self._conn.execute(

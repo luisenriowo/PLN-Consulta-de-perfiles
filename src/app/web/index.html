@@ -10,6 +10,10 @@
   <header class="topbar">
     <h1 class="brand">Cronologías</h1>
     <div class="toolbar">
+      <div class="vista-switch" role="tablist" aria-label="Vista">
+        <button id="vista-timeline" class="vista-btn activo" type="button">Cronología</button>
+        <button id="vista-grafo" class="vista-btn" type="button">Grafo</button>
+      </div>
       <label class="ctl ctl-lg">
         <span>Figura</span>
         <select id="figura"></select>
@@ -26,7 +30,7 @@
         <span>Hasta</span>
         <input type="date" id="hasta" />
       </label>
-      <label class="ctl toggle">
+      <label class="ctl toggle" id="ctl-comparar">
         <input type="checkbox" id="comparar" />
         <span>Comparar</span>
       </label>
@@ -65,6 +69,24 @@
     <section id="timeline" class="timeline oculto" aria-live="polite"></section>
     <p id="vacio" class="vacio oculto">Sin eventos en el rango seleccionado.</p>
     <p id="error" class="error oculto"></p>
+
+    <section id="grafo-vista" class="grafo-vista oculto" aria-label="Grafo de relaciones">
+      <div class="grafo-controles">
+        <div class="g-tipos" id="g-tipos"></div>
+        <label class="g-conf">Confianza ≥ <output id="g-conf-val">0.0</output>
+          <input type="range" id="g-conf" min="0" max="1" step="0.05" value="0" />
+        </label>
+        <span class="g-stats" id="g-stats"></span>
+      </div>
+      <div class="grafo-layout">
+        <div id="cy" class="cy"></div>
+        <aside id="grafo-panel" class="grafo-panel">
+          <p class="gp-hint">Clic en un <strong>nodo</strong> para ver sus relaciones en
+            el tiempo, o en una <strong>arista</strong> para ver la evidencia y las fuentes.</p>
+        </aside>
+      </div>
+      <p id="grafo-msg" class="grafo-msg oculto"></p>
+    </section>
   </main>
 
   <div id="fuentes-modal" class="modal-fondo oculto" role="dialog" aria-modal="true">
@@ -80,6 +102,8 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
   <script src="app.js"></script>
+  <script src="grafo.js"></script>
 </body>
 </html>
