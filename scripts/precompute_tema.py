@@ -39,7 +39,7 @@ from src.ingest import andina, gdelt
 from src.ingest._util import dentro_de_ventana, http_session
 from src.pipeline import preprocess
 from src.pipeline.entity_discovery import descubrir_entidades
-from src.pipeline.relation_classifier import HybridClassifier
+from src.pipeline.relation_classifier import CalibratedClassifier, HybridClassifier
 from src.pipeline.relations import extraer_coocurrencias
 from src.schemas import Documento, RelationEdge
 from src.storage import KnowledgeGraph
@@ -117,15 +117,23 @@ def _cargar_corpus(slug: str, cfg) -> list[Documento]:
     if corpus.exists():
         log.info("[1-2] corpus ya existe — cargando desde %s (omite scraping)", corpus)
         df = pd.read_parquet(corpus)
+        # Re-aplica limpiar() al reusar: hace efectivo el fix de bylines sobre un
+        # corpus ya descargado, sin re-scrapear. limpiar es idempotente.
         docs = [
             Documento(
                 doc_id=r.doc_id, fuente=r.fuente, url=r.url,
-                fecha_pub=pd.Timestamp(r.fecha_pub).date(), texto=r.texto,
-                entidades=[],
+                fecha_pub=pd.Timestamp(r.fecha_pub).date(),
+                texto=preprocess.limpiar(r.texto), entidades=[],
             )
             for r in df.itertuples()
         ]
-        log.info("    %d docs cargados", len(docs))
+        log.info("    %d docs cargados (re-limpieza aplicada: fix de bylines)", len(docs))
+        # Persiste el corpus ya limpio (idempotente): el grafo y la API leen texto sin créditos.
+        pd.DataFrame([
+            {"doc_id": d.doc_id, "fuente": d.fuente, "url": d.url,
+             "fecha_pub": d.fecha_pub.isoformat(), "texto": d.texto}
+            for d in docs
+        ]).to_parquet(corpus, index=False)
         return docs
 
     log.info("[1] ingesta multi-fuente: %s", list(cfg.fuentes))
@@ -184,7 +192,8 @@ def precompute_tema(slug: str) -> None:
         log.info("    grafo anterior eliminado (re-run limpio)")
 
     if _llm.disponible():
-        clasificador = HybridClassifier()
+        clasificador = CalibratedClassifier()   # reglas→mencion, LLM→tipadas
+        log.info("    clasificador: CalibratedClassifier (reglas para mencion, LLM para tipadas)")
     else:
         log.warning("LLM no disponible (revisa RELATIONS_LLM_PROVIDER y su API key) "
                     "— clasificación SOLO por reglas")
@@ -198,7 +207,12 @@ def precompute_tema(slug: str) -> None:
 
         for (a_id, b_id), coocs in por_par.items():
             resultado = clasificador.classify_grupo(coocs)
-            if resultado.tipo == "mencion" and resultado.confianza < 0.5:
+            # 'mencion' = co-ocurrencia SIN relación tipada entre el par → no es
+            # arista del grafo de relaciones. Con el clasificador calibrado el LLM
+            # marca como mencion la mayoría de pares (que las reglas tipaban mal),
+            # y lo hace con confianza alta, así que hay que descartarla por TIPO,
+            # no por umbral de confianza.
+            if resultado.tipo == "mencion":
                 continue
 
             evidencias = list(dict.fromkeys(c.oracion for c in coocs))[:5]

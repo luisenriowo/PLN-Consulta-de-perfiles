@@ -222,3 +222,71 @@ class HybridClassifier:
             evidencia=llm_res.evidencia,
             metodo="hybrid",
         )
+
+
+# ── CalibratedClassifier (enrutamiento por TIPO, calibrado con el gold) ──────
+
+class CalibratedClassifier:
+    """Reglas SOLO para `mencion`; LLM para toda predicción TIPADA.
+
+    Calibrado contra el gold (ver reports/resultados-relaciones.md): las reglas
+    aciertan `mencion` con precisión 0.90–1.00, pero SOBRE-DISPARAN relaciones
+    tipadas con ALTA confianza (accuracy reglas/híbrido-umbral ≈0.27 vs LLM 0.75).
+    Por eso el `HybridClassifier` por umbral no servía: escalaba solo predicciones
+    de baja confianza y los errores eran de alta confianza, así que nunca los
+    verificaba (solo 20/135 escalados en la medición).
+
+    Enrutamiento aquí: si las reglas dicen `mencion` → se confía en reglas; si
+    dicen cualquier tipo (alianza/conflicto/pertenencia/nombramiento/acusacion/
+    ruptura) → se manda al LLM a confirmar/corregir. `metodo` queda en "rules" o
+    "llm" para trazabilidad. Si el LLM falla por cuota, degrada a reglas.
+    """
+
+    def __init__(self) -> None:
+        self._rules = RuleBasedClassifier()
+        self._llm: LLMClassifier | None = None
+        self._llm_desactivado = False
+
+    def _get_llm(self) -> LLMClassifier:
+        if self._llm is None:
+            self._llm = LLMClassifier()
+        return self._llm
+
+    def _llamar_llm(self, cooc: Coocurrencia) -> RelationResult | None:
+        if self._llm_desactivado:
+            return None
+        try:
+            return self._get_llm().classify(cooc)
+        except Exception as exc:
+            msg = str(exc).lower()
+            if "rate_limit" in msg or "429" in msg or "quota" in msg or "limit" in msg:
+                import logging as _log
+                _log.getLogger(__name__).warning(
+                    "LLM desactivado por cuota/rate-limit — resto del run usará solo reglas. "
+                    "Error: %s", exc
+                )
+                self._llm_desactivado = True
+            return None
+
+    def classify(self, cooc: Coocurrencia) -> RelationResult:
+        rules_res = self._rules.classify(cooc)
+        if rules_res.tipo == "mencion":
+            return rules_res
+        llm_res = self._llamar_llm(cooc)
+        return llm_res if llm_res is not None else rules_res
+
+    def classify_grupo(self, coocs: list[Coocurrencia]) -> RelationResult:
+        """Decisión por par único de entidades (O(pares), no O(oraciones)).
+
+        Si NINGUNA co-ocurrencia dispara una relación tipada por reglas → la
+        relación es `mencion` (reglas, alta precisión). Si alguna la dispara, se
+        manda esa oración (la de mayor confianza de reglas) al LLM a verificar.
+        """
+        resultados = [(c, self._rules.classify(c)) for c in coocs]
+        mejor_cooc, mejor_res = max(
+            resultados, key=lambda x: (x[1].confianza, len(x[0].oracion))
+        )
+        if mejor_res.tipo == "mencion":
+            return mejor_res
+        llm_res = self._llamar_llm(mejor_cooc)
+        return llm_res if llm_res is not None else mejor_res

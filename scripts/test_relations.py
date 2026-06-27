@@ -88,6 +88,22 @@ def test_hibrido_umbral0() -> None:
     print("  OK híbrido umbral=0.0 no escala al LLM (metodo=rules)")
 
 
+def test_calibrated_routing() -> None:
+    from src.pipeline.relation_classifier import CalibratedClassifier
+    clf = CalibratedClassifier()
+    clf._llm_desactivado = True   # fuerza fallback a reglas (sin red)
+    # 'mencion' → reglas (no llama al LLM)
+    r1 = clf.classify(_cooc("Ambos asistieron a la ceremonia en Lima."))
+    assert r1.tipo == "mencion" and r1.metodo == "rules", r1
+    # tipada → enruta al LLM; con LLM desactivado cae a reglas sin crashear
+    r2 = clf.classify(_cooc("La fiscalía acusó a X por corrupción."))
+    assert r2.tipo == "acusacion" and r2.metodo == "rules", r2
+    # classify_grupo: grupo todo-mencion → mencion
+    g = clf.classify_grupo([_cooc("Ambos viajaron al sur."), _cooc("Se vieron en Lima.")])
+    assert g.tipo == "mencion", g
+    print("  OK CalibratedClassifier: mencion por reglas, tipada enruta al LLM")
+
+
 def test_grafo_roundtrip() -> None:
     slug = "test_tmp"
     with KnowledgeGraph(slug) as g:
@@ -133,6 +149,8 @@ def main() -> None:
     test_harness()
     print("\n== (3) HybridClassifier umbral=0.0 (sin LLM) ==")
     test_hibrido_umbral0()
+    print("\n== (3b) CalibratedClassifier (enrutamiento por tipo) ==")
+    test_calibrated_routing()
     print("\n== (4) KnowledgeGraph roundtrip ==")
     test_grafo_roundtrip()
     print("\n== (5) cargar_gold (parseo CSV) ==")

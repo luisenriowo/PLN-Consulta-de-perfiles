@@ -55,6 +55,22 @@ def test_dedup_cross_fuente() -> None:
     print("  OK dedup cross-fuente: nota republicada en 2 medios -> 1 documento")
 
 
+def test_byline_stripping() -> None:
+    # "(FIN) ..." marca fin de nota: se elimina todo el crédito.
+    out = preprocess.limpiar(
+        "El ministro habló sobre turismo en Cusco. (FIN) NDP/ETA/JCR JRA : Publicado: 9/9/2025"
+    )
+    assert "NDP" not in out and "Publicado" not in out, out
+    assert "turismo" in out, out
+    # variante sin (FIN): iniciales en mayúscula + Publicado: fecha
+    out2 = preprocess.limpiar("Texto normal del cuerpo. MCA GRM Publicado: 7/10/2025")
+    assert "MCA" not in out2 and "Texto normal" in out2, out2
+    # NO borra texto legítimo ("publicado" en minúscula, sin iniciales)
+    out3 = preprocess.limpiar("El informe fue publicado el 1/2/2024 por el diario oficial.")
+    assert "publicado" in out3 and "diario oficial" in out3, out3
+    print("  OK byline: elimina créditos NDP/MCA/JCR, conserva texto legítimo")
+
+
 def test_dispatcher_colectores() -> None:
     spec = importlib.util.spec_from_file_location("pt", "scripts/precompute_tema.py")
     pt = importlib.util.module_from_spec(spec)
@@ -71,7 +87,8 @@ def main() -> None:
     print("== (1) _familia_fuente ==");            test_familia_fuente()
     print("\n== (2) señal multi_fuente ==");        test_multi_fuente_decisiva()
     print("\n== (3) dedup cross-fuente ==");        test_dedup_cross_fuente()
-    print("\n== (4) dispatcher de colectores ==");  test_dispatcher_colectores()
+    print("\n== (4) fix de bylines (preprocess) =="); test_byline_stripping()
+    print("\n== (5) dispatcher de colectores ==");  test_dispatcher_colectores()
     print("\n[OK] TODOS LOS TESTS MULTI-FUENTE PASARON")
 
 

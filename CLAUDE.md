@@ -162,8 +162,9 @@ ingest (topic queries) → preprocess (dedup, incl. cross-source)
        applied BEFORE the top-N cut), Wikidata linking → top-N EntityNode)
     → co-occurrence extraction (pipeline/relations.py — sentences where ≥2
          entities appear; shallow dep-triple subject-verb-object)
-      → relation classification (pipeline/relation_classifier.py — Hybrid:
-           rules first, LLM only below a confidence threshold; per entity-pair)
+      → relation classification (pipeline/relation_classifier.py —
+           CalibratedClassifier: rules decide 'mencion', LLM decides every typed
+           relation; per entity-pair; 'mencion' edges dropped)
         → knowledge graph (storage/graph.py — DuckDB persistence + NetworkX
              analytics) → manifest entry (tipo="tema")
 ```
@@ -198,10 +199,25 @@ when the slug is a figure, enabling corpus reuse.
 
 **Relation taxonomy** (`src/schemas.py` `TIPOS_RELACION`, single source of
 truth): `alianza`, `conflicto`, `pertenencia`, `nombramiento`, `acusacion`,
-`ruptura`, `mencion`. Three classifiers implement the `RelationClassifier`
+`ruptura`, `mencion`. Four classifiers implement the `RelationClassifier`
 Protocol: `RuleBasedClassifier` (verb lexicon, no LLM), `LLMClassifier`
-(provider-agnostic), `HybridClassifier` (recommended; degrades to rules-only if
-the LLM hits a quota error or no API key — pass `umbral=0.0` to force rules).
+(provider-agnostic), `HybridClassifier` (escalates to LLM below a confidence
+threshold), and **`CalibratedClassifier`** — the one `precompute_tema` uses.
+
+`CalibratedClassifier` routes by PREDICTED TYPE, not by confidence: rules decide
+`mencion` only (measured precision 0.90–1.00); every TYPED rule prediction goes
+to the LLM to confirm/correct. This is the gold-justified fix
+(reports/resultados-relaciones.md): the old umbral-based hybrid was useless
+(accuracy ≈0.27 ≈ rules) because rule ERRORS are high-confidence, so the 0.65
+threshold never verified them; the LLM scored 0.75. All classifiers degrade to
+rules if the LLM hits a quota error or no API key. The relations LLM runs at
+`temperature=0.0` (Anthropic has no seed; `claude-haiku-4-5`).
+
+`precompute_tema` drops `mencion` edges entirely (a co-occurrence without a typed
+relation is not a graph edge) and classifies per UNIQUE entity-pair via
+`classify_grupo` (~O(pairs), not O(sentences)). `preprocess.limpiar` strips
+Andina credit lines / bylines ("(FIN) NDP/JCR Publicado: dd/mm/aaaa") so reporter
+initials (NDP/FHG/HTC) don't enter the graph as spurious ORG entities.
 
 **Graph schemas** (`src/schemas.py`): `EntityNode` (graph node; `entity_id` is a
 Wikidata QID when linked, else a slug), `RelationResult` (classifier output),
