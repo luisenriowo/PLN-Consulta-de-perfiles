@@ -46,6 +46,26 @@ class FiguraConfig:
     hasta: date = FECHA_CORTE_HUMALA
 
 
+@dataclass(frozen=True)
+class TemaConfig:
+    """Configuración de un TEMA (enfoque tema-céntrico).
+
+    A diferencia de `FiguraConfig`, un tema NO tiene sujeto único ni gazetteer de
+    desambiguación: las entidades se descubren automáticamente del corpus
+    (`entity_discovery`) y el grafo de relaciones es el producto. Solo necesita
+    qué buscar, en qué ventana, cuántas entidades retener y el país (contexto
+    para el lookup de Wikidata).
+    """
+
+    slug: str
+    nombre: str
+    queries: tuple[str, ...]
+    desde: date = FECHA_INICIO_HUMALA
+    hasta: date = FECHA_CORTE_HUMALA
+    top_n: int = 20
+    pais: str = "Perú"
+
+
 FIGURAS: dict[str, FiguraConfig] = {
     "humala": FiguraConfig(
         slug="humala",
@@ -100,6 +120,20 @@ FIGURAS: dict[str, FiguraConfig] = {
 }
 
 
+TEMAS: dict[str, TemaConfig] = {
+    "elecciones-2021-2026": TemaConfig(
+        slug="elecciones-2021-2026",
+        nombre="Elecciones generales 2021–2026",
+        queries=(
+            "elecciones generales", "segunda vuelta", "JNE", "ONPE",
+            "Pedro Castillo", "Keiko Fujimori", "Perú Libre", "Fuerza Popular",
+            "Dina Boluarte", "vacancia presidencial",
+        ),
+        top_n=20,
+    ),
+}
+
+
 def cargar(slug: str) -> FiguraConfig:
     """Config de una figura: primero el registro en código, luego las dinámicas
     (creadas desde la web)."""
@@ -109,6 +143,29 @@ def cargar(slug: str) -> FiguraConfig:
     if slug in dinamicas:
         return dinamicas[slug]
     raise KeyError(f"No hay config para '{slug}'.")
+
+
+def cargar_tema(slug: str) -> TemaConfig:
+    """Config de un tema (enfoque tema-céntrico).
+
+    Si el slug no es un tema registrado pero existe una figura/corpus con ese
+    slug, lo ADAPTA a `TemaConfig` (mismo corpus, mismas queries, sin sujeto).
+    Esto permite construir el grafo tema-céntrico reutilizando un corpus ya
+    descargado, sin re-scrapear — útil para validar el pipeline.
+    """
+    if slug in TEMAS:
+        return TEMAS[slug]
+    try:
+        fig = cargar(slug)
+    except KeyError:
+        raise KeyError(
+            f"No hay tema ni figura con slug '{slug}'. "
+            f"Temas: {sorted(TEMAS)} | Figuras: {sorted(FIGURAS)}"
+        ) from None
+    return TemaConfig(
+        slug=fig.slug, nombre=fig.nombre, queries=fig.queries,
+        desde=fig.desde, hasta=fig.hasta,
+    )
 
 
 def construir_config(

@@ -59,10 +59,11 @@ def main() -> None:
     print(f"  eventos por año: {dict(sorted(anios.items()))}")
 
     print("\n== SALIENCE (§2: saliente si ≥2 señales) ==")
-    salientes = salience.select_salient(eventos)
+    patron = salience.patron_sujeto(["Humala", "Ollanta"])
+    salientes = salience.select_salient(eventos, sujeto_patron=patron)
     conteo_senal = Counter()
     for e in eventos:
-        for s, v in salience.senales(e).items():
+        for s, v in salience.senales(e, sujeto_patron=patron).items():
             if v:
                 conteo_senal[s] += 1
     print(f"  eventos salientes: {len(salientes)} de {len(eventos)}")
@@ -73,7 +74,7 @@ def main() -> None:
 
     print("\n== LÍNEA DE TIEMPO SALIENTE (cronológica) ==")
     for e in salientes:
-        ss = "+".join(k for k, v in salience.senales(e).items() if v)
+        ss = "+".join(k for k, v in salience.senales(e, sujeto_patron=patron).items() if v)
         print(f"  {e.fecha_normalizada} [{len(e.fuentes):2d}n] {e.pasajes_evidencia[0][:72]}  ({ss})")
 
     filas = [{
@@ -82,7 +83,7 @@ def main() -> None:
         "n_notas": len(e.fuentes),
         "n_fechas": len(set(e.fechas_evidencia)),
         "saliente": e.cluster_id in sal_ids,
-        "senales": "+".join(k for k, v in salience.senales(e).items() if v),
+        "senales": "+".join(k for k, v in salience.senales(e, sujeto_patron=patron).items() if v),
         "fuentes": ",".join(e.fuentes),
         "pasaje_representativo": e.pasajes_evidencia[0] if e.pasajes_evidencia else "",
     } for e in eventos]

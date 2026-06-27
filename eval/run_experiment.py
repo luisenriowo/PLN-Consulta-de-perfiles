@@ -67,7 +67,10 @@ def eventos_salientes() -> list:
                   fecha_pub=date.fromisoformat(r.fecha_pub), texto=r.texto)
         for r in df.itertuples()
     ]
-    return salience.select_salient(cluster.cluster_events(docs, umbral=cluster.UMBRAL_DEFECTO))
+    return salience.select_salient(
+        cluster.cluster_events(docs, umbral=cluster.UMBRAL_DEFECTO),
+        sujeto_patron=salience.patron_sujeto(["Humala", "Ollanta"]),
+    )
 
 
 def _media_desv(xs: list[float]) -> tuple[float, float]:

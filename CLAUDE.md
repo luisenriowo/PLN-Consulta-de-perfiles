@@ -6,6 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `timeline-gen` is a NLP research pipeline (T02 — Generación de lenguaje) that builds political-figure timelines from a Spanish news corpus (Agencia Andina primary, GDELT secondary). It compares four generation conditions — B0Lead, B1Extractive, SistemaRAG, Ablación — on the **same** backbone-produced event clusters, then serves the results via a FastAPI + static-web backend.
 
+**Topic-centric pivot (in progress).** The project is moving from figure-centric
+timelines to a **topic-centric entity-relation graph**: given a *topic + date
+range*, it discovers ~10–20 entities (people, parties, institutions) from the
+corpus and builds a typed relation graph between them. The graph is the product;
+a figure's timeline becomes a *derived view* (the ego-network of one node). The
+graph backbone (`pipeline/entity_discovery.py`, `pipeline/relations.py`,
+`pipeline/relation_classifier.py`, `storage/graph.py`) is built and exposed via
+`/api/figuras/{slug}/grafo/*`; the topic orchestrator is
+`scripts/precompute_tema.py`. See "Topic-centric pipeline" below.
+
 ## Commands
 
 ```bash
@@ -22,6 +32,12 @@ streamlit run src/app/streamlit_app.py
 
 # Offline precompute a figure (slug must exist in src/figuras.py)
 python scripts/precompute_figura.py <slug>      # e.g. humala, keiko, roberto-sanchez
+
+# Offline precompute a TOPIC graph (slug in TEMAS in src/figuras.py, or reuse an
+# existing figure's corpus by passing its slug). Builds data/graph_<slug>.duckdb.
+python scripts/precompute_tema.py <slug>        # e.g. elecciones-2021-2026, humala
+# Fully offline run (no Wikidata, rules-only relations):
+WIKIDATA_ENRIQUECER=0 ANTHROPIC_API_KEY= python scripts/precompute_tema.py <slug>
 
 # Build Humala corpus from scratch (scraping + NER + gate-metrics)
 python scripts/build_corpus.py
@@ -49,6 +65,11 @@ Environment variables (in a `.env` file, gitignored):
 - `TIMELINE_LLM_MODEL` — sobreescribe el modelo de generación (defaults por proveedor: `claude-haiku-4-5`, `gpt-4o-mini`, `llama-3.3-70b-versatile`, `gemini-flash-latest`).
 - `RELATIONS_LLM_MODEL` — sobreescribe el modelo de clasificación de relaciones.
 - `TIMELINE_API` — Streamlit frontend target (default `http://127.0.0.1:8000`).
+- `NER_MODEL` — `spacy` (default) | `transformer`. NER backend for entity discovery (`src/pipeline/ner.py`).
+- `SPACY_NER_MODEL` / `SPACY_DEP_MODEL` — spaCy models for NER and dep-parsing (default `es_core_news_lg`; `precompute_tema.py` falls back to `es_core_news_md` if unset, since that's the dev model that ships).
+- `WIKIDATA_ENRIQUECER` — `1` (default) | `0`. Set `0` to skip Wikidata lookups in entity discovery (offline runs).
+- `WIKIDATA_WORKERS` — parallel threads for Wikidata lookups (default 5).
+- `TIMELINE_DATA_DIR` — root data dir (default `data`); also where `wikidata_cache.json` and `graph_<slug>.duckdb` live.
 
 ## Architecture
 
@@ -116,6 +137,57 @@ data/
 2. Run `python scripts/precompute_figura.py <slug>`.
 
 Figures created via the web UI are stored in `data/figuras_dinamicas.json` and do not appear in `src/figuras.py`.
+
+### Topic-centric pipeline (entity-relation graph)
+
+Parallel to the four-conditions figure pipeline. Same ingest/preprocess, but
+**no single subject**: no gazetteer, no protagonism filter. The product is a
+knowledge graph, not a timeline.
+
+```
+ingest (topic queries) → preprocess (dedup, incl. cross-source)
+  → entity discovery (pipeline/entity_discovery.py — NER over the WHOLE corpus,
+       token-containment grouping, Wikidata linking → top-N EntityNode)
+    → co-occurrence extraction (pipeline/relations.py — sentences where ≥2
+         entities appear; shallow dep-triple subject-verb-object)
+      → relation classification (pipeline/relation_classifier.py — Hybrid:
+           rules first, LLM only below a confidence threshold; per entity-pair)
+        → knowledge graph (storage/graph.py — DuckDB persistence + NetworkX
+             analytics) → manifest entry (tipo="tema")
+```
+
+Orchestrator: `scripts/precompute_tema.py <slug>`. It reuses
+`data/corpus_<slug>.parquet` if present (so you can build a topic graph over an
+existing figure's corpus by passing its slug), else scrapes from the topic's
+`queries`. Output: `data/graph_<slug>.duckdb` + manifest registration.
+
+**Config:** `TemaConfig` / `TEMAS` in `src/figuras.py` (no `sujeto_id`,
+`gazetteer`, or `familia_otros` — just `queries`, window, `top_n`, `pais`).
+`figuras.cargar_tema(slug)` adapts an existing `FiguraConfig` to a `TemaConfig`
+when the slug is a figure, enabling corpus reuse.
+
+**Relation taxonomy** (`src/schemas.py` `TIPOS_RELACION`, single source of
+truth): `alianza`, `conflicto`, `pertenencia`, `nombramiento`, `acusacion`,
+`ruptura`, `mencion`. Three classifiers implement the `RelationClassifier`
+Protocol: `RuleBasedClassifier` (verb lexicon, no LLM), `LLMClassifier`
+(provider-agnostic), `HybridClassifier` (recommended; degrades to rules-only if
+the LLM hits a quota error or no API key — pass `umbral=0.0` to force rules).
+
+**Graph schemas** (`src/schemas.py`): `EntityNode` (graph node; `entity_id` is a
+Wikidata QID when linked, else a slug), `RelationResult` (classifier output),
+`RelationEdge` (graph edge with `evidencia`, `fuentes`, `confianza`, `metodo`).
+`metodo` ∈ {rules, llm, hybrid, human} preserves provenance for auditing/curation.
+
+**Storage** (`src/storage/graph.py`): one `KnowledgeGraph` per slug, file
+`data/graph_<slug>.duckdb`. DuckDB for SQL queries (filter relations by date /
+type / confidence / entity); NetworkX for `centralidad` (PageRank),
+`comunidades` (Louvain), `camino` (shortest path). Open `read_only=True` in the
+API. Exposed read-only at `/api/figuras/{slug}/grafo/{entidades,relaciones,
+centralidad,comunidades,camino}`.
+
+The manifest (`data/figuras.json`) now tags each entry with `tipo`:
+`"figura"` (4-condition timeline) or `"tema"` (graph; carries `n_entidades`,
+`n_relaciones`, `rango_fechas` instead of `n_eventos`).
 
 ### Web app and background jobs (`src/app/`)
 

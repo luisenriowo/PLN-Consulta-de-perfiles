@@ -47,7 +47,9 @@ def cargar_protagonistas() -> list[Documento]:
 def main() -> None:
     docs = cargar_protagonistas()
     clusters = cluster.cluster_events(docs, umbral=cluster.UMBRAL_DEFECTO)
-    salientes = salience.select_salient(clusters)
+    salientes = salience.select_salient(
+        clusters, sujeto_patron=salience.patron_sujeto(["Humala", "Ollanta"])
+    )
     print(f"docs={len(docs)}  eventos={len(clusters)}  salientes={len(salientes)}")
 
     nombres = [c.name for c in CONDICIONES]

@@ -118,7 +118,13 @@ def precompute(slug: str) -> None:
     log.info("    protagonista: %d de %d", len(protag), len(docs))
 
     log.info("[5] clustering + saliencia")
-    salientes = salience.select_salient(cluster.cluster_events(protag))
+    formas_sujeto = [
+        sup for sup, (cid, _nombre) in cfg.gazetteer.items() if cid == cfg.sujeto_id
+    ]
+    salientes = salience.select_salient(
+        cluster.cluster_events(protag),
+        sujeto_patron=salience.patron_sujeto(formas_sujeto),
+    )
     log.info("    eventos salientes: %d", len(salientes))
 
     log.info("[6] grafo de relaciones")

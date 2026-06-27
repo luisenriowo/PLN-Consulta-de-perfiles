@@ -10,8 +10,14 @@ juicio humano (consecuencia de fondo) se aproximan con proxies léxicos, y la
 multi-fuente queda inerte porque el corpus es mono-fuente (Andina). Esto es
 selección automática del SISTEMA; el gold humano sigue siendo la referencia.
 
+El módulo es AGNÓSTICO al sujeto: la señal de prominencia se evalúa contra un
+`sujeto_patron` que pasa el llamador (construido con `patron_sujeto`). En modo
+figura el script pasa las formas superficiales del sujeto; en modo tema-céntrico
+no hay sujeto único, así que `sujeto_patron=None` deja la prominencia inerte y
+la saliencia se apoya en las otras señales.
+
 Mapa a §2:
-  1. prominencia        — Humala en el título de ≥1 nota (pasaje).
+  1. prominencia        — el sujeto aparece en el título de ≥1 nota (pasaje).
   2. nota_dedicada      — proxy: ≥2 notas cubren el evento (cobertura dedicada).
   3. cobertura_sostenida— ≥2 fechas de publicación distintas.
   4. consecuencia       — proxy léxico: el título refiere un hecho con efecto
@@ -22,10 +28,11 @@ Mapa a §2:
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 
+from src.pipeline._utils import _norm
 from src.schemas import EventCluster
 
-_SUJETO = re.compile(r"\b(humala|ollanta)\b", re.IGNORECASE)
 _CONSECUENCIA = re.compile(
     r"conden|sentenc|prisi[oó]n|absuel|orden[oó]|dicta|enjuiciamiento|acusaci[oó]n|"
     r"reparaci[oó]n|inhabilit|detenci[oó]n|captura|impedimento|prisi[oó]n preventiva|"
@@ -36,11 +43,36 @@ _CONSECUENCIA = re.compile(
 UMBRAL_SENALES = 2   # §2: saliente si cumple ≥2
 
 
-def senales(c: EventCluster) -> dict[str, bool]:
-    """Evalúa las señales de saliencia §2 sobre un cluster."""
+def patron_sujeto(formas: Iterable[str]) -> re.Pattern | None:
+    """Compila un patrón ``\\b(forma1|forma2|…)\\b`` de formas superficiales.
+
+    Las formas se normalizan (minúsculas, sin acentos) para casar contra texto
+    también normalizado vía `_norm`. Devuelve None si no quedan formas válidas:
+    en ese caso la señal de prominencia queda inerte (modo tema-céntrico).
+    """
+    formas_norm = sorted(
+        {_norm(f) for f in formas if f and f.strip()}, key=len, reverse=True
+    )
+    if not formas_norm:
+        return None
+    alternativas = "|".join(re.escape(f) for f in formas_norm)
+    return re.compile(rf"\b({alternativas})\b")
+
+
+def senales(
+    c: EventCluster, *, sujeto_patron: re.Pattern | None = None
+) -> dict[str, bool]:
+    """Evalúa las señales de saliencia §2 sobre un cluster.
+
+    `sujeto_patron` controla la señal de prominencia; si es None la señal queda
+    en False (no hay sujeto único contra el cual medir prominencia).
+    """
     pasajes = " || ".join(c.pasajes_evidencia)
+    prominencia = (
+        bool(sujeto_patron.search(_norm(pasajes))) if sujeto_patron is not None else False
+    )
     return {
-        "prominencia": bool(_SUJETO.search(pasajes)),
+        "prominencia": prominencia,
         "nota_dedicada": len(c.fuentes) >= 2,
         "cobertura_sostenida": len(set(c.fechas_evidencia)) >= 2,
         "consecuencia": bool(_CONSECUENCIA.search(pasajes)),
@@ -48,11 +80,13 @@ def senales(c: EventCluster) -> dict[str, bool]:
     }
 
 
-def es_saliente(c: EventCluster) -> bool:
+def es_saliente(c: EventCluster, *, sujeto_patron: re.Pattern | None = None) -> bool:
     """True si el cluster cumple ≥2 señales (§2)."""
-    return sum(senales(c).values()) >= UMBRAL_SENALES
+    return sum(senales(c, sujeto_patron=sujeto_patron).values()) >= UMBRAL_SENALES
 
 
-def select_salient(clusters: list[EventCluster]) -> list[EventCluster]:
+def select_salient(
+    clusters: list[EventCluster], *, sujeto_patron: re.Pattern | None = None
+) -> list[EventCluster]:
     """Selecciona los clusters de evento salientes (orden cronológico preservado)."""
-    return [c for c in clusters if es_saliente(c)]
+    return [c for c in clusters if es_saliente(c, sujeto_patron=sujeto_patron)]

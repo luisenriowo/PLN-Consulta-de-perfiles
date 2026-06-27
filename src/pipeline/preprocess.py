@@ -48,6 +48,10 @@ def preprocess(docs: list[Documento]) -> list[Documento]:
     """Limpia, descarta ruido corto y deduplica documentos.
 
     El orden de entrada se preserva; ante duplicados gana la primera aparición.
+    La deduplicación es por FIRMA DE TEXTO, así que funciona CROSS-FUENTE: una
+    misma nota republicada por dos medios (distinto `doc_id`/`fuente`, mismo
+    cuerpo) se colapsa a una sola. Pasa los documentos de todas las fuentes
+    juntos a esta función para que la combinación multi-fuente quede deduplicada.
     """
     vistos: set[str] = set()
     salida: list[Documento] = []

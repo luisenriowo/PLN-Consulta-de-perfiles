@@ -54,6 +54,16 @@ class Documento(BaseModel):
 
     `entidades` lo rellena el backbone (pipeline/entities.py); empieza vacío en
     la ingesta. Campo aditivo: no afecta la interfaz del punto de swap.
+
+    Contrato MULTI-FUENTE (invariante de ingesta):
+      - `doc_id` DEBE estar namespaced por fuente: ``<fuente>:<id>`` (p. ej.
+        "andina:123456", "gdelt:https://..."). Así el id es globalmente único
+        aunque dos medios reusen numeraciones internas iguales.
+      - `fuente` identifica el medio (dominio): "andina.pe", "gdelt", etc.
+      - Una misma nota republicada por dos medios se deduplica en
+        `preprocess.preprocess` por FIRMA DE TEXTO (cross-fuente), de modo que
+        cuenta una sola vez. Cada colector de ingesta debe respetar este
+        contrato para que el corpus sea combinable entre fuentes.
     """
 
     doc_id: str

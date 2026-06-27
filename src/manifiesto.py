@@ -53,6 +53,16 @@ def cargar() -> list[dict]:
     return json.loads(MANIFIESTO.read_text(encoding="utf-8"))
 
 
+def _persistir(figs: dict[str, dict]) -> None:
+    """Escribe el manifiesto ordenado por nombre."""
+    MANIFIESTO.parent.mkdir(parents=True, exist_ok=True)
+    MANIFIESTO.write_text(
+        json.dumps(sorted(figs.values(), key=lambda f: f["nombre"]),
+                   ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
 def actualizar(slug: str, nombre: str) -> dict:
     """Inserta/actualiza la entrada de la figura en el manifiesto y la devuelve."""
     info = _resumen_figura(slug)
@@ -62,11 +72,32 @@ def actualizar(slug: str, nombre: str) -> dict:
             "Precomputa la figura antes de registrarla en el manifiesto."
         )
     figs = {f["slug"]: f for f in cargar()}
-    figs[slug] = {"slug": slug, "nombre": nombre, **info}
-    MANIFIESTO.parent.mkdir(parents=True, exist_ok=True)
-    MANIFIESTO.write_text(
-        json.dumps(sorted(figs.values(), key=lambda f: f["nombre"]),
-                   ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    figs[slug] = {"slug": slug, "nombre": nombre, "tipo": "figura", **info}
+    _persistir(figs)
+    return figs[slug]
+
+
+def actualizar_tema(
+    slug: str,
+    nombre: str,
+    *,
+    n_entidades: int,
+    n_relaciones: int,
+    rango_fechas: list[str] | None,
+) -> dict:
+    """Inserta/actualiza la entrada de un TEMA en el manifiesto y la devuelve.
+
+    Un tema no tiene salidas de las 4 condiciones; su resumen viene del grafo
+    (nº de entidades, nº de relaciones y rango de fechas de las aristas).
+    """
+    figs = {f["slug"]: f for f in cargar()}
+    figs[slug] = {
+        "slug": slug,
+        "nombre": nombre,
+        "tipo": "tema",
+        "rango_fechas": rango_fechas,
+        "n_entidades": n_entidades,
+        "n_relaciones": n_relaciones,
+    }
+    _persistir(figs)
     return figs[slug]
