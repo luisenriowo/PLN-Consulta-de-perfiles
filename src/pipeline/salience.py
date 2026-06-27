@@ -22,7 +22,10 @@ Mapa a §2:
   3. cobertura_sostenida— ≥2 fechas de publicación distintas.
   4. consecuencia       — proxy léxico: el título refiere un hecho con efecto
                           (condena, sentencia, prisión, orden judicial, …).
-  5. multi_fuente [bonus]— ≥2 medios independientes. Inerte: mono-fuente.
+  5. multi_fuente [bonus]— el evento está corroborado por ≥2 FAMILIAS de fuente
+                          (p. ej. andina + gdelt), derivadas del prefijo del
+                          `doc_id` namespaced. En corpus mono-fuente queda en
+                          False (compatibilidad hacia atrás).
 """
 
 from __future__ import annotations
@@ -41,6 +44,12 @@ _CONSECUENCIA = re.compile(
 )
 
 UMBRAL_SENALES = 2   # §2: saliente si cumple ≥2
+
+
+def _familia_fuente(doc_id: str) -> str:
+    """Familia de fuente desde el doc_id namespaced: 'andina:123' -> 'andina',
+    'gdelt:http://…' -> 'gdelt'. Sin prefijo, devuelve el id completo."""
+    return doc_id.split(":", 1)[0] if ":" in doc_id else doc_id
 
 
 def patron_sujeto(formas: Iterable[str]) -> re.Pattern | None:
@@ -71,12 +80,13 @@ def senales(
     prominencia = (
         bool(sujeto_patron.search(_norm(pasajes))) if sujeto_patron is not None else False
     )
+    medios = {_familia_fuente(f) for f in c.fuentes}
     return {
         "prominencia": prominencia,
         "nota_dedicada": len(c.fuentes) >= 2,
         "cobertura_sostenida": len(set(c.fechas_evidencia)) >= 2,
         "consecuencia": bool(_CONSECUENCIA.search(pasajes)),
-        "multi_fuente": False,   # corpus mono-fuente; bonus inerte por ahora
+        "multi_fuente": len(medios) >= 2,
     }
 
 

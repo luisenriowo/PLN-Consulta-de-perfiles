@@ -28,14 +28,14 @@ import logging
 import os
 import sys
 import time
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import pandas as pd
 
 from src import figuras, manifiesto
 from src.generation import _llm
-from src.ingest import andina
+from src.ingest import andina, gdelt
 from src.ingest._util import dentro_de_ventana, http_session
 from src.pipeline import preprocess
 from src.pipeline.entity_discovery import descubrir_entidades
@@ -49,14 +49,61 @@ log = logging.getLogger(__name__)
 DELAY = 0.4   # cortesía entre descargas
 
 
-def _descubrir_urls(session, cfg) -> dict[str, set[str]]:
+def _colectar_andina(cfg) -> list[Documento]:
+    """Descarga + parsea notas de Andina para las queries del tema (en ventana)."""
+    session = http_session()
     proc: dict[str, set[str]] = {}
     for q in cfg.queries:
         urls = andina.buscar(session, q)
-        log.info("  query %r: %d URLs", q, len(urls))
+        log.info("    andina query %r: %d URLs", q, len(urls))
         for u in urls:
             proc.setdefault(u, set()).add(q)
-    return proc
+    log.info("    andina URLs únicas: %d", len(proc))
+
+    docs: list[Documento] = []
+    for k, url in enumerate(proc, 1):
+        d = andina.parse_nota(session, url)
+        if d and dentro_de_ventana(d.fecha_pub, desde=cfg.desde, hasta=cfg.hasta):
+            docs.append(d)
+        if k % 100 == 0:
+            log.info("    andina %d/%d (ok=%d)", k, len(proc), len(docs))
+        time.sleep(DELAY)
+    return docs
+
+
+def _colectar_gdelt(cfg) -> list[Documento]:
+    """Recolecta titulares de GDELT (medios independientes) por query.
+
+    Una request por query, respetando el rate limit de la DOC API (≥5 s).
+    """
+    docs: list[Documento] = []
+    for i, q in enumerate(cfg.queries):
+        if i:
+            time.sleep(5.5)   # rate limit GDELT: 1 request / ≥5 s
+        try:
+            res = gdelt.collect(q, hasta=cfg.hasta, desde=cfg.desde)
+        except Exception as exc:   # GDELT no es crítica; no debe tumbar el run
+            log.warning("    gdelt query %r falló: %s", q, exc)
+            continue
+        log.info("    gdelt query %r: %d docs", q, len(res))
+        docs.extend(res)
+    return docs
+
+
+_COLECTORES = {"andina": _colectar_andina, "gdelt": _colectar_gdelt}
+
+
+def _colectar(cfg) -> list[Documento]:
+    """Ingesta MULTI-FUENTE: agrega los colectores configurados en cfg.fuentes."""
+    docs: list[Documento] = []
+    for fuente in cfg.fuentes:
+        colector = _COLECTORES.get(fuente)
+        if colector is None:
+            log.warning("    fuente desconocida %r — se omite", fuente)
+            continue
+        log.info("[1] colectando fuente: %s", fuente)
+        docs.extend(colector(cfg))
+    return docs
 
 
 def _cargar_corpus(slug: str, cfg) -> list[Documento]:
@@ -81,22 +128,14 @@ def _cargar_corpus(slug: str, cfg) -> list[Documento]:
         log.info("    %d docs cargados", len(docs))
         return docs
 
-    session = http_session()
-    log.info("[1] descubrimiento de URLs (Andina)")
-    proc = _descubrir_urls(session, cfg)
-    log.info("    URLs únicas: %d", len(proc))
+    log.info("[1] ingesta multi-fuente: %s", list(cfg.fuentes))
+    docs = _colectar(cfg)
 
-    log.info("[2] descarga + parseo + ventana")
-    docs: list[Documento] = []
-    for k, url in enumerate(proc, 1):
-        d = andina.parse_nota(session, url)
-        if d and dentro_de_ventana(d.fecha_pub, desde=cfg.desde, hasta=cfg.hasta):
-            docs.append(d)
-        if k % 100 == 0:
-            log.info("    %d/%d (ok=%d)", k, len(proc), len(docs))
-        time.sleep(DELAY)
+    log.info("[2] preprocess (dedup cross-fuente por firma de texto)")
+    crudos = len(docs)
     docs = preprocess.preprocess(docs)
-    log.info("    en ventana tras preprocess: %d", len(docs))
+    log.info("    colectados: %d → tras dedup: %d", crudos, len(docs))
+    log.info("    distribución por fuente: %s", dict(Counter(d.fuente for d in docs)))
 
     corpus.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame([

@@ -60,6 +60,7 @@ python scripts/test_relations.py            # validate the relation harness with
 python scripts/export_entidades_gold.py <slug> [--top 60]   # → annotation/gold_entidades/<slug>.csv (fill es_actor_gold, tipo_correcto, nombre_canonico)
 python -m eval.entities annotation/gold_entidades/<slug>.csv   # actor precision/recall, type accuracy, splits
 python scripts/test_entities.py             # validate the entity harness with known-answer fixtures (no gold/network)
+python scripts/test_multifuente.py          # validate multi-source layer (multi_fuente signal, cross-source dedup, collector dispatch)
 
 # Smoke test ingest (lightweight, no full scrape)
 python scripts/smoke_ingest.py
@@ -172,6 +173,16 @@ Orchestrator: `scripts/precompute_tema.py <slug>`. It reuses
 existing figure's corpus by passing its slug), else scrapes from the topic's
 `queries`. Output: `data/graph_<slug>.duckdb` + manifest registration.
 
+**Multi-source ingestion.** `TemaConfig.fuentes` lists the collectors to use
+(`"andina"`, `"gdelt"`; default `("andina",)`). `precompute_tema._colectar`
+dispatches to each, merges, and `preprocess.preprocess` deduplicates **across
+sources** by text signature; semantic clustering then merges paraphrased
+republications of the same event. GDELT (`src/ingest/gdelt.py`) is the secondary
+source — independent media, title-only `texto`, rate-limited (1 req / ≥5 s, so
+`_colectar_gdelt` paces and tolerates per-query failures). Source provenance is
+carried in the namespaced `doc_id` (`andina:…`, `gdelt:…`), which drives the
+`multi_fuente` saliency signal (≥2 source families corroborating an event).
+
 **Entity resolution (actor-focused).** `descubrir_entidades` defaults to keeping
 only ACTORS (`_TIPOS_ACTOR` = PER+ORG) and dropping generic terms (`_GENERICOS`,
 e.g. "Estado", "Gobierno"), filtering BEFORE the `top_n` cut so `top_n=20` yields
@@ -223,7 +234,7 @@ A cluster is salient if ≥2 of 5 signals are true:
 2. **nota_dedicada** — ≥2 source documents
 3. **cobertura_sostenida** — ≥2 distinct publication dates
 4. **consecuencia** — lexical proxy for judicial outcomes (sentencia, prisión, …)
-5. **multi_fuente** — currently inert (corpus is mono-source: Andina)
+5. **multi_fuente** — cluster has doc_ids from ≥2 source families (e.g. andina + gdelt), derived from the `doc_id` prefix. Inert for mono-source (Andina-only) corpora; active once GDELT/other sources are ingested.
 
 ### LLM client (`src/generation/_llm.py`)
 

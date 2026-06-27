@@ -64,6 +64,9 @@ class TemaConfig:
     hasta: date = FECHA_CORTE_HUMALA
     top_n: int = 20
     pais: str = "Perú"
+    # Colectores de ingesta a usar (multi-fuente). Soportados: "andina", "gdelt".
+    # GDELT aporta medios independientes (corrobora eventos → señal multi_fuente).
+    fuentes: tuple[str, ...] = ("andina",)
 
 
 FIGURAS: dict[str, FiguraConfig] = {
@@ -130,6 +133,7 @@ TEMAS: dict[str, TemaConfig] = {
             "Dina Boluarte", "vacancia presidencial",
         ),
         top_n=20,
+        fuentes=("andina", "gdelt"),   # multi-fuente: Andina + medios independientes
     ),
 }
 
