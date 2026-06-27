@@ -133,7 +133,13 @@ class RelationEdge(BaseModel):
 
     origen_id:  str
     destino_id: str
-    tipo:       str
+    # `predicado` es la relación ABIERTA (verbo conector, OpenIE); `tipo` es la
+    # categoría (taxonomía) y queda None hasta que se identifica DESPUÉS. Una
+    # arista puede tener predicado sin tipo (abierta) o tipo sin predicado (la
+    # ruta vieja de clasificación). `fecha` la hace temporal: varias por par a lo
+    # largo del tiempo permiten ver la evolución de la relación.
+    tipo:       str | None = None
+    predicado:  str | None = None
     fecha:      date
     evidencia:  list[str] = Field(default_factory=list)   # oraciones de respaldo
     fuentes:    list[str] = Field(default_factory=list)   # doc_ids

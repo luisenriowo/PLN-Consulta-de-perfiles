@@ -49,7 +49,8 @@ CREATE TABLE IF NOT EXISTS relations (
     figura_slug TEXT    NOT NULL,
     origen_id   TEXT    NOT NULL REFERENCES entities(entity_id),
     destino_id  TEXT    NOT NULL REFERENCES entities(entity_id),
-    tipo        TEXT    NOT NULL,
+    tipo        TEXT,                -- categoría (taxonomía); NULL si aún sin tipar
+    predicado   TEXT,                -- relación ABIERTA (verbo conector, OpenIE)
     fecha       DATE    NOT NULL,
     confianza   REAL    NOT NULL,
     metodo      TEXT    NOT NULL
@@ -124,13 +125,13 @@ class KnowledgeGraph:
         row = self._conn.execute(
             """
             INSERT INTO relations (figura_slug, origen_id, destino_id, tipo,
-                                   fecha, confianza, metodo)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                                   predicado, fecha, confianza, metodo)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING id
             """,
             [
                 self.slug, edge.origen_id, edge.destino_id, edge.tipo,
-                edge.fecha.isoformat(), edge.confianza, edge.metodo,
+                edge.predicado, edge.fecha.isoformat(), edge.confianza, edge.metodo,
             ],
         ).fetchone()
         rel_id: int = row[0]
@@ -192,9 +193,14 @@ class KnowledgeGraph:
         """
         return self._conn.execute(sql, params).df().to_dict("records")
 
-    def evolucion(self, origen_id: str, destino_id: str) -> list[dict]:
-        """Evolución temporal de la relación entre dos entidades."""
-        return self.relations(origen_id=origen_id, destino_id=destino_id)
+    def evolucion(self, entidad_a: str, entidad_b: str) -> list[dict]:
+        """Evolución temporal de la relación entre dos entidades (ambas
+        direcciones, ordenada por fecha). Cada fila trae `predicado` (relación
+        abierta), `tipo` (si ya se identificó) y `fecha`: leerlas en orden
+        muestra cómo evoluciona el vínculo."""
+        ida    = self.relations(origen_id=entidad_a, destino_id=entidad_b)
+        vuelta = self.relations(origen_id=entidad_b, destino_id=entidad_a)
+        return sorted(ida + vuelta, key=lambda r: r["fecha"])
 
     def evidencia(self, relation_id: int) -> dict:
         """Pasajes de evidencia y doc_ids fuente de una arista (por su id)."""

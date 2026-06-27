@@ -101,6 +101,59 @@ def _dep_triple(oracion: str, nlp) -> tuple[str, str, str] | None:
     return (sujeto, root.lemma_, objeto)
 
 
+def _token_entidad(doc, nombre: str):
+    """Primer token del doc cuya forma coincide con una palabra del nombre."""
+    palabras = {p for p in _norm(nombre).split() if len(p) > 2}
+    for t in doc:
+        if _norm(t.text) in palabras:
+            return t
+    return None
+
+
+def _camino_dep(a, b) -> list:
+    """Camino en el árbol de dependencias entre dos tokens (vía ancestro común)."""
+    anc_a = [a] + list(a.ancestors)
+    idx_b = {t.i: k for k, t in enumerate([b] + list(b.ancestors))}
+    lca = next((t for t in anc_a if t.i in idx_b), None)
+    if lca is None:
+        return []
+    rama_a = []
+    for t in anc_a:
+        rama_a.append(t)
+        if t.i == lca.i:
+            break
+    rama_b = []
+    for t in [b] + list(b.ancestors):
+        if t.i == lca.i:
+            break
+        rama_b.append(t)
+    return rama_a + list(reversed(rama_b))
+
+
+def relacion_abierta(oracion: str, ent_a: str, ent_b: str, nlp) -> str | None:
+    """Frase-predicado LIBRE que conecta a `ent_a` y `ent_b` en la oración.
+
+    OpenIE-lite: ubica un token de cada entidad, toma el camino de dependencias
+    entre ambos y devuelve la FORMA del verbo conector (p. ej. "nombró",
+    "acusó", "se enfrentaron"). No impone taxonomía: el TIPO se identifica
+    después (agrupando predicados o con LLM on-demand). Usa la forma de
+    superficie porque `_nlp_dep` desactiva el lematizador por velocidad. Si no
+    hay verbo en el camino, cae al verbo raíz; None si tampoco hay.
+    """
+    return _predicado(nlp(oracion), ent_a, ent_b)
+
+
+def _predicado(doc, ent_a: str, ent_b: str) -> str | None:
+    """Predicado conector entre dos entidades sobre un doc YA parseado."""
+    ta, tb = _token_entidad(doc, ent_a), _token_entidad(doc, ent_b)
+    if ta is not None and tb is not None:
+        verbos = [t for t in _camino_dep(ta, tb) if t.pos_ in {"VERB", "AUX"}]
+        if verbos:
+            return verbos[0].text.lower()
+    root = next((t for t in doc if t.dep_ == "ROOT"), None)
+    return root.text.lower() if root and root.pos_ in {"VERB", "AUX"} else None
+
+
 @lru_cache(maxsize=1)
 def _nlp_dep():
     """Carga spaCy con solo el dep parser (sin NER, más rápido).
@@ -156,3 +209,51 @@ def extraer_coocurrencias(
                         fecha    = doc.fecha_pub,
                         triple   = triple,
                     )
+
+
+@dataclass(frozen=True)
+class RelacionAbierta:
+    """Relación ABIERTA fechada entre dos entidades (OpenIE).
+
+    `predicado` es el verbo conector libre (sin taxonomía); el TIPO se identifica
+    después. La `fecha` la hace una arista TEMPORAL: el mismo par puede tener
+    varias a lo largo del tiempo → permite ver cómo evoluciona la relación.
+    """
+
+    entity_a:  EntityNode
+    entity_b:  EntityNode
+    predicado: str
+    oracion:   str
+    doc_id:    str
+    fecha:     date
+
+
+def extraer_relaciones_abiertas(
+    docs:      list[Documento],
+    entidades: list[EntityNode],
+    *,
+    min_entidades: int = 2,
+) -> Iterator[RelacionAbierta]:
+    """Genera relaciones ABIERTAS fechadas (una por par co-ocurrente con verbo).
+
+    A diferencia de `extraer_coocurrencias` + clasificación + colapso por par,
+    aquí NO se agrega: cada co-ocurrencia con predicado válido es una arista
+    temporal independiente. Así el grafo es un multigrafo en el tiempo y se puede
+    reconstruir la evolución de cualquier par. Parsea cada oración UNA vez.
+    """
+    nlp = _nlp_dep()
+    for doc in docs:
+        for oracion in _segmentar(doc.texto):
+            oracion_norm = _norm(oracion)
+            presentes    = [e for e in entidades if _menciona(oracion_norm, e)]
+            if len(presentes) < min_entidades:
+                continue
+            parsed = nlp(oracion)
+            for i, ea in enumerate(presentes):
+                for eb in presentes[i + 1:]:
+                    pred = _predicado(parsed, ea.nombre, eb.nombre)
+                    if pred:
+                        yield RelacionAbierta(
+                            entity_a = ea, entity_b = eb, predicado = pred,
+                            oracion = oracion, doc_id = doc.doc_id, fecha = doc.fecha_pub,
+                        )
