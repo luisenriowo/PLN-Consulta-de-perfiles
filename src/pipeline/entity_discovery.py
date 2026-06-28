@@ -65,6 +65,13 @@ _GENERICOS: frozenset[str] = frozenset(
         "el gobierno",
         "el peru",
         "ejecutivo",
+        # Medios/agencias (la publicadora aparece en casi toda nota) y gentilicio:
+        # no son actores políticos, contaminan el grafo.
+        "agencia andina",
+        "andina",
+        "agencia efe",
+        "efe",
+        "peruano",
     }
 )
 
@@ -166,6 +173,11 @@ def _agrupar(
     Retorna {slug: {nombre, tipo, alias, n_menciones, n_docs}}.
     """
     grupos: list[dict] = []
+    # BLOCKING: índice (tipo, token) -> índices de grupos que contienen ese token.
+    # Cada mención solo se compara con grupos que comparten ≥1 token (mismo
+    # resultado que comparar contra todos —los de intersección 0 nunca casan—
+    # pero O(menciones × candidatos) en vez de O(menciones × grupos)).
+    indice: dict[tuple[str, str], set[int]] = {}
 
     for texto_raw, tipo, doc_id in menciones:
         texto = _limpiar_span(texto_raw)
@@ -175,36 +187,42 @@ def _agrupar(
         if len(toks) < _MIN_TOKENS:
             continue
 
-        mejor_g = None
-        mejor_ov = 0.0
-        for g in grupos:
-            if g["tipo"] != tipo:
-                continue
+        candidatos: set[int] = set()
+        for tok in toks:
+            candidatos.update(indice.get((tipo, tok), ()))
+
+        mejor_gi = None
+        mejor_ov = 0
+        for gi in candidatos:
+            g = grupos[gi]
             intersec = len(toks & g["tokens"])
-            if intersec == 0:
-                continue
-            # Ratio de contención: cuánto del conjunto más pequeño está cubierto.
             ratio = intersec / min(len(toks), len(g["tokens"]))
             if ratio >= 0.7 and intersec > mejor_ov:
-                mejor_g = g
+                mejor_gi = gi
                 mejor_ov = intersec
 
-        if mejor_g is None:
+        if mejor_gi is None:
+            gi = len(grupos)
             grupos.append(
                 {
-                    "tokens": toks,
+                    "tokens": set(toks),
                     "tipo": tipo,
                     "frecuencias": {texto: 1},  # {forma: count}
                     "doc_ids": {doc_id},
                     "n_menciones": 1,
                 }
             )
+            for tok in toks:
+                indice.setdefault((tipo, tok), set()).add(gi)
         else:
-            mejor_g["tokens"] |= toks
-            mejor_g["n_menciones"] += 1
-            mejor_g["doc_ids"].add(doc_id)
-            frecs = mejor_g["frecuencias"]
-            frecs[texto] = frecs.get(texto, 0) + 1
+            g = grupos[mejor_gi]
+            nuevos = toks - g["tokens"]
+            g["tokens"] |= toks
+            g["n_menciones"] += 1
+            g["doc_ids"].add(doc_id)
+            g["frecuencias"][texto] = g["frecuencias"].get(texto, 0) + 1
+            for tok in nuevos:                 # indexar tokens nuevos del grupo
+                indice.setdefault((tipo, tok), set()).add(mejor_gi)
 
     resultado: dict[str, dict] = {}
     for g in grupos:
