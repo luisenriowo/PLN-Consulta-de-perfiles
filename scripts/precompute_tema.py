@@ -286,6 +286,15 @@ def precompute_tema(slug: str) -> None:
                 r["confianza_media"],
             )
 
+        log.info("[6] analíticas (PageRank + comunidades Louvain — precompute para escala masiva)")
+        stats_an = grafo.precompute_analytics()
+        log.info(
+            "    analíticas precomputadas: %d nodos · %d aristas · %d comunidades",
+            stats_an["n_nodos"],
+            stats_an["n_aristas"],
+            stats_an["n_comunidades"],
+        )
+
     if _llm.disponible():
         log.info("    costo LLM: %s", _llm.costo())
 
@@ -301,7 +310,7 @@ def precompute_tema(slug: str) -> None:
         n_relaciones=n_rel,
         rango_fechas=rango,
     )
-    log.info("[6] manifiesto: %s", entrada)
+    log.info("[7] manifiesto: %s", entrada)
     log.info("== LISTO ==")
 
 

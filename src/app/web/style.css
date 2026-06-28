@@ -468,5 +468,51 @@ details.tipo li { padding: 7px 0; border-top: 1px solid var(--hairline); font-si
   .cy { height: 55vh; }
 }
 
+/* ---------- P4: búsqueda, ego, modo evolución ---------- */
+.g-buscar-wrap { position: relative; min-width: 240px; }
+.g-buscar {
+  width: 100%; padding: 7px 10px; font-family: var(--sans); font-size: 13px;
+  border: 1px solid var(--hairline); border-radius: 8px; background: var(--paper);
+}
+.g-buscar:focus { outline: none; border-color: var(--accent); }
+.g-resultados {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+  max-height: 320px; overflow-y: auto; margin-top: 2px;
+  border: 1px solid var(--hairline); border-radius: 8px; background: var(--paper);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+.g-resultados:empty { display: none; }
+.g-res-item {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--hairline);
+}
+.g-res-item:last-child { border-bottom: none; }
+.g-res-item:hover, .g-res-item.sel-foco { background: var(--paper-2); }
+.g-res-nombre { font-size: 13px; color: var(--ink); }
+.g-res-meta { font-size: 11px; color: var(--muted); font-family: var(--mono); white-space: nowrap; }
+.g-res-tipo { font-size: 10px; font-weight: 700; color: #fff; border-radius: 3px; padding: 1px 5px; }
+.g-res-tipo.PER { background: #1e88e5; }
+.g-res-tipo.ORG { background: #fb8c00; }
+.g-res-tipo.LOC { background: #43a047; }
+.g-res-tipo.MISC { background: #757575; }
+
+.g-acciones { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.g-btn {
+  border: 1px solid var(--hairline); background: var(--paper); color: var(--ink-soft);
+  font-family: var(--sans); font-size: 12px; font-weight: 600;
+  padding: 6px 12px; border-radius: 8px; cursor: pointer;
+}
+.g-btn:hover { background: var(--paper-2); }
+.g-btn.activo { background: var(--accent); color: #fff; border-color: var(--accent); }
+.g-evolucion-estado { font-size: 12px; color: var(--muted); font-style: italic; }
+
+.gp-evolucion { border-top: 2px dashed var(--hairline); margin-top: var(--sp-3); padding-top: var(--sp-2); }
+.gp-evolucion .gp-ev-vacio { color: var(--muted); font-size: 13px; font-style: italic; }
+.gp-ev-item { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  padding: 6px 0; border-bottom: 1px solid var(--hairline); font-size: 13px; }
+.gp-ev-item .gp-flecha { color: var(--muted); font-weight: 700; }
+.gp-ev-item .gp-conf { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+.gp-ego-aviso { color: var(--accent); font-size: 13px; font-weight: 600; }
+
 /* Estado de visibilidad — al final para ganar la cascada sin !important */
 .oculto { display: none; }

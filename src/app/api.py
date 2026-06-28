@@ -101,7 +101,11 @@ def _check_grafo(slug: str) -> Path:
 
 
 def _abrir_grafo(slug: str):
-    """Context manager wrapper con error HTTP útil si el DuckDB está corrupto."""
+    """Context manager wrapper con error HTTP útil si el DuckDB está corrupto.
+
+    Las HTTPException levantadas DENTRO del `with` (404 entidad inexistente,
+    400 fecha inválida, etc.) se relanzan tal cual: el 503 sólo cubre fallos
+    reales al abrir/leer la BD."""
     import contextlib
 
     @contextlib.contextmanager
@@ -109,6 +113,8 @@ def _abrir_grafo(slug: str):
         try:
             with KnowledgeGraph(slug, read_only=True) as g:
                 yield g
+        except HTTPException:
+            raise
         except Exception as exc:
             log.error("Error abriendo grafo de '%s': %s", slug, exc)
             raise HTTPException(
@@ -224,6 +230,15 @@ def grafo_entidades(slug: str) -> list[dict]:
         return g.entities()
 
 
+def _parse_date_or_400(s: str | None) -> date | None:
+    if not s:
+        return None
+    try:
+        return date.fromisoformat(s)
+    except ValueError:
+        raise HTTPException(400, f"Fecha inválida: {s!r} — usa formato YYYY-MM-DD")
+
+
 @app.get("/api/figuras/{slug}/grafo/relaciones")
 def grafo_relaciones(
     slug: str,
@@ -238,18 +253,10 @@ def grafo_relaciones(
     _check_slug(slug)
     _check_grafo(slug)
 
-    def _parse_date(s: str | None) -> date | None:
-        if not s:
-            return None
-        try:
-            return date.fromisoformat(s)
-        except ValueError:
-            raise HTTPException(400, f"Fecha inválida: {s!r} — usa formato YYYY-MM-DD")
-
     with _abrir_grafo(slug) as g:
         return g.relations(
-            desde=_parse_date(desde),
-            hasta=_parse_date(hasta),
+            desde=_parse_date_or_400(desde),
+            hasta=_parse_date_or_400(hasta),
             tipo=tipo,
             origen_id=origen_id,
             destino_id=destino_id,
@@ -324,6 +331,180 @@ def grafo_evidencia(slug: str, rel_id: int) -> dict:
         for d in ev["fuentes"]
     ]
     return ev
+
+
+# ── Rutas: grafo — P4 (búsqueda, evolución, ego, paginación) ─────────────────
+
+@app.get("/api/figuras/{slug}/grafo/stats")
+def grafo_stats(slug: str) -> dict:
+    """Conteos rápidos del grafo (n_entidades, n_relaciones, rango de fechas)
+    para que el frontend decida si cargar el grafo completo o pedir búsqueda."""
+    _check_slug(slug)
+    _check_grafo(slug)
+    with _abrir_grafo(slug) as g:
+        return g.stats()
+
+
+@app.get("/api/figuras/{slug}/grafo/entidades/buscar")
+def grafo_entidades_buscar(
+    slug: str,
+    q: str = Query("", description="Texto a buscar (vacío = top por n_docs)"),
+    limit: int = Query(20, ge=1, le=50, description="Máximo de resultados (1-50)"),
+) -> list[dict]:
+    """Busca entidades por nombre, entity_id o alias. Case-insensitive,
+    ordenado por relevancia (exacto > prefijo > contiene > n_docs)."""
+    _check_slug(slug)
+    _check_grafo(slug)
+    with _abrir_grafo(slug) as g:
+        return g.search_entities(q, limit=limit)
+
+
+@app.get("/api/figuras/{slug}/grafo/relaciones/pagina")
+def grafo_relaciones_pagina(
+    slug: str,
+    desde: Optional[str] = Query(None),
+    hasta: Optional[str] = Query(None),
+    tipo: Optional[str] = Query(None),
+    origen_id: Optional[str] = Query(None),
+    destino_id: Optional[str] = Query(None),
+    min_confianza: float = Query(0.0, ge=0.0, le=1.0),
+    limit: int = Query(100, ge=1, le=2000, description="Tamaño de página (1-2000)"),
+    offset: int = Query(0, ge=0, description="Offset (>=0)"),
+    include_total: bool = Query(False, description="Incluir conteo total"),
+) -> dict:
+    """Relaciones paginadas server-side (filtros iguales a /relaciones). No
+    rompe /relaciones (lista simple); este devuelve {items,total,limit,offset}."""
+    _check_slug(slug)
+    _check_grafo(slug)
+    with _abrir_grafo(slug) as g:
+        return g.relations_page(
+            desde=_parse_date_or_400(desde),
+            hasta=_parse_date_or_400(hasta),
+            tipo=tipo,
+            origen_id=origen_id,
+            destino_id=destino_id,
+            min_confianza=min_confianza,
+            limit=limit,
+            offset=offset,
+            include_total=include_total,
+        )
+
+
+@app.get("/api/figuras/{slug}/grafo/evolucion")
+def grafo_evolucion(
+    slug: str,
+    entidad_a: str = Query(..., description="entity_id de la primera entidad"),
+    entidad_b: str = Query(..., description="entity_id de la segunda entidad"),
+    desde: Optional[str] = Query(None),
+    hasta: Optional[str] = Query(None),
+    tipo: Optional[str] = Query(None),
+    min_confianza: float = Query(0.0, ge=0.0, le=1.0),
+    limit: int = Query(500, ge=1, le=2000, description="Tope de eventos datados"),
+) -> dict:
+    """Evolución temporal bidireccional entre dos entidades (ambas direcciones,
+    ordenadas por fecha). 404 si alguna entidad no existe; 200 con eventos=[]
+    si no hay relaciones entre ellas."""
+    _check_slug(slug)
+    _check_grafo(slug)
+    with _abrir_grafo(slug) as g:
+        ea = g.entity(entidad_a)
+        eb = g.entity(entidad_b)
+        if ea is None:
+            raise HTTPException(404, f"Entidad no existe: {entidad_a!r}")
+        if eb is None:
+            raise HTTPException(404, f"Entidad no existe: {entidad_b!r}")
+
+        resultado = g.evolucion_filtrada(
+            entidad_a, entidad_b,
+            desde=_parse_date_or_400(desde),
+            hasta=_parse_date_or_400(hasta),
+            tipo=tipo,
+            min_confianza=min_confianza,
+            limit=limit,
+        )
+        eventos = resultado["items"]
+        # Garantizar contrato: predicado presente (null si esquema viejo)
+        for ev in eventos:
+            ev.setdefault("predicado", None)
+            # Fechas a string para JSON
+            f = ev.get("fecha")
+            if isinstance(f, date):
+                ev["fecha"] = f.isoformat()
+        return {
+            "entidad_a": {
+                "entity_id": ea["entity_id"], "nombre": ea["nombre"],
+                "tipo": ea["tipo"],
+            },
+            "entidad_b": {
+                "entity_id": eb["entity_id"], "nombre": eb["nombre"],
+                "tipo": eb["tipo"],
+            },
+            "eventos": eventos,
+            "truncado": resultado["truncado"],
+            "limit": resultado["limit"],
+        }
+
+
+@app.get("/api/figuras/{slug}/grafo/evolucion/cambios")
+def grafo_evolucion_cambios(
+    slug: str,
+    top_n: int = Query(20, ge=1, le=100, description="Número de pares a devolver (1-100)"),
+) -> list[dict]:
+    """Pares con más de un tipo de relación a lo largo del tiempo.
+
+    Útil para detectar evoluciones alianza→conflicto y similares.
+    Solo opera sobre relaciones tipadas. Devuelve los top_n pares con más
+    tipos distintos, cada uno con su secuencia temporal de tipos."""
+    _check_slug(slug)
+    _check_grafo(slug)
+    with _abrir_grafo(slug) as g:
+        return g.cambios_relacion(top_n=top_n)
+
+
+@app.get("/api/figuras/{slug}/grafo/ego/{entity_id}")
+def grafo_ego(
+    slug: str,
+    entity_id: str,
+    profundidad: int = Query(1, ge=1, le=2, description="1 o 2"),
+    desde: Optional[str] = Query(None),
+    hasta: Optional[str] = Query(None),
+    tipo: Optional[str] = Query(None),
+    min_confianza: float = Query(0.0, ge=0.0, le=1.0),
+    limit: int = Query(500, ge=1, le=2000),
+) -> dict:
+    """Ego-grafo on-demand: centro + vecinos (+ vecinos de vecinos si p=2).
+    404 si la entidad central no existe. Trunca relaciones por `limit`."""
+    _check_slug(slug)
+    _check_grafo(slug)
+    with _abrir_grafo(slug) as g:
+        if g.entity(entity_id) is None:
+            raise HTTPException(404, f"Entidad no existe: {entity_id!r}")
+        data = g.ego(
+            entity_id,
+            profundidad=profundidad,
+            desde=_parse_date_or_400(desde),
+            hasta=_parse_date_or_400(hasta),
+            tipo=tipo,
+            min_confianza=min_confianza,
+            limit=limit,
+        )
+        # Serializar fechas y normalizar predicado ausente
+        for r in data["relaciones"]:
+            f = r.get("fecha")
+            if isinstance(f, date):
+                r["fecha"] = f.isoformat()
+            r.setdefault("predicado", None)
+        for e in data["entidades"]:
+            # alias puede venir como string JSON
+            a = e.get("alias")
+            if isinstance(a, str):
+                try:
+                    e["alias"] = json.loads(a) if a else []
+                except (json.JSONDecodeError, TypeError):
+                    e["alias"] = []
+            # metadata no se usa en el frontend; omitir para respuesta liviana
+            e.pop("metadata", None)
+        return data
 
 
 # ── Rutas: figuras dinámicas ───────────────────────────────────────────────────
