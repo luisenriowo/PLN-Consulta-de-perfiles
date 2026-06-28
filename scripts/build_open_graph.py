@@ -73,15 +73,24 @@ def build(
     top_n: int = 300,
     enriquecer_wikidata: bool = False,
     corpus_slug: str | None = None,
+    usar_menciones: bool = False,
 ) -> dict:
     docs = _cargar(corpus_slug or slug, jsonl)
     log.info("docs cargados: %d", len(docs))
     docs = [d for d in docs if es_espanol(d.texto)]
     log.info("tras filtro de idioma (ES): %d", len(docs))
 
+    # Reusar menciones NER persistidas (scripts/ner_corpus.py) en vez de re-correr
+    # NER. La ruta de menciones se deriva del corpus parquet (solo modo parquet).
+    menc = None
+    if usar_menciones and jsonl is None:
+        from scripts.ner_corpus import cargar_menciones
+        menc = cargar_menciones(manifiesto.corpus_path(corpus_slug or slug))
+        log.info("usando %d menciones NER persistidas (sin re-NER)", len(menc))
+
     log.info("descubriendo entidades (top_n=%d)…", top_n)
     entidades = descubrir_entidades(
-        docs, top_n=top_n, enriquecer_wikidata=enriquecer_wikidata
+        docs, top_n=top_n, enriquecer_wikidata=enriquecer_wikidata, menciones=menc
     )
     log.info("entidades: %d", len(entidades))
 
@@ -152,6 +161,10 @@ if __name__ == "__main__":
     p.add_argument(
         "--wikidata", action="store_true", help="enriquecer entidades con Wikidata"
     )
+    p.add_argument(
+        "--menciones", action="store_true",
+        help="reusar menciones NER persistidas (scripts/ner_corpus.py) en vez de re-NER",
+    )
     args = p.parse_args()
     build(
         args.slug,
@@ -159,4 +172,5 @@ if __name__ == "__main__":
         top_n=args.top_n,
         enriquecer_wikidata=args.wikidata,
         corpus_slug=args.corpus_slug,
+        usar_menciones=args.menciones,
     )

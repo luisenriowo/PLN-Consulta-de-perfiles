@@ -79,10 +79,25 @@ _GENERICOS: frozenset[str] = frozenset(
 _MIN_TOKENS = 1
 
 
+def _es_fragmento(nombre: str) -> bool:
+    """True si el nombre parece un FRAGMENTO de NER, no una entidad real.
+
+    Token único, corto (<4 chars) y que NO está en mayúsculas: 'And', 'Ma',
+    'Pro', 'at', 'zer'. Los acrónimos válidos van en MAYÚSCULAS (OMS, APP, ONP,
+    RPP) y se conservan.
+    """
+    n = nombre.strip()
+    return " " not in n and len(n) < 4 and not n.isupper()
+
+
 def _es_actor(info: dict, tipos: frozenset[str], excluir: frozenset[str]) -> bool:
-    """True si el grupo de entidad es un actor retenible (tipo permitido y no
-    genérico). Aísla el criterio de filtrado para poder testearlo."""
-    return info["tipo"] in tipos and _norm(info["nombre"]) not in excluir
+    """True si el grupo de entidad es un actor retenible (tipo permitido, no
+    genérico, no fragmento). Aísla el criterio de filtrado para poder testearlo."""
+    return (
+        info["tipo"] in tipos
+        and _norm(info["nombre"]) not in excluir
+        and not _es_fragmento(info["nombre"])
+    )
 
 
 # ── Limpieza de spans NER ─────────────────────────────────────────────────

@@ -63,18 +63,34 @@ def _segmentar(texto: str) -> list[str]:
     ]
 
 
+@lru_cache(maxsize=8192)
+def _patron_palabra(texto_norm: str) -> re.Pattern:
+    """Patrón con límite de palabra para `texto_norm` (cacheado por forma)."""
+    return re.compile(r"\b" + re.escape(texto_norm) + r"\b")
+
+
+def _contiene(oracion_norm: str, forma: str) -> bool:
+    """True si `forma` aparece como PALABRA en la oración (no como substring).
+
+    Pre-filtra con `in` (rápido) y confirma con límite de palabra: evita que
+    nombres cortos ("Ma", "Pro") casen dentro de otras palabras ("Lima",
+    "programa") y exploten el grafo con co-ocurrencias falsas.
+    """
+    return forma in oracion_norm and bool(_patron_palabra(forma).search(oracion_norm))
+
+
 def _menciona(oracion_norm: str, node: EntityNode) -> bool:
-    """True si la oración normalizada contiene el nombre canónico o algún alias.
+    """True si la oración menciona (como palabra) el nombre canónico o un alias.
 
     Los alias vienen de entity_discovery: todas las formas superficiales que
-    aparecieron en el corpus para este nodo. Se aplica un mínimo de 6 chars
-    para evitar falsos positivos con formas muy cortas.
+    aparecieron en el corpus para este nodo. Se aplica un mínimo de 6 chars a los
+    alias para evitar falsos positivos con formas muy cortas.
     """
-    if _norm(node.nombre) in oracion_norm:
+    if _contiene(oracion_norm, _norm(node.nombre)):
         return True
     for a in node.alias:
         a_norm = _norm(a)
-        if len(a_norm) >= 6 and a_norm in oracion_norm:
+        if len(a_norm) >= 6 and _contiene(oracion_norm, a_norm):
             return True
     return False
 
@@ -183,6 +199,15 @@ _VERBOS_REPORTE = {
     "subrayar",
 }
 
+# Verbos NO relacionales: copulativos, auxiliares, modales, "ligeros" y de
+# navegación. Dominan el camino de dependencias pero no expresan una relación
+# entre las entidades (ser/estar/haber/tener/poder/deber; "Lee también" → leer).
+_VERBOS_VACIOS = {
+    "ser", "estar", "haber", "tener", "poder", "deber", "hacer", "ir",
+    "querer", "saber", "leer", "recordar", "ver", "dar", "quedar",
+    "destacar", "resaltar", "remarcar",
+}
+
 
 def _lemma(token) -> str:
     """Lema estable; cae a texto normalizado si spaCy no trae lematizador."""
@@ -195,7 +220,7 @@ def _lemma(token) -> str:
 def _frase_predicado(verbo) -> str | None:
     """Normaliza verbo conector y añade preposición informativa si existe."""
     lema = _lemma(verbo)
-    if not lema or lema in _VERBOS_REPORTE:
+    if not lema or lema in _VERBOS_REPORTE or lema in _VERBOS_VACIOS:
         return None
 
     partes: list[str] = []
@@ -302,6 +327,7 @@ def extraer_relaciones_abiertas(
     entidades: list[EntityNode],
     *,
     min_entidades: int = 2,
+    max_entidades: int = 6,
 ) -> Iterator[RelacionAbierta]:
     """Genera relaciones ABIERTAS fechadas (una por par co-ocurrente con verbo).
 
@@ -309,13 +335,17 @@ def extraer_relaciones_abiertas(
     aquí NO se agrega: cada co-ocurrencia con predicado válido es una arista
     temporal independiente. Así el grafo es un multigrafo en el tiempo y se puede
     reconstruir la evolución de cualquier par. Parsea cada oración UNA vez.
+
+    `max_entidades`: salta oraciones con demasiadas entidades (listas de
+    gabinete/candidatos, bancadas). Son enumeraciones, no relaciones par-a-par,
+    y su combinatoria (C(n,2)) hace explotar el grafo con ruido `mencion`.
     """
     nlp = _nlp_dep()
     for doc in docs:
         for oracion in _segmentar(doc.texto):
             oracion_norm = _norm(oracion)
             presentes = [e for e in entidades if _menciona(oracion_norm, e)]
-            if len(presentes) < min_entidades:
+            if not (min_entidades <= len(presentes) <= max_entidades):
                 continue
             parsed = nlp(oracion)
             for i, ea in enumerate(presentes):
