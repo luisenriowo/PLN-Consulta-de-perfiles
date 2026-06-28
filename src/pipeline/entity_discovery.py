@@ -36,9 +36,9 @@ from src.pipeline._utils import _norm
 from src.pipeline.ner import get_ner_model
 from src.schemas import Documento, EntityNode
 
-_WIKIDATA_API     = "https://www.wikidata.org/w/api.php"
-_DATA_DIR         = Path(os.environ.get("TIMELINE_DATA_DIR", "data"))
-_CACHE_PATH       = _DATA_DIR / "wikidata_cache.json"
+_WIKIDATA_API = "https://www.wikidata.org/w/api.php"
+_DATA_DIR = Path(os.environ.get("TIMELINE_DATA_DIR", "data"))
+_CACHE_PATH = _DATA_DIR / "wikidata_cache.json"
 _WIKIDATA_WORKERS = int(os.environ.get("WIKIDATA_WORKERS", "5"))
 
 # Peso por tipo de entidad para el ranking (PER > ORG > LOC > MISC).
@@ -53,36 +53,77 @@ _TIPOS_ACTOR: frozenset[str] = frozenset({"PER", "ORG"})
 # Términos genéricos que NER a veces etiqueta como PER/ORG pero que no son
 # actores específicos (nodos demasiado generales para el grafo). Conservador y
 # overridable vía `excluir`. Normalizados (minúsculas, sin acentos).
-_GENERICOS: frozenset[str] = frozenset({
-    "estado", "gobierno", "nacion", "pais", "peru", "republica",
-    "el estado", "el gobierno", "el peru", "ejecutivo",
-})
+_GENERICOS: frozenset[str] = frozenset(
+    {
+        "estado",
+        "gobierno",
+        "nacion",
+        "pais",
+        "peru",
+        "republica",
+        "el estado",
+        "el gobierno",
+        "el peru",
+        "ejecutivo",
+    }
+)
 
 # Mínimo de tokens válidos (len > 1) para considerar una mención.
 _MIN_TOKENS = 1
 
 
-def _es_actor(
-    info: dict, tipos: frozenset[str], excluir: frozenset[str]
-) -> bool:
+def _es_actor(info: dict, tipos: frozenset[str], excluir: frozenset[str]) -> bool:
     """True si el grupo de entidad es un actor retenible (tipo permitido y no
     genérico). Aísla el criterio de filtrado para poder testearlo."""
     return info["tipo"] in tipos and _norm(info["nombre"]) not in excluir
+
 
 # ── Limpieza de spans NER ─────────────────────────────────────────────────
 
 # Temporales y conectores que nunca forman parte de un nombre de entidad.
 # spaCy los absorbe por proximidad al span; se eliminan en ambos extremos.
-_RUIDO_TEMPORAL: frozenset[str] = frozenset({
-    "ayer", "hoy", "manana", "tarde", "noche", "madrugada",
-    "ya", "aun", "todavia", "recien", "ahora", "luego", "tambien",
-    "y", "o", "e", "ni", "sino", "pero",
-})
+_RUIDO_TEMPORAL: frozenset[str] = frozenset(
+    {
+        "ayer",
+        "hoy",
+        "manana",
+        "tarde",
+        "noche",
+        "madrugada",
+        "ya",
+        "aun",
+        "todavia",
+        "recien",
+        "ahora",
+        "luego",
+        "tambien",
+        "y",
+        "o",
+        "e",
+        "ni",
+        "sino",
+        "pero",
+    }
+)
 
 # Palabras que nunca deben iniciar un nombre de entidad.
-_RUIDO_INICIO: frozenset[str] = frozenset({
-    "el", "la", "los", "las", "un", "una", "unos", "unas", "al", "del",
-}) | _RUIDO_TEMPORAL
+_RUIDO_INICIO: frozenset[str] = (
+    frozenset(
+        {
+            "el",
+            "la",
+            "los",
+            "las",
+            "un",
+            "una",
+            "unos",
+            "unas",
+            "al",
+            "del",
+        }
+    )
+    | _RUIDO_TEMPORAL
+)
 
 # Palabras que nunca deben cerrar un nombre de entidad.
 _RUIDO_FIN: frozenset[str] = _RUIDO_TEMPORAL
@@ -108,8 +149,9 @@ def _tokens(texto: str) -> frozenset[str]:
 
 # ── Agrupación de menciones ────────────────────────────────────────────────
 
+
 def _agrupar(
-    menciones: list[tuple[str, str, str]],   # (texto, tipo, doc_id)
+    menciones: list[tuple[str, str, str]],  # (texto, tipo, doc_id)
 ) -> dict[str, dict]:
     """Agrupa menciones limpias por solapamiento de tokens.
 
@@ -133,7 +175,7 @@ def _agrupar(
         if len(toks) < _MIN_TOKENS:
             continue
 
-        mejor_g  = None
+        mejor_g = None
         mejor_ov = 0.0
         for g in grupos:
             if g["tipo"] != tipo:
@@ -144,19 +186,21 @@ def _agrupar(
             # Ratio de contención: cuánto del conjunto más pequeño está cubierto.
             ratio = intersec / min(len(toks), len(g["tokens"]))
             if ratio >= 0.7 and intersec > mejor_ov:
-                mejor_g  = g
+                mejor_g = g
                 mejor_ov = intersec
 
         if mejor_g is None:
-            grupos.append({
-                "tokens":      toks,
-                "tipo":        tipo,
-                "frecuencias": {texto: 1},   # {forma: count}
-                "doc_ids":     {doc_id},
-                "n_menciones": 1,
-            })
+            grupos.append(
+                {
+                    "tokens": toks,
+                    "tipo": tipo,
+                    "frecuencias": {texto: 1},  # {forma: count}
+                    "doc_ids": {doc_id},
+                    "n_menciones": 1,
+                }
+            )
         else:
-            mejor_g["tokens"]      |= toks
+            mejor_g["tokens"] |= toks
             mejor_g["n_menciones"] += 1
             mejor_g["doc_ids"].add(doc_id)
             frecs = mejor_g["frecuencias"]
@@ -170,18 +214,19 @@ def _agrupar(
             key=lambda kv: (kv[1], -len(kv[0])),
         )[0]
         alias = [k for k in g["frecuencias"] if k != canonical]
-        slug  = re.sub(r"[^a-z0-9]+", "-", _norm(canonical)).strip("-")
+        slug = re.sub(r"[^a-z0-9]+", "-", _norm(canonical)).strip("-")
         resultado[slug] = {
-            "nombre":      canonical,
-            "tipo":        g["tipo"],
-            "alias":       alias,
+            "nombre": canonical,
+            "tipo": g["tipo"],
+            "alias": alias,
             "n_menciones": g["n_menciones"],
-            "n_docs":      len(g["doc_ids"]),
+            "n_docs": len(g["doc_ids"]),
         }
     return resultado
 
 
 # ── Wikidata ───────────────────────────────────────────────────────────────
+
 
 def _cargar_cache() -> dict:
     """Lee el cache local desde disco. Sin memoización — cada llamada es fresca."""
@@ -204,12 +249,12 @@ def _fetch_wikidata(nombre: str, tipo: str, pais: str) -> dict | None:
     Errores de red se silencian (Wikidata no es crítico).
     """
     params = {
-        "action":   "wbsearchentities",
-        "search":   nombre,
+        "action": "wbsearchentities",
+        "search": nombre,
         "language": "es",
-        "type":     "item",
-        "format":   "json",
-        "limit":    5,
+        "type": "item",
+        "format": "json",
+        "limit": 5,
     }
     try:
         resp = requests.get(_WIKIDATA_API, params=params, timeout=8)
@@ -224,12 +269,13 @@ def _fetch_wikidata(nombre: str, tipo: str, pais: str) -> dict | None:
         if pais_norm in desc or "politic" in desc or "peruan" in desc:
             return {
                 "wikidata_id": item["id"],
-                "metadata":    {"descripcion": item.get("description", "")},
+                "metadata": {"descripcion": item.get("description", "")},
             }
     return None
 
 
 # ── API pública ────────────────────────────────────────────────────────────
+
 
 def descubrir_entidades(
     docs: list[Documento],
@@ -268,7 +314,7 @@ def descubrir_entidades(
         detectadas en el corpus, para que `_menciona` en relations.py
         pueda identificar más co-ocurrencias.
     """
-    tipos_keep   = frozenset(tipos) if tipos is not None else _TIPOS_ACTOR
+    tipos_keep = frozenset(tipos) if tipos is not None else _TIPOS_ACTOR
     excluir_norm = (
         frozenset(_norm(e) for e in excluir) if excluir is not None else _GENERICOS
     )
@@ -277,7 +323,7 @@ def descubrir_entidades(
         # Menciones ya computadas (NER persistido) → no re-correr NER (escala).
         menciones_raw: list[tuple[str, str, str]] = list(menciones)
     else:
-        ner    = get_ner_model()
+        ner = get_ner_model()
         textos = [d.texto for d in docs]
         menciones_raw = []
         for doc, ms in zip(docs, ner(textos)):
@@ -286,7 +332,8 @@ def descubrir_entidades(
 
     grupos = _agrupar(menciones_raw)
     grupos = {
-        slug: info for slug, info in grupos.items()
+        slug: info
+        for slug, info in grupos.items()
         if _es_actor(info, tipos_keep, excluir_norm)
     }
     ordenados = sorted(
@@ -301,14 +348,18 @@ def descubrir_entidades(
         cache = _cargar_cache()
 
         pendientes = [
-            (slug, info) for slug, info in ordenados
+            (slug, info)
+            for slug, info in ordenados
             if f"{_norm(info['nombre'])}::{info['tipo']}" not in cache
         ]
 
         if pendientes:
             with ThreadPoolExecutor(max_workers=_WIKIDATA_WORKERS) as pool:
                 futures = {
-                    pool.submit(_fetch_wikidata, info["nombre"], info["tipo"], pais): (slug, info)
+                    pool.submit(_fetch_wikidata, info["nombre"], info["tipo"], pais): (
+                        slug,
+                        info,
+                    )
                     for slug, info in pendientes
                 }
                 for future in as_completed(futures):
@@ -322,15 +373,17 @@ def descubrir_entidades(
     nodos: list[EntityNode] = []
     for slug, info in ordenados:
         key = f"{_norm(info['nombre'])}::{info['tipo']}"
-        wk  = cache.get(key) if enriquecer_wikidata else None
-        nodos.append(EntityNode(
-            entity_id   = wk["wikidata_id"] if wk else slug,
-            nombre      = info["nombre"],
-            tipo        = info["tipo"],
-            alias       = info["alias"],
-            wikidata_id = wk["wikidata_id"] if wk else None,
-            n_docs      = info["n_docs"],
-            n_menciones = info["n_menciones"],
-            metadata    = wk.get("metadata", {}) if wk else {},
-        ))
+        wk = cache.get(key) if enriquecer_wikidata else None
+        nodos.append(
+            EntityNode(
+                entity_id=wk["wikidata_id"] if wk else slug,
+                nombre=info["nombre"],
+                tipo=info["tipo"],
+                alias=info["alias"],
+                wikidata_id=wk["wikidata_id"] if wk else None,
+                n_docs=info["n_docs"],
+                n_menciones=info["n_menciones"],
+                metadata=wk.get("metadata", {}) if wk else {},
+            )
+        )
     return nodos

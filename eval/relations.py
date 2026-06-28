@@ -53,13 +53,12 @@ def fila_a_ejemplo(row: dict) -> tuple[Coocurrencia, str] | None:
     if not tipo_gold:
         return None
     if tipo_gold not in TIPOS_RELACION:
-        raise ValueError(
-            f"tipo_gold inválido {tipo_gold!r}. Válidos: {TIPOS}"
-        )
+        raise ValueError(f"tipo_gold inválido {tipo_gold!r}. Válidos: {TIPOS}")
     verbo = (row.get("triple_verbo") or "").strip()
     triple = (
         (row.get("triple_sujeto", ""), verbo, row.get("triple_objeto", ""))
-        if verbo else None
+        if verbo
+        else None
     )
     try:
         fecha = date.fromisoformat((row.get("fecha") or "").strip())
@@ -122,7 +121,8 @@ def evaluar(clasificador, ejemplos: list[tuple[Coocurrencia, str]]) -> dict:
     con_soporte = [t for t in TIPOS if por_tipo[t]["support"] > 0]
     macro_f1 = (
         sum(por_tipo[t]["f1"] for t in con_soporte) / len(con_soporte)
-        if con_soporte else 0.0
+        if con_soporte
+        else 0.0
     )
     return {
         "por_tipo": por_tipo,

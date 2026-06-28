@@ -17,6 +17,7 @@ import os
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     pass
@@ -34,10 +35,12 @@ def disponible() -> bool:
 def completar(system: str, user: str, *, max_tokens: int = 320) -> str:
     """Llama al proveedor configurado y devuelve el texto generado."""
     from src.llm._config import get_generation_provider
+
     return get_generation_provider().complete(system, user, max_tokens=max_tokens)
 
 
 def costo() -> dict:
     """Resumen de uso acumulado por el proveedor de generación."""
     from src.llm._config import get_generation_provider
+
     return get_generation_provider().costo()

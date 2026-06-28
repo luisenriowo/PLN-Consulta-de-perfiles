@@ -14,7 +14,9 @@ import re
 
 from src.schemas import Documento
 
-_CORCHETES = re.compile(r"\[\s*(?:\d+|cita\s+requerida|sin fuentes?)\s*\]", re.IGNORECASE)
+_CORCHETES = re.compile(
+    r"\[\s*(?:\d+|cita\s+requerida|sin fuentes?)\s*\]", re.IGNORECASE
+)
 _ESPACIOS = re.compile(r"[ \t ]+")
 _SALTOS = re.compile(r"\n{2,}")
 
@@ -32,7 +34,7 @@ _CREDITO_BYLINE = re.compile(
 # Fin de oración: . ! ? (o cierre …) seguido de espacio y mayúscula/comilla/¿¡
 _FIN_ORACION = re.compile(r"(?<=[.!?…])\s+(?=[«\"¿¡A-ZÁÉÍÓÚÑ0-9])")
 
-_MIN_CARS = 60   # documentos más cortos se descartan como ruido
+_MIN_CARS = 60  # documentos más cortos se descartan como ruido
 
 
 def limpiar(texto: str) -> str:

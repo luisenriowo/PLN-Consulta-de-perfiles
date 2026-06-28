@@ -18,10 +18,11 @@ from collections.abc import Callable
 from eval.align import alinear, sim_rouge1
 from src.schemas import TimelineEntry
 
-rouge_1 = sim_rouge1   # mismo cálculo (F1 de unigramas)
+rouge_1 = sim_rouge1  # mismo cálculo (F1 de unigramas)
 
 
 # ---------- Date F1 ----------
+
 
 def date_f1(
     predicho: list[TimelineEntry], gold: list[TimelineEntry], *, tol_dias: int = 0
@@ -46,11 +47,14 @@ def date_f1(
 
 # ---------- ROUGE ----------
 
+
 def _lcs(a: list[str], b: list[str]) -> int:
     dp = [[0] * (len(b) + 1) for _ in range(len(a) + 1)]
     for i, x in enumerate(a):
         for j, y in enumerate(b):
-            dp[i + 1][j + 1] = dp[i][j] + 1 if x == y else max(dp[i][j + 1], dp[i + 1][j])
+            dp[i + 1][j + 1] = (
+                dp[i][j] + 1 if x == y else max(dp[i][j + 1], dp[i + 1][j])
+            )
     return dp[-1][-1]
 
 
@@ -84,6 +88,7 @@ def rouge_vs_gold(
 
 
 # ---------- Tasa de alucinación (métrica estrella) ----------
+
 
 def tasa_alucinacion(
     entries: list[TimelineEntry],

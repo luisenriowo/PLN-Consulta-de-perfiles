@@ -55,12 +55,11 @@ def clasificar(
         return "no_mencionado"
 
     len_titulo = len(doc.texto.split("\n", 1)[0])
-    prefijo = _prefijo_titular(doc.texto)            # título + lead
+    prefijo = _prefijo_titular(doc.texto)  # título + lead
     en_titulo = any(e.inicio <= len_titulo for e in menciones)
     en_lead = any(e.inicio <= prefijo for e in menciones)
     otro_familiar_en_titulo = any(
-        e.entidad_id in familia_otros and e.inicio <= len_titulo
-        for e in doc.entidades
+        e.entidad_id in familia_otros and e.inicio <= len_titulo for e in doc.entidades
     )
 
     per = Counter(
@@ -69,10 +68,10 @@ def clasificar(
     n_sujeto = per.get(sujeto_id, 0)
     dominante = n_sujeto >= 2 and n_sujeto >= max(per.values())
 
-    if en_titulo:                       # Ollanta encabeza la nota
+    if en_titulo:  # Ollanta encabeza la nota
         return "protagonista"
-    if otro_familiar_en_titulo:         # el título es de otro familiar → lateral
+    if otro_familiar_en_titulo:  # el título es de otro familiar → lateral
         return "solo_mencionado"
-    if en_lead or dominante:            # Ollanta es el sujeto aunque no titule
+    if en_lead or dominante:  # Ollanta es el sujeto aunque no titule
         return "protagonista"
     return "solo_mencionado"

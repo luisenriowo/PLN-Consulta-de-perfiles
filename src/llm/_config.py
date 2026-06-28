@@ -26,6 +26,7 @@ from functools import lru_cache
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     pass
@@ -49,32 +50,36 @@ except ValueError:
 
 _DEFAULTS: dict[str, str] = {
     "anthropic": "claude-haiku-4-5",
-    "openai":    "gpt-4o-mini",
-    "groq":      "llama-3.3-70b-versatile",
-    "gemini":    "gemini-flash-latest",
+    "openai": "gpt-4o-mini",
+    "groq": "llama-3.3-70b-versatile",
+    "gemini": "gemini-flash-latest",
 }
 
 # Proveedor → nombre de la env var de su API key.
 KEY_VAR: dict[str, str] = {
     "anthropic": "ANTHROPIC_API_KEY",
-    "openai":    "OPENAI_API_KEY",
-    "groq":      "GROQ_API_KEY",
-    "gemini":    "GEMINI_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "groq": "GROQ_API_KEY",
+    "gemini": "GEMINI_API_KEY",
 }
 
 
 def _build_provider(model: str, temperature: float):
     if _PROVIDER == "anthropic":
         from src.llm.anthropic import AnthropicProvider
+
         return AnthropicProvider(model=model, temperature=temperature)
     if _PROVIDER == "openai":
         from src.llm.openai import OpenAIProvider
+
         return OpenAIProvider(model=model, temperature=temperature)
     if _PROVIDER == "groq":
         from src.llm.groq import GroqProvider
+
         return GroqProvider(model=model, temperature=temperature)
     if _PROVIDER == "gemini":
         from src.llm.gemini import GeminiProvider
+
         return GeminiProvider(model=model, temperature=temperature)
     raise ValueError(
         f"RELATIONS_LLM_PROVIDER={_PROVIDER!r} no reconocido. "

@@ -26,21 +26,46 @@ import re
 # Taxonomía procesal controlada, en ORDEN DE PRIORIDAD (el acto más decisivo
 # gana). Auditable: el span-fuente mostrado deja ver por qué se clasificó así.
 TAXONOMIA: list[tuple[str, re.Pattern]] = [
-    ("sentencia", re.compile(
-        r"sentenci|conden[oó]|conden[ae]|absol|absuel|fallo condenatorio|"
-        r"a[ñn]os de (prisi[oó]n|c[aá]rcel)|pena de", re.I)),
-    ("apelacion", re.compile(
-        r"apelaci[oó]n|apel[oó]|segunda instancia|casaci[oó]n|"
-        r"sala penal de apelaciones|confirm[oó] la (sentencia|condena)|revoc", re.I)),
-    ("medida_cautelar", re.compile(
-        r"prisi[oó]n preventiva|prisi[oó]n preliminar|detenci[oó]n preliminar|"
-        r"impedimento de salida|comparecencia|allanamiento|incautaci[oó]n|"
-        r"cauci[oó]n|grillete|arresto domiciliario", re.I)),
-    ("imputacion_acusacion", re.compile(
-        r"acusaci[oó]n|acus[oó]|imputa|formaliz|requerimiento (mixto|de acusaci[oó]n)|"
-        r"denuncia (constitucional|penal|fiscal)", re.I)),
-    ("audiencia", re.compile(
-        r"audiencia|juicio oral|vista de la causa|diligencia|interrogatorio|alegatos", re.I)),
+    (
+        "sentencia",
+        re.compile(
+            r"sentenci|conden[oó]|conden[ae]|absol|absuel|fallo condenatorio|"
+            r"a[ñn]os de (prisi[oó]n|c[aá]rcel)|pena de",
+            re.I,
+        ),
+    ),
+    (
+        "apelacion",
+        re.compile(
+            r"apelaci[oó]n|apel[oó]|segunda instancia|casaci[oó]n|"
+            r"sala penal de apelaciones|confirm[oó] la (sentencia|condena)|revoc",
+            re.I,
+        ),
+    ),
+    (
+        "medida_cautelar",
+        re.compile(
+            r"prisi[oó]n preventiva|prisi[oó]n preliminar|detenci[oó]n preliminar|"
+            r"impedimento de salida|comparecencia|allanamiento|incautaci[oó]n|"
+            r"cauci[oó]n|grillete|arresto domiciliario",
+            re.I,
+        ),
+    ),
+    (
+        "imputacion_acusacion",
+        re.compile(
+            r"acusaci[oó]n|acus[oó]|imputa|formaliz|requerimiento (mixto|de acusaci[oó]n)|"
+            r"denuncia (constitucional|penal|fiscal)",
+            re.I,
+        ),
+    ),
+    (
+        "audiencia",
+        re.compile(
+            r"audiencia|juicio oral|vista de la causa|diligencia|interrogatorio|alegatos",
+            re.I,
+        ),
+    ),
 ]
 TIPOS = [t for t, _ in TAXONOMIA] + ["otro"]
 
@@ -102,13 +127,24 @@ def _clasificar(ev: dict) -> dict:
         for frase, doc_id, url in candidatos:
             if pat.search(frase):
                 est = _estatus(frase) if tipo in ("sentencia", "apelacion") else None
-                return {"tipo": tipo, "span": frase, "doc_id": doc_id, "url": url, "estatus": est}
+                return {
+                    "tipo": tipo,
+                    "span": frase,
+                    "doc_id": doc_id,
+                    "url": url,
+                    "estatus": est,
+                }
     # "Otro": no se detectó acto procesal (típico de eventos políticos, no
     # judiciales). Mostramos el titular representativo como CONTEXTO del evento
     # — no es un trigger procesal, solo dice de qué trata.
     f0 = ev["fuentes"][0] if ev.get("fuentes") else {}
-    return {"tipo": "otro", "span": f0.get("titulo") or None,
-            "doc_id": f0.get("doc_id"), "url": f0.get("url"), "estatus": None}
+    return {
+        "tipo": "otro",
+        "span": f0.get("titulo") or None,
+        "doc_id": f0.get("doc_id"),
+        "url": f0.get("url"),
+        "estatus": None,
+    }
 
 
 def _delitos(eventos: list[dict]) -> list[dict]:
@@ -120,7 +156,9 @@ def _delitos(eventos: list[dict]) -> list[dict]:
             for nombre, pat in DELITOS.items():
                 if nombre not in vistos and pat.search(frase):
                     vistos.add(nombre)
-                    salida.append({"delito": nombre, "span": frase, "doc_id": doc_id, "url": url})
+                    salida.append(
+                        {"delito": nombre, "span": frase, "doc_id": doc_id, "url": url}
+                    )
     return salida
 
 
@@ -135,28 +173,45 @@ def computar(figura: dict, *, n_notas_corpus: int, gold: dict | None = None) -> 
         "rango_fechas": [min(fechas), max(fechas)] if fechas else [None, None],
         "n_notas_corpus": n_notas_corpus,
         "n_notas_citadas": len({f["doc_id"] for e in eventos for f in e["fuentes"]}),
-        "eventos_por_condicion": {c: sum(1 for e in eventos if c in e["por_condicion"]) for c in conds},
-        "descartados_sistema": len(eventos) - sum(1 for e in eventos if "sistema_rag" in e["por_condicion"]),
-        "tasa_alucinacion": None,   # slot reservado: lo llena la salida del eval
+        "eventos_por_condicion": {
+            c: sum(1 for e in eventos if c in e["por_condicion"]) for c in conds
+        },
+        "descartados_sistema": len(eventos)
+        - sum(1 for e in eventos if "sistema_rag" in e["por_condicion"]),
+        "tasa_alucinacion": None,  # slot reservado: lo llena la salida del eval
     }
 
     # Bloque 2: gold verificado si existe; si no, reglas.
-    por_tipo: dict[str, dict] = {t: {"n": 0, "etiqueta": ETIQUETAS_TIPO[t], "eventos": []} for t in TIPOS}
+    por_tipo: dict[str, dict] = {
+        t: {"n": 0, "etiqueta": ETIQUETAS_TIPO[t], "eventos": []} for t in TIPOS
+    }
     for ev in eventos:
         cid = ev["cluster_id"]
         c = (gold.get(cid) if gold else None) or _clasificar(ev)
         t = c.get("tipo", "otro")
-        por_tipo.setdefault(t, {"n": 0, "etiqueta": ETIQUETAS_TIPO.get(t, t), "eventos": []})
+        por_tipo.setdefault(
+            t, {"n": 0, "etiqueta": ETIQUETAS_TIPO.get(t, t), "eventos": []}
+        )
         por_tipo[t]["n"] += 1
-        por_tipo[t]["eventos"].append({
-            "cluster_id": cid, "fecha": ev["fecha"],
-            "span": c.get("span"), "doc_id": c.get("doc_id"),
-            "url": c.get("url"), "estatus": c.get("estatus"),
-        })
+        por_tipo[t]["eventos"].append(
+            {
+                "cluster_id": cid,
+                "fecha": ev["fecha"],
+                "span": c.get("span"),
+                "doc_id": c.get("doc_id"),
+                "url": c.get("url"),
+                "estatus": c.get("estatus"),
+            }
+        )
 
     bloque2 = {
         "fuente_clasificacion": "gold_humano" if gold else "reglas",
         "por_tipo": por_tipo,
         "delitos": _delitos(eventos),
     }
-    return {"slug": figura["slug"], "nombre": figura["nombre"], "bloque1": bloque1, "bloque2": bloque2}
+    return {
+        "slug": figura["slug"],
+        "nombre": figura["nombre"],
+        "bloque1": bloque1,
+        "bloque2": bloque2,
+    }

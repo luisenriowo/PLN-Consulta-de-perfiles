@@ -42,7 +42,7 @@ def main() -> None:
 
     print("clase           antes  ->  después")
     for c in ("protagonista", "solo_mencionado", "no_mencionado"):
-        print(f"  {c:16} {antes.get(c,0):4d}  ->  {despues.get(c,0):4d}")
+        print(f"  {c:16} {antes.get(c, 0):4d}  ->  {despues.get(c, 0):4d}")
 
     # Notas que dejaron de ser protagonistas (las que el guard de familia sacó)
     df_old = pd.read_parquet(CORPUS)

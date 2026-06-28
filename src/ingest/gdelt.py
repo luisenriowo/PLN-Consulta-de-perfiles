@@ -73,7 +73,7 @@ def collect(
                 fuente=art.get("domain", "gdelt"),
                 url=art.get("url", ""),
                 fecha_pub=fecha_pub,
-                texto=art.get("title", "").strip(),   # sin cuerpo: solo titular
+                texto=art.get("title", "").strip(),  # sin cuerpo: solo titular
             )
         )
     return docs

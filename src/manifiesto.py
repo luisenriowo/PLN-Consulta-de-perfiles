@@ -57,8 +57,11 @@ def _persistir(figs: dict[str, dict]) -> None:
     """Escribe el manifiesto ordenado por nombre."""
     MANIFIESTO.parent.mkdir(parents=True, exist_ok=True)
     MANIFIESTO.write_text(
-        json.dumps(sorted(figs.values(), key=lambda f: f["nombre"]),
-                   ensure_ascii=False, indent=2),
+        json.dumps(
+            sorted(figs.values(), key=lambda f: f["nombre"]),
+            ensure_ascii=False,
+            indent=2,
+        ),
         encoding="utf-8",
     )
 

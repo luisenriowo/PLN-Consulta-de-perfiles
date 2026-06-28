@@ -43,7 +43,7 @@ _CONSECUENCIA = re.compile(
     re.IGNORECASE,
 )
 
-UMBRAL_SENALES = 2   # §2: saliente si cumple ≥2
+UMBRAL_SENALES = 2  # §2: saliente si cumple ≥2
 
 
 def _familia_fuente(doc_id: str) -> str:
@@ -78,7 +78,9 @@ def senales(
     """
     pasajes = " || ".join(c.pasajes_evidencia)
     prominencia = (
-        bool(sujeto_patron.search(_norm(pasajes))) if sujeto_patron is not None else False
+        bool(sujeto_patron.search(_norm(pasajes)))
+        if sujeto_patron is not None
+        else False
     )
     medios = {_familia_fuente(f) for f in c.fuentes}
     return {

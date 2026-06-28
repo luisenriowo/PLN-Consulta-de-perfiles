@@ -25,7 +25,6 @@ import logging
 import sys
 import time
 from collections import defaultdict
-from pathlib import Path
 
 import pandas as pd
 
@@ -48,7 +47,7 @@ from src.storage import KnowledgeGraph
 log = logging.getLogger(__name__)
 
 MODELO_NER = "es_core_news_md"
-DELAY = 0.4   # cortesía entre descargas
+DELAY = 0.4  # cortesía entre descargas
 
 
 def _descubrir(session, cfg) -> dict[str, set[str]]:
@@ -63,8 +62,13 @@ def _descubrir(session, cfg) -> dict[str, set[str]]:
 
 def precompute(slug: str) -> None:
     cfg = figuras.cargar(slug)
-    log.info("== PRECÓMPUTO '%s' (%s) · ventana %s…%s ==",
-             cfg.slug, cfg.nombre, cfg.desde, cfg.hasta)
+    log.info(
+        "== PRECÓMPUTO '%s' (%s) · ventana %s…%s ==",
+        cfg.slug,
+        cfg.nombre,
+        cfg.desde,
+        cfg.hasta,
+    )
 
     corpus = manifiesto.corpus_path(slug)
 
@@ -73,8 +77,11 @@ def precompute(slug: str) -> None:
         df = pd.read_parquet(corpus)
         docs = [
             Documento(
-                doc_id=r.doc_id, fuente=r.fuente, url=r.url,
-                fecha_pub=pd.Timestamp(r.fecha_pub).date(), texto=r.texto,
+                doc_id=r.doc_id,
+                fuente=r.fuente,
+                url=r.url,
+                fecha_pub=pd.Timestamp(r.fecha_pub).date(),
+                texto=r.texto,
                 entidades=[],
             )
             for r in df.itertuples()
@@ -99,11 +106,18 @@ def precompute(slug: str) -> None:
         log.info("    en ventana tras preprocess: %d", len(docs))
 
         corpus.parent.mkdir(parents=True, exist_ok=True)
-        pd.DataFrame([
-            {"doc_id": d.doc_id, "fuente": d.fuente, "url": d.url,
-             "fecha_pub": d.fecha_pub.isoformat(), "texto": d.texto}
-            for d in docs
-        ]).to_parquet(corpus, index=False)
+        pd.DataFrame(
+            [
+                {
+                    "doc_id": d.doc_id,
+                    "fuente": d.fuente,
+                    "url": d.url,
+                    "fecha_pub": d.fecha_pub.isoformat(),
+                    "texto": d.texto,
+                }
+                for d in docs
+            ]
+        ).to_parquet(corpus, index=False)
         log.info("    corpus → %s (%d docs)", corpus, len(docs))
 
     log.info("[3] NER + linking (gazetteer de %s)", cfg.slug)
@@ -111,7 +125,8 @@ def precompute(slug: str) -> None:
 
     log.info("[4] filtro de protagonismo")
     protag = [
-        d for d in docs
+        d
+        for d in docs
         if clasificar(d, sujeto_id=cfg.sujeto_id, familia_otros=cfg.familia_otros)
         == "protagonista"
     ]
@@ -161,33 +176,45 @@ def precompute(slug: str) -> None:
 
             # Consolidar evidencias (hasta 5 oraciones únicas) y todas las fuentes.
             evidencias = list(dict.fromkeys(c.oracion for c in coocs))[:5]
-            fuentes    = list(dict.fromkeys(c.doc_id  for c in coocs))
-            fecha      = min(c.fecha for c in coocs)
+            fuentes = list(dict.fromkeys(c.doc_id for c in coocs))
+            fecha = min(c.fecha for c in coocs)
 
-            grafo.insert_relation(RelationEdge(
-                origen_id  = a_id,
-                destino_id = b_id,
-                tipo       = resultado.tipo,
-                fecha      = fecha,
-                evidencia  = evidencias,
-                fuentes    = fuentes,
-                confianza  = resultado.confianza,
-                metodo     = resultado.metodo,
-            ))
+            grafo.insert_relation(
+                RelationEdge(
+                    origen_id=a_id,
+                    destino_id=b_id,
+                    tipo=resultado.tipo,
+                    fecha=fecha,
+                    evidencia=evidencias,
+                    fuentes=fuentes,
+                    confianza=resultado.confianza,
+                    metodo=resultado.metodo,
+                )
+            )
             n_rel += 1
 
-        log.info("    co-ocurrencias: %d → pares: %d → relaciones: %d",
-                 len(todas_coocs), len(por_par), n_rel)
+        log.info(
+            "    co-ocurrencias: %d → pares: %d → relaciones: %d",
+            len(todas_coocs),
+            len(por_par),
+            n_rel,
+        )
         for r in grafo.resumen_por_tipo():
-            log.info("      %s: %d (confianza media %.2f)",
-                     r["tipo"], r["n"], r["confianza_media"])
+            log.info(
+                "      %s: %d (confianza media %.2f)",
+                r["tipo"],
+                r["n"],
+                r["confianza_media"],
+            )
 
     log.info("[7] generación")
     conds = [B0Lead(), B1Extractive()]
     if _llm.disponible():
         conds += [SistemaRAG(), Ablacion(sujeto=cfg.nombre)]
     else:
-        log.warning("LLM no disponible (revisa RELATIONS_LLM_PROVIDER y su API key) — solo B0/B1")
+        log.warning(
+            "LLM no disponible (revisa RELATIONS_LLM_PROVIDER y su API key) — solo B0/B1"
+        )
     destino = manifiesto.salidas_dir(slug)
     destino.mkdir(parents=True, exist_ok=True)
     for cond in conds:
@@ -195,7 +222,8 @@ def precompute(slug: str) -> None:
         (destino / f"{cond.name}.json").write_text(
             json.dumps(
                 [{**e.model_dump(), "fecha": e.fecha.isoformat()} for e in entries],
-                ensure_ascii=False, indent=2,
+                ensure_ascii=False,
+                indent=2,
             ),
             encoding="utf-8",
         )
@@ -210,6 +238,7 @@ def precompute(slug: str) -> None:
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
+
     load_dotenv()
     logging.basicConfig(
         level=logging.INFO,
@@ -218,8 +247,7 @@ if __name__ == "__main__":
     )
     if len(sys.argv) < 2:
         log.error(
-            "Uso: python scripts/precompute_figura.py <slug>\n"
-            "Figuras configuradas: %s",
+            "Uso: python scripts/precompute_figura.py <slug>\nFiguras configuradas: %s",
             sorted(figuras.FIGURAS),
         )
         raise SystemExit(1)

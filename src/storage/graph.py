@@ -68,6 +68,12 @@ CREATE TABLE IF NOT EXISTS relation_sources (
     doc_id      TEXT    NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS relation_type_labels (
+    relation_id INTEGER PRIMARY KEY,
+    figura_slug TEXT    NOT NULL,
+    tipo        TEXT    NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_rel_slug   ON relations(figura_slug);
 CREATE INDEX IF NOT EXISTS idx_rel_origen ON relations(origen_id);
 CREATE INDEX IF NOT EXISTS idx_rel_dest   ON relations(destino_id);
@@ -87,6 +93,7 @@ class KnowledgeGraph:
     def __init__(self, slug: str, *, read_only: bool = False) -> None:
         self.slug = slug
         import duckdb
+
         if not read_only:
             _DATA.mkdir(parents=True, exist_ok=True)
         self._conn = duckdb.connect(
@@ -97,6 +104,18 @@ class KnowledgeGraph:
 
     def _init_schema(self) -> None:
         self._conn.execute(_DDL)
+
+    def _table_exists(self, name: str) -> bool:
+        return bool(
+            self._conn.execute(
+                """
+            SELECT COUNT(*)
+            FROM information_schema.tables
+            WHERE table_name = ?
+            """,
+                [name],
+            ).fetchone()[0]
+        )
 
     # ── Escritura ──────────────────────────────────────────────────────────
 
@@ -113,8 +132,12 @@ class KnowledgeGraph:
                 metadata    = excluded.metadata
             """,
             [
-                node.entity_id, node.nombre, node.tipo, node.wikidata_id,
-                node.n_docs, node.n_menciones,
+                node.entity_id,
+                node.nombre,
+                node.tipo,
+                node.wikidata_id,
+                node.n_docs,
+                node.n_menciones,
                 json.dumps(node.alias, ensure_ascii=False),
                 json.dumps(node.metadata, ensure_ascii=False),
             ],
@@ -130,8 +153,14 @@ class KnowledgeGraph:
             RETURNING id
             """,
             [
-                self.slug, edge.origen_id, edge.destino_id, edge.tipo,
-                edge.predicado, edge.fecha.isoformat(), edge.confianza, edge.metodo,
+                self.slug,
+                edge.origen_id,
+                edge.destino_id,
+                edge.tipo,
+                edge.predicado,
+                edge.fecha.isoformat(),
+                edge.confianza,
+                edge.metodo,
             ],
         ).fetchone()
         rel_id: int = row[0]
@@ -147,6 +176,29 @@ class KnowledgeGraph:
                 [(rel_id, d) for d in edge.fuentes],
             )
         return rel_id
+
+    def update_relation_type(self, relation_id: int, tipo: str | None) -> None:
+        """Persiste el tipo inducido/anotado de una arista existente.
+
+        DuckDB no permite actualizar una fila de `relations` si está referenciada
+        por `relation_evidence`/`relation_sources`. Guardamos la etiqueta inducida
+        en una tabla auxiliar y las lecturas la exponen como `tipo`.
+        """
+        if tipo is None:
+            self._conn.execute(
+                "DELETE FROM relation_type_labels WHERE relation_id = ? AND figura_slug = ?",
+                [relation_id, self.slug],
+            )
+            return
+        self._conn.execute(
+            """
+            INSERT INTO relation_type_labels VALUES (?, ?, ?)
+            ON CONFLICT (relation_id) DO UPDATE SET
+                figura_slug = excluded.figura_slug,
+                tipo = excluded.tipo
+            """,
+            [relation_id, self.slug, tipo],
+        )
 
     # ── Lectura / queries SQL ──────────────────────────────────────────────
 
@@ -165,53 +217,85 @@ class KnowledgeGraph:
         min_confianza: float = 0.0,
     ) -> list[dict]:
         """Relaciones con filtros opcionales. Todas las columnas + evidencia."""
-        cond:   list[str] = ["r.figura_slug = ?"]
-        params: list      = [self.slug]
+        cond: list[str] = ["r.figura_slug = ?"]
+        params: list = [self.slug]
+        usar_labels = self._table_exists("relation_type_labels")
+        tipo_expr = "COALESCE(rt.tipo, r.tipo)" if usar_labels else "r.tipo"
+        join_labels = (
+            """
+            LEFT JOIN relation_type_labels rt
+                ON rt.relation_id = r.id AND rt.figura_slug = r.figura_slug
+            """
+            if usar_labels
+            else ""
+        )
 
         if desde:
-            cond.append("r.fecha >= ?");   params.append(desde.isoformat())
+            cond.append("r.fecha >= ?")
+            params.append(desde.isoformat())
         if hasta:
-            cond.append("r.fecha <= ?");   params.append(hasta.isoformat())
+            cond.append("r.fecha <= ?")
+            params.append(hasta.isoformat())
         if tipo:
-            cond.append("r.tipo = ?");     params.append(tipo)
+            cond.append(f"{tipo_expr} = ?")
+            params.append(tipo)
         if origen_id:
-            cond.append("r.origen_id = ?"); params.append(origen_id)
+            cond.append("r.origen_id = ?")
+            params.append(origen_id)
         if destino_id:
-            cond.append("r.destino_id = ?"); params.append(destino_id)
+            cond.append("r.destino_id = ?")
+            params.append(destino_id)
         if min_confianza > 0.0:
-            cond.append("r.confianza >= ?"); params.append(min_confianza)
+            cond.append("r.confianza >= ?")
+            params.append(min_confianza)
 
         sql = f"""
-            SELECT r.*,
+            SELECT r.id,
+                   r.figura_slug,
+                   r.origen_id,
+                   r.destino_id,
+                   {tipo_expr} AS tipo,
+                   r.predicado,
+                   r.fecha,
+                   r.confianza,
+                   r.metodo,
                    e_o.nombre AS origen_nombre,
                    e_d.nombre AS destino_nombre
             FROM relations r
+            {join_labels}
             LEFT JOIN entities e_o ON r.origen_id  = e_o.entity_id
             LEFT JOIN entities e_d ON r.destino_id = e_d.entity_id
             WHERE {" AND ".join(cond)}
             ORDER BY r.fecha
         """
-        return self._conn.execute(sql, params).df().to_dict("records")
+        rows = self._conn.execute(sql, params).df().to_dict("records")
+        for row in rows:
+            for key, value in list(row.items()):
+                if value != value:  # NaN de pandas para NULL SQL.
+                    row[key] = None
+        return rows
 
     def evolucion(self, entidad_a: str, entidad_b: str) -> list[dict]:
         """Evolución temporal de la relación entre dos entidades (ambas
         direcciones, ordenada por fecha). Cada fila trae `predicado` (relación
         abierta), `tipo` (si ya se identificó) y `fecha`: leerlas en orden
         muestra cómo evoluciona el vínculo."""
-        ida    = self.relations(origen_id=entidad_a, destino_id=entidad_b)
+        ida = self.relations(origen_id=entidad_a, destino_id=entidad_b)
         vuelta = self.relations(origen_id=entidad_b, destino_id=entidad_a)
         return sorted(ida + vuelta, key=lambda r: r["fecha"])
 
     def evidencia(self, relation_id: int) -> dict:
         """Pasajes de evidencia y doc_ids fuente de una arista (por su id)."""
         pasajes = [
-            r[0] for r in self._conn.execute(
+            r[0]
+            for r in self._conn.execute(
                 "SELECT pasaje FROM relation_evidence WHERE relation_id = ?",
                 [relation_id],
             ).fetchall()
         ]
         fuentes = [
-            r[0] for r in self._conn.execute(
+            r[0]
+            for r in self._conn.execute(
                 "SELECT doc_id FROM relation_sources WHERE relation_id = ?",
                 [relation_id],
             ).fetchall()
@@ -220,16 +304,33 @@ class KnowledgeGraph:
 
     def resumen_por_tipo(self) -> list[dict]:
         """Conteo de relaciones agrupado por tipo."""
-        return self._conn.execute(
+        usar_labels = self._table_exists("relation_type_labels")
+        tipo_expr = "COALESCE(rt.tipo, r.tipo)" if usar_labels else "r.tipo"
+        join_labels = (
             """
-            SELECT tipo, COUNT(*) AS n, AVG(confianza) AS confianza_media
-            FROM relations
-            WHERE figura_slug = ?
-            GROUP BY tipo
+            LEFT JOIN relation_type_labels rt
+                ON rt.relation_id = r.id AND rt.figura_slug = r.figura_slug
+            """
+            if usar_labels
+            else ""
+        )
+        return (
+            self._conn.execute(
+                f"""
+            SELECT {tipo_expr} AS tipo,
+                   COUNT(*) AS n,
+                   AVG(r.confianza) AS confianza_media
+            FROM relations r
+            {join_labels}
+            WHERE r.figura_slug = ?
+            GROUP BY {tipo_expr}
             ORDER BY n DESC
             """,
-            [self.slug],
-        ).df().to_dict("records")
+                [self.slug],
+            )
+            .df()
+            .to_dict("records")
+        )
 
     # ── NetworkX ──────────────────────────────────────────────────────────
 
@@ -266,9 +367,7 @@ class KnowledgeGraph:
             return []
         return list(nx.community.louvain_communities(G, seed=42))
 
-    def camino(
-        self, origen_id: str, destino_id: str, **kwargs
-    ) -> list[str]:
+    def camino(self, origen_id: str, destino_id: str, **kwargs) -> list[str]:
         """Camino más corto entre dos entidades. Lista vacía si no existe."""
         G = self.to_networkx(**kwargs)
         try:
