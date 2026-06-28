@@ -45,6 +45,7 @@ app = FastAPI(title="timeline-gen", description="Líneas de tiempo de figuras po
 
 # ── Helpers internos ───────────────────────────────────────────────────────────
 
+
 @lru_cache(maxsize=16)
 def _fuentes_map_cached(slug: str, _mtime: float) -> dict[str, dict]:
     """doc_id -> {url, titulo, lead}. `_mtime` está en la clave de caché para que
@@ -110,12 +111,15 @@ def _abrir_grafo(slug: str):
                 yield g
         except Exception as exc:
             log.error("Error abriendo grafo de '%s': %s", slug, exc)
-            raise HTTPException(503, f"Grafo de '{slug}' no disponible temporalmente") from exc
+            raise HTTPException(
+                503, f"Grafo de '{slug}' no disponible temporalmente"
+            ) from exc
 
     return _cm()
 
 
 # ── Timeline ───────────────────────────────────────────────────────────────────
+
 
 def _eventos_figura(slug: str) -> dict:
     """Timeline alineado por cluster_id (todas las condiciones, fuentes
@@ -125,14 +129,25 @@ def _eventos_figura(slug: str) -> dict:
         raise HTTPException(404, f"figura '{slug}' no está en el manifiesto")
 
     fmap = _fuentes_map(slug)
-    conds = [c for c in CONDS_ORDEN if (manifiesto.salidas_dir(slug) / f"{c}.json").exists()]
+    conds = [
+        c for c in CONDS_ORDEN if (manifiesto.salidas_dir(slug) / f"{c}.json").exists()
+    ]
 
     indice: dict[str, dict] = {}
     for cond in conds:
         for e in _cargar_cond(slug, cond):
-            cid = e.get("cluster_id") or f"{e['fecha']}|{','.join(sorted(e.get('fuentes', [])))}"
+            cid = (
+                e.get("cluster_id")
+                or f"{e['fecha']}|{','.join(sorted(e.get('fuentes', [])))}"
+            )
             d = indice.setdefault(
-                cid, {"cluster_id": cid, "fecha": e["fecha"], "fuentes": set(), "por_condicion": {}}
+                cid,
+                {
+                    "cluster_id": cid,
+                    "fecha": e["fecha"],
+                    "fuentes": set(),
+                    "por_condicion": {},
+                },
             )
             d["fuentes"].update(e.get("fuentes", []))
             d["por_condicion"][cond] = e["resumen"]
@@ -143,17 +158,25 @@ def _eventos_figura(slug: str) -> dict:
             {"doc_id": f, **fmap.get(f, {"url": "", "titulo": "", "lead": ""})}
             for f in sorted(d["fuentes"])
         ]
-        eventos.append({
-            "cluster_id": d["cluster_id"],
-            "fecha": d["fecha"],
-            "fuentes": fuentes,
-            "por_condicion": d["por_condicion"],
-        })
+        eventos.append(
+            {
+                "cluster_id": d["cluster_id"],
+                "fecha": d["fecha"],
+                "fuentes": fuentes,
+                "por_condicion": d["por_condicion"],
+            }
+        )
 
-    return {"slug": slug, "nombre": figs[slug]["nombre"], "condiciones": conds, "eventos": eventos}
+    return {
+        "slug": slug,
+        "nombre": figs[slug]["nombre"],
+        "condiciones": conds,
+        "eventos": eventos,
+    }
 
 
 # ── Rutas: timeline ────────────────────────────────────────────────────────────
+
 
 @app.get("/api/figuras")
 def figuras() -> list[dict]:
@@ -190,6 +213,7 @@ def resumen(slug: str) -> dict:
 
 
 # ── Rutas: grafo de relaciones ─────────────────────────────────────────────────
+
 
 @app.get("/api/figuras/{slug}/grafo/entidades")
 def grafo_entidades(slug: str) -> list[dict]:
@@ -303,6 +327,7 @@ def grafo_evidencia(slug: str, rel_id: int) -> dict:
 
 
 # ── Rutas: figuras dinámicas ───────────────────────────────────────────────────
+
 
 class CrearFigura(BaseModel):
     nombre: str

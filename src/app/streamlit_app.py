@@ -28,12 +28,16 @@ try:
     info = requests.get(f"{API}/", timeout=5).json()
     condiciones = info.get("condiciones", [])
 except requests.RequestException:
-    st.error(f"No se pudo conectar al backend en {API}. Levántalo con "
-             "`uv run uvicorn src.app.api:app`.")
+    st.error(
+        f"No se pudo conectar al backend en {API}. Levántalo con "
+        "`uv run uvicorn src.app.api:app`."
+    )
     st.stop()
 
 if not condiciones:
-    st.warning("No hay condiciones generadas. Corre `uv run python scripts/run_generation.py`.")
+    st.warning(
+        "No hay condiciones generadas. Corre `uv run python scripts/run_generation.py`."
+    )
     st.stop()
 
 st.markdown(f"**Sujeto:** {info.get('sujeto', '—')}")
@@ -47,8 +51,7 @@ for e in entradas:
     st.markdown(f"**{e['fecha']}** — {e['resumen']}")
     fuentes = e.get("fuentes", [])
     enlaces = [
-        f"[{f['doc_id']}]({f['url']})" if f.get("url") else f["doc_id"]
-        for f in fuentes
+        f"[{f['doc_id']}]({f['url']})" if f.get("url") else f["doc_id"] for f in fuentes
     ]
     st.caption("Fuentes: " + (", ".join(enlaces) if enlaces else "—"))
     st.divider()

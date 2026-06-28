@@ -18,13 +18,13 @@ from pydantic import BaseModel, Field
 # Importar desde aquí; no redefinir en otros módulos.
 # ---------------------------------------------------------------------------
 TIPOS_RELACION: dict[str, str] = {
-    "alianza":          "Apoyo, colaboración o respaldo mutuo",
-    "conflicto":        "Oposición, enfrentamiento o rechazo",
-    "pertenencia":      "Miembro de, afiliado a, parte de",
-    "nombramiento":     "Designación, nombramiento o elección de un cargo",
-    "acusacion":        "Imputación, acusación o investigación judicial",
-    "ruptura":          "Alejamiento, renuncia o expulsión de una relación previa",
-    "mencion":          "Co-aparición sin relación claramente identificable",
+    "alianza": "Apoyo, colaboración o respaldo mutuo",
+    "conflicto": "Oposición, enfrentamiento o rechazo",
+    "pertenencia": "Miembro de, afiliado a, parte de",
+    "nombramiento": "Designación, nombramiento o elección de un cargo",
+    "acusacion": "Imputación, acusación o investigación judicial",
+    "ruptura": "Alejamiento, renuncia o expulsión de una relación previa",
+    "mencion": "Co-aparición sin relación claramente identificable",
 }
 
 
@@ -100,14 +100,14 @@ class EntityNode(BaseModel):
     forzar un schema rígido que rompería si Wikidata amplía sus datos.
     """
 
-    entity_id:   str
-    nombre:      str
-    tipo:        str                                    # PER | ORG | LOC
-    alias:       list[str]               = Field(default_factory=list)
-    wikidata_id: str | None               = None
-    n_docs:      int                      = 0
-    n_menciones: int                      = 0
-    metadata:    dict                     = Field(default_factory=dict)
+    entity_id: str
+    nombre: str
+    tipo: str  # PER | ORG | LOC
+    alias: list[str] = Field(default_factory=list)
+    wikidata_id: str | None = None
+    n_docs: int = 0
+    n_menciones: int = 0
+    metadata: dict = Field(default_factory=dict)
 
 
 class RelationResult(BaseModel):
@@ -118,10 +118,10 @@ class RelationResult(BaseModel):
     filtrar por calidad al analizar los resultados.
     """
 
-    tipo:       str     # clave de TIPOS_RELACION
-    confianza:  float   # 0.0 – 1.0
-    evidencia:  str     # oración de respaldo
-    metodo:     str     # "rules" | "llm" | "hybrid"
+    tipo: str  # clave de TIPOS_RELACION
+    confianza: float  # 0.0 – 1.0
+    evidencia: str  # oración de respaldo
+    metodo: str  # "rules" | "llm" | "hybrid"
 
 
 class RelationEdge(BaseModel):
@@ -131,20 +131,20 @@ class RelationEdge(BaseModel):
     permitiendo cruzar el grafo con la línea de tiempo existente.
     """
 
-    origen_id:  str
+    origen_id: str
     destino_id: str
     # `predicado` es la relación ABIERTA (verbo conector, OpenIE); `tipo` es la
     # categoría (taxonomía) y queda None hasta que se identifica DESPUÉS. Una
     # arista puede tener predicado sin tipo (abierta) o tipo sin predicado (la
     # ruta vieja de clasificación). `fecha` la hace temporal: varias por par a lo
     # largo del tiempo permiten ver la evolución de la relación.
-    tipo:       str | None = None
-    predicado:  str | None = None
-    fecha:      date
-    evidencia:  list[str] = Field(default_factory=list)   # oraciones de respaldo
-    fuentes:    list[str] = Field(default_factory=list)   # doc_ids
-    confianza:  float
-    metodo:     str
+    tipo: str | None = None
+    predicado: str | None = None
+    fecha: date
+    evidencia: list[str] = Field(default_factory=list)  # oraciones de respaldo
+    fuentes: list[str] = Field(default_factory=list)  # doc_ids
+    confianza: float
+    metodo: str
     cluster_id: str | None = None
 
 

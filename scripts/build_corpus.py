@@ -42,8 +42,8 @@ from src.pipeline.protagonism import clasificar
 
 SUJETO = "Ollanta Humala"
 SUJETO_ID = "humala:ollanta"
-MODELO = "es_core_news_md"   # smoke/desarrollo; producción usa lg
-DELAY = 0.4                  # cortesía entre descargas de notas
+MODELO = "es_core_news_md"  # smoke/desarrollo; producción usa lg
+DELAY = 0.4  # cortesía entre descargas de notas
 
 # Queries de término suelto (Andina busca por frase). Valor = rol.
 QUERIES_ANDINA = {
@@ -119,8 +119,10 @@ def main() -> None:
     print("== DESCUBRIMIENTO ANDINA (multi-query término) ==")
     procedencia = descubrir_andina(session)
     total_pares = sum(len(qs) for qs in procedencia.values())
-    print(f"  URLs únicas: {len(procedencia)}  | solapamiento: "
-          f"{total_pares - len(procedencia)}")
+    print(
+        f"  URLs únicas: {len(procedencia)}  | solapamiento: "
+        f"{total_pares - len(procedencia)}"
+    )
 
     print("== DESCARGA + PARSEO Andina ==")
     docs = []
@@ -143,15 +145,21 @@ def main() -> None:
     print("== GDELT (secundaria: medios independientes) ==")
     try:
         gdelt_docs = gdelt.collect(SUJETO, FECHA_CORTE_HUMALA, maxrecords=250)
-        gdelt_docs = [d for d in gdelt_docs if dentro_de_ventana(d.fecha_pub, hasta=FECHA_CORTE_HUMALA)]
+        gdelt_docs = [
+            d
+            for d in gdelt_docs
+            if dentro_de_ventana(d.fecha_pub, hasta=FECHA_CORTE_HUMALA)
+        ]
         for d in gdelt_docs:
             proc_map[d.doc_id] = "gdelt"
         rango = sorted(d.fecha_pub for d in gdelt_docs)
-        print(f"  GDELT en ventana: {len(gdelt_docs)}"
-              + (f"  rango {rango[0]}…{rango[-1]}" if rango else "")
-              + f"  medios: {len({d.fuente for d in gdelt_docs})}")
+        print(
+            f"  GDELT en ventana: {len(gdelt_docs)}"
+            + (f"  rango {rango[0]}…{rango[-1]}" if rango else "")
+            + f"  medios: {len({d.fuente for d in gdelt_docs})}"
+        )
         docs += gdelt_docs
-    except Exception as exc:   # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         print(f"  GDELT no disponible: {exc!r}")
 
     print("== PREPROCESS (limpieza + dedup exacta) ==")
@@ -173,8 +181,10 @@ def main() -> None:
     clase = {d.doc_id: clasificar(d) for d in anotados}
     clases = Counter(clase.values())
     protag = [d for d in anotados if clase[d.doc_id] == "protagonista"]
-    print(f"  protagonista: {len(protag)}  | solo_mencionado: {clases['solo_mencionado']}"
-          f"  | no_mencionado: {clases['no_mencionado']}")
+    print(
+        f"  protagonista: {len(protag)}  | solo_mencionado: {clases['solo_mencionado']}"
+        f"  | no_mencionado: {clases['no_mencionado']}"
+    )
     print(f"  CORPUS EFECTIVO: {len(protag)} de {len(anotados)}")
 
     # por fuente y por año (corpus efectivo)
@@ -186,24 +196,31 @@ def main() -> None:
     print("== DIVERSIDAD DE FUENTES (gate-metric 3) ==")
     medios_protag = {d.fuente for d in protag}
     medios_gdelt = {d.fuente for d in protag if _tipo_fuente(d) == "gdelt"}
-    print(f"  medios distintos en corpus efectivo: {len(medios_protag)}"
-          f"  (independientes vía GDELT: {len(medios_gdelt)})")
+    print(
+        f"  medios distintos en corpus efectivo: {len(medios_protag)}"
+        f"  (independientes vía GDELT: {len(medios_gdelt)})"
+    )
     print(f"  ejemplos GDELT: {sorted(medios_gdelt)[:8]}")
 
     # --- persistir ---
-    filas = [{
-        "doc_id": d.doc_id,
-        "fuente": d.fuente,
-        "source": _tipo_fuente(d),
-        "url": d.url,
-        "fecha_pub": d.fecha_pub.isoformat(),
-        "texto": d.texto,
-        "queries": proc_map.get(d.doc_id, ""),
-        "n_ent_ollanta": sum(1 for e in d.entidades if e.entidad_id == SUJETO_ID),
-        "clase_protagonismo": clase[d.doc_id],
-        "humala_protagonista": clase[d.doc_id] == "protagonista",
-        "entidades": json.dumps([e.model_dump() for e in d.entidades], ensure_ascii=False),
-    } for d in anotados]
+    filas = [
+        {
+            "doc_id": d.doc_id,
+            "fuente": d.fuente,
+            "source": _tipo_fuente(d),
+            "url": d.url,
+            "fecha_pub": d.fecha_pub.isoformat(),
+            "texto": d.texto,
+            "queries": proc_map.get(d.doc_id, ""),
+            "n_ent_ollanta": sum(1 for e in d.entidades if e.entidad_id == SUJETO_ID),
+            "clase_protagonismo": clase[d.doc_id],
+            "humala_protagonista": clase[d.doc_id] == "protagonista",
+            "entidades": json.dumps(
+                [e.model_dump() for e in d.entidades], ensure_ascii=False
+            ),
+        }
+        for d in anotados
+    ]
     SALIDA_PARQUET.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(filas).to_parquet(SALIDA_PARQUET, index=False)
     print(f"\n== PERSISTIDO ==\n  {SALIDA_PARQUET} ({len(filas)} filas)")
@@ -211,7 +228,8 @@ def main() -> None:
     metrics = {
         "ventana": [FECHA_INICIO_HUMALA.isoformat(), FECHA_CORTE_HUMALA.isoformat()],
         "queries_andina": QUERIES_ANDINA,
-        "andina_en_ventana": len(docs) - sum(1 for d in anotados if _tipo_fuente(d) == "gdelt"),
+        "andina_en_ventana": len(docs)
+        - sum(1 for d in anotados if _tipo_fuente(d) == "gdelt"),
         "dedup": dedup,
         "protagonismo": dict(clases),
         "corpus_efectivo": len(protag),
@@ -220,7 +238,9 @@ def main() -> None:
         "medios_distintos_efectivo": len(medios_protag),
         "medios_independientes_gdelt": len(medios_gdelt),
     }
-    SALIDA_METRICS.write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
+    SALIDA_METRICS.write_text(
+        json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print(f"  {SALIDA_METRICS}")
 
 

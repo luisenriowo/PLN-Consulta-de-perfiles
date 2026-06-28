@@ -82,11 +82,40 @@ es con un tercero que no es ninguna de las dos, → **`mencion`**.
 
 ---
 
-## 3. Protocolo de acuerdo inter-anotador
+## 3. Gold de RELACIONES ABIERTAS y TIPADO INDUCIDO (`annotation/gold_relaciones_abiertas/<slug>.csv`)
+
+Cada fila es una arista abierta extraída por OpenIE-lite y, si ya existe, su
+cluster inducido. Se completan tres columnas:
+
+### `triple_valido_gold` ∈ {1, 0}
+`1` si la oración expresa una relación entre `entity_a` y `entity_b`. `0` si solo
+co-aparecen, si una entidad está mal enlazada, si es una lista/byline, o si la
+relación relevante es con un tercero.
+
+### `predicado_ok_gold` ∈ {1, 0}
+`1` si `predicado` captura el vínculo expresado entre ambas entidades, aunque sea
+superficial. `0` si el verbo es de reporte (`dijo`, `señaló`), demasiado genérico,
+o apunta al hecho equivocado.
+
+### `tipo_gold`
+Etiqueta humana del tipo de relación. Para evaluar contra la taxonomía fija usa
+las 7 etiquetas de la sección 2. Para tipado inducido, si un cluster revela un
+tipo emergente interpretable no cubierto por la taxonomía, anotar un nombre corto
+en minúsculas con guion bajo (p. ej. `competencia_electoral`) y documentarlo en
+notas/metodología antes de reportarlo.
+
+### Etiquetado de clusters inducidos (`data/salidas/<slug>/relation_type_clusters.csv`)
+Completar `tipo_label` una vez por cluster, mirando `predicados_top` y `ejemplos`.
+Si el cluster mezcla relaciones incompatibles, usar `mixto` y marcarlo para
+re-clustering/ajuste de umbral; no forzar una etiqueta limpia.
+
+---
+
+## 4. Protocolo de acuerdo inter-anotador
 
 1. El anotador A produce el gold completo siguiendo esta guía.
-2. Se genera una copia en blanco de una **muestra** (≥30 filas) para el anotador
-   B: `uv run python scripts/acuerdo_anotadores.py --blank <gold.csv> --n 30`.
+2. Se genera una copia en blanco de una **muestra** (≥60 filas para el paper) para
+   el anotador B: `uv run python scripts/acuerdo_anotadores.py --blank <gold.csv> --n 60`.
 3. B etiqueta la muestra **sin ver** las etiquetas de A.
 4. Se mide acuerdo: `uv run python scripts/acuerdo_anotadores.py <A.csv> <B.csv> --col tipo_gold`.
    Reporta % de acuerdo y κ de Cohen.

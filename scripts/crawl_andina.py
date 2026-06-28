@@ -37,9 +37,15 @@ URL = "https://andina.pe/agencia/noticia-x-{id}.aspx"
 
 
 def crawl(
-    desde_id: int, hasta_id: int, salida: Path, *, delay: float = 0.5,
-    limite: int | None = None, ckpt_cada: int = 50,
-    desde: date | None = None, hasta: date | None = None,
+    desde_id: int,
+    hasta_id: int,
+    salida: Path,
+    *,
+    delay: float = 0.5,
+    limite: int | None = None,
+    ckpt_cada: int = 50,
+    desde: date | None = None,
+    hasta: date | None = None,
 ) -> dict:
     """Recorre [desde_id, hasta_id] descargando notas válidas a `salida` (JSONL).
 
@@ -51,17 +57,26 @@ def crawl(
     ckpt = salida.with_suffix(".ckpt.json")
     estado = (
         json.loads(ckpt.read_text(encoding="utf-8"))
-        if ckpt.exists() else {"ultimo_id": desde_id - 1, "ok": 0, "vistos": 0}
+        if ckpt.exists()
+        else {"ultimo_id": desde_id - 1, "ok": 0, "vistos": 0}
     )
     inicio = max(desde_id, estado["ultimo_id"] + 1)
     ok, vistos = estado["ok"], estado["vistos"]
     if inicio > hasta_id:
-        log.info("nada que hacer: checkpoint (%d) ya cubre el rango", estado["ultimo_id"])
+        log.info(
+            "nada que hacer: checkpoint (%d) ya cubre el rango", estado["ultimo_id"]
+        )
         return estado
 
     salida.parent.mkdir(parents=True, exist_ok=True)
     session = http_session()
-    log.info("crawl IDs [%d … %d] → %s (reanudando en %d)", desde_id, hasta_id, salida, inicio)
+    log.info(
+        "crawl IDs [%d … %d] → %s (reanudando en %d)",
+        desde_id,
+        hasta_id,
+        salida,
+        inicio,
+    )
 
     t0 = time.time()
     i = inicio
@@ -72,51 +87,92 @@ def crawl(
                 try:
                     doc = andina.parse_nota(session, URL.format(id=i))
                 except Exception:
-                    doc = None   # 404 / id inexistente / error de red puntual
+                    doc = None  # 404 / id inexistente / error de red puntual
                 en_ventana = doc is not None and (
                     (desde is None and hasta is None)
                     or dentro_de_ventana(
                         doc.fecha_pub,
-                        desde=desde or date.min, hasta=hasta or date.max,
+                        desde=desde or date.min,
+                        hasta=hasta or date.max,
                     )
                 )
                 if doc is not None and doc.texto.strip() and en_ventana:
-                    f.write(json.dumps({
-                        "doc_id": doc.doc_id, "fuente": doc.fuente, "url": doc.url,
-                        "fecha_pub": doc.fecha_pub.isoformat(), "texto": doc.texto,
-                    }, ensure_ascii=False) + "\n")
+                    f.write(
+                        json.dumps(
+                            {
+                                "doc_id": doc.doc_id,
+                                "fuente": doc.fuente,
+                                "url": doc.url,
+                                "fecha_pub": doc.fecha_pub.isoformat(),
+                                "texto": doc.texto,
+                            },
+                            ensure_ascii=False,
+                        )
+                        + "\n"
+                    )
                     ok += 1
                 if vistos % ckpt_cada == 0:
                     f.flush()
-                    ckpt.write_text(json.dumps({"ultimo_id": i, "ok": ok, "vistos": vistos}),
-                                    encoding="utf-8")
+                    ckpt.write_text(
+                        json.dumps({"ultimo_id": i, "ok": ok, "vistos": vistos}),
+                        encoding="utf-8",
+                    )
                     rate = vistos / max(time.time() - t0, 1e-9)
-                    log.info("id=%d  válidas=%d/%d (%.0f%%)  %.1f ids/s",
-                             i, ok, vistos, 100 * ok / vistos, rate)
+                    log.info(
+                        "id=%d  válidas=%d/%d (%.0f%%)  %.1f ids/s",
+                        i,
+                        ok,
+                        vistos,
+                        100 * ok / vistos,
+                        rate,
+                    )
                 if limite and ok >= limite:
                     break
                 time.sleep(delay)
         finally:
-            ckpt.write_text(json.dumps({"ultimo_id": i, "ok": ok, "vistos": vistos}),
-                            encoding="utf-8")
+            ckpt.write_text(
+                json.dumps({"ultimo_id": i, "ok": ok, "vistos": vistos}),
+                encoding="utf-8",
+            )
 
     dur = time.time() - t0
-    log.info("== FIN == válidas=%d de %d vistos en %.0fs (%.1f ids/s)",
-             ok, vistos, dur, vistos / max(dur, 1e-9))
+    log.info(
+        "== FIN == válidas=%d de %d vistos en %.0fs (%.1f ids/s)",
+        ok,
+        vistos,
+        dur,
+        vistos / max(dur, 1e-9),
+    )
     return {"ultimo_id": i, "ok": ok, "vistos": vistos, "segundos": round(dur, 1)}
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-7s %(message)s",
-                        datefmt="%H:%M:%S")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)-7s %(message)s",
+        datefmt="%H:%M:%S",
+    )
     p = argparse.ArgumentParser(description="Crawler por ID de Andina")
     p.add_argument("--desde-id", type=int, required=True)
     p.add_argument("--hasta-id", type=int, required=True)
     p.add_argument("--salida", type=Path, default=Path("data/andina_crawl.jsonl"))
     p.add_argument("--delay", type=float, default=0.5)
-    p.add_argument("--limite", type=int, default=None, help="parar tras N notas válidas")
-    p.add_argument("--desde", type=date.fromisoformat, default=None, help="fecha mínima ISO")
-    p.add_argument("--hasta", type=date.fromisoformat, default=None, help="fecha máxima ISO")
+    p.add_argument(
+        "--limite", type=int, default=None, help="parar tras N notas válidas"
+    )
+    p.add_argument(
+        "--desde", type=date.fromisoformat, default=None, help="fecha mínima ISO"
+    )
+    p.add_argument(
+        "--hasta", type=date.fromisoformat, default=None, help="fecha máxima ISO"
+    )
     args = p.parse_args()
-    crawl(args.desde_id, args.hasta_id, args.salida, delay=args.delay,
-          limite=args.limite, desde=args.desde, hasta=args.hasta)
+    crawl(
+        args.desde_id,
+        args.hasta_id,
+        args.salida,
+        delay=args.delay,
+        limite=args.limite,
+        desde=args.desde,
+        hasta=args.hasta,
+    )

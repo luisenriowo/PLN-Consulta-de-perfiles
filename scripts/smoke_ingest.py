@@ -19,7 +19,7 @@ from src.pipeline import entities, preprocess
 from src.pipeline.preprocess import segmentar_oraciones
 
 SUJETO = "Ollanta Humala"
-MODELO_SMOKE = "es_core_news_md"   # rápido; producción usa es_core_news_lg
+MODELO_SMOKE = "es_core_news_md"  # rápido; producción usa es_core_news_lg
 
 
 def main() -> None:
@@ -31,8 +31,10 @@ def main() -> None:
 
     limpios = preprocess.preprocess(crudos)
     n_oraciones = sum(len(segmentar_oraciones(d.texto)) for d in limpios)
-    print(f"== PREPROCESS ==")
-    print(f"  tras limpieza/dedup: {len(limpios)}  ({len(crudos) - len(limpios)} descartados)")
+    print("== PREPROCESS ==")
+    print(
+        f"  tras limpieza/dedup: {len(limpios)}  ({len(crudos) - len(limpios)} descartados)"
+    )
     print(f"  oraciones segmentadas: {n_oraciones}")
 
     anotados = entities.link_entities(limpios, modelo=MODELO_SMOKE)

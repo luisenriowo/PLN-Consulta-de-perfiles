@@ -20,7 +20,7 @@ from src.pipeline import embeddings
 from src.schemas import Documento, EventCluster
 
 MODELO_EMB = embeddings.MODELO_EMB
-UMBRAL_DEFECTO = 0.35   # distancia coseno; menor = clusters más estrictos
+UMBRAL_DEFECTO = 0.35  # distancia coseno; menor = clusters más estrictos
 
 
 def _texto_evento(doc: Documento) -> str:
@@ -68,8 +68,8 @@ def cluster_events(
                 pasajes.append(t)
         clusters.append(
             EventCluster(
-                cluster_id="",   # se asigna tras ordenar
-                fecha_normalizada=miembros[0].fecha_pub,   # primer reporte
+                cluster_id="",  # se asigna tras ordenar
+                fecha_normalizada=miembros[0].fecha_pub,  # primer reporte
                 pasajes_evidencia=pasajes,
                 fuentes=[d.doc_id for d in miembros],
                 fechas_evidencia=[d.fecha_pub for d in miembros],

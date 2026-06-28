@@ -16,7 +16,6 @@ get_ner_model(). No hay que tocar SpacyNER ni TransformerNER.
 from __future__ import annotations
 
 import os
-import unicodedata
 from functools import cached_property, lru_cache
 from typing import Protocol, runtime_checkable
 
@@ -27,18 +26,18 @@ _TIPOS_VALIDOS = {"PER", "ORG", "LOC", "MISC"}
 
 # ── Protocolo ─────────────────────────────────────────────────────────────────
 
+
 @runtime_checkable
 class NERModel(Protocol):
     """Contrato mínimo de un modelo NER: recibe textos, devuelve menciones."""
 
-    def __call__(
-        self, texts: list[str]
-    ) -> list[list[EntidadMencion]]:
+    def __call__(self, texts: list[str]) -> list[list[EntidadMencion]]:
         """Procesa una lista de textos en batch y devuelve las menciones por texto."""
         ...
 
 
 # ── SpacyNER ──────────────────────────────────────────────────────────────────
+
 
 class SpacyNER:
     """NER con spaCy es_core_news_lg. Rápido, sin dependencia de GPU."""
@@ -49,6 +48,7 @@ class SpacyNER:
     @cached_property
     def _nlp(self):
         import spacy
+
         return spacy.load(
             self._model_name,
             disable=["lemmatizer", "morphologizer", "tagger"],
@@ -73,6 +73,7 @@ class SpacyNER:
 
 # ── TransformerNER ────────────────────────────────────────────────────────────
 
+
 class TransformerNER:
     """NER con roberta-base-bne-capiter — mejor precisión para noticias en español.
 
@@ -83,9 +84,12 @@ class TransformerNER:
 
     # Mapeo etiquetas del modelo → etiquetas internas del proyecto
     _LABEL_MAP: dict[str, str] = {
-        "PER": "PER", "PERSON": "PER",
-        "ORG": "ORG", "ORGANIZATION": "ORG",
-        "LOC": "LOC", "LOCATION": "LOC",
+        "PER": "PER",
+        "PERSON": "PER",
+        "ORG": "ORG",
+        "ORGANIZATION": "ORG",
+        "LOC": "LOC",
+        "LOCATION": "LOC",
         "MISC": "MISC",
     }
 
@@ -97,12 +101,13 @@ class TransformerNER:
         batch_size: int = 16,
     ) -> None:
         self._model_name = model
-        self._device     = device
+        self._device = device
         self._batch_size = batch_size
 
     @cached_property
     def _pipe(self):
         from transformers import pipeline
+
         return pipeline(
             "ner",
             model=self._model_name,
@@ -123,17 +128,20 @@ class TransformerNER:
                 tipo = self._LABEL_MAP.get(ent["entity_group"], "MISC")
                 if tipo not in _TIPOS_VALIDOS:
                     continue
-                menciones.append(EntidadMencion(
-                    texto=ent["word"].strip(),
-                    tipo=tipo,
-                    inicio=ent["start"],
-                    fin=ent["end"],
-                ))
+                menciones.append(
+                    EntidadMencion(
+                        texto=ent["word"].strip(),
+                        tipo=tipo,
+                        inicio=ent["start"],
+                        fin=ent["end"],
+                    )
+                )
             resultado.append(menciones)
         return resultado
 
 
 # ── Factory ───────────────────────────────────────────────────────────────────
+
 
 @lru_cache(maxsize=1)
 def get_ner_model() -> NERModel:

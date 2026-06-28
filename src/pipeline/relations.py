@@ -35,6 +35,7 @@ _MIN_CHARS = 15
 
 # ── Estructura de datos ────────────────────────────────────────────────────
 
+
 @dataclass(frozen=True)
 class Coocurrencia:
     """Par de entidades que co-aparecen en una oración con su contexto.
@@ -46,20 +47,19 @@ class Coocurrencia:
 
     entity_a: EntityNode
     entity_b: EntityNode
-    oracion:  str
-    doc_id:   str
-    fecha:    date
-    triple:   tuple[str, str, str] | None = field(default=None, compare=False)
+    oracion: str
+    doc_id: str
+    fecha: date
+    triple: tuple[str, str, str] | None = field(default=None, compare=False)
 
 
 # ── Helpers internos ───────────────────────────────────────────────────────
 
+
 def _segmentar(texto: str) -> list[str]:
     """Divide el texto en oraciones por puntuación de cierre."""
     return [
-        s.strip()
-        for s in _RE_SEP_ORACION.split(texto)
-        if len(s.strip()) >= _MIN_CHARS
+        s.strip() for s in _RE_SEP_ORACION.split(texto) if len(s.strip()) >= _MIN_CHARS
     ]
 
 
@@ -85,17 +85,13 @@ def _dep_triple(oracion: str, nlp) -> tuple[str, str, str] | None:
     Retorna None si no hay verbo raíz con sujeto u objeto identificables;
     esto ocurre en titulares nominales o fragmentos sin verbo principal.
     """
-    doc  = nlp(oracion)
+    doc = nlp(oracion)
     root = next((t for t in doc if t.dep_ == "ROOT"), None)
     if root is None or root.pos_ not in {"VERB", "AUX"}:
         return None
 
-    sujeto  = next(
-        (t.text for t in root.lefts  if t.dep_ in {"nsubj", "nsubjpass"}), ""
-    )
-    objeto  = next(
-        (t.text for t in root.rights if t.dep_ in {"obj", "dobj", "obl"}),   ""
-    )
+    sujeto = next((t.text for t in root.lefts if t.dep_ in {"nsubj", "nsubjpass"}), "")
+    objeto = next((t.text for t in root.rights if t.dep_ in {"obj", "dobj", "obl"}), "")
     if not sujeto and not objeto:
         return None
     return (sujeto, root.lemma_, objeto)
@@ -134,11 +130,10 @@ def relacion_abierta(oracion: str, ent_a: str, ent_b: str, nlp) -> str | None:
     """Frase-predicado LIBRE que conecta a `ent_a` y `ent_b` en la oración.
 
     OpenIE-lite: ubica un token de cada entidad, toma el camino de dependencias
-    entre ambos y devuelve la FORMA del verbo conector (p. ej. "nombró",
-    "acusó", "se enfrentaron"). No impone taxonomía: el TIPO se identifica
-    después (agrupando predicados o con LLM on-demand). Usa la forma de
-    superficie porque `_nlp_dep` desactiva el lematizador por velocidad. Si no
-    hay verbo en el camino, cae al verbo raíz; None si tampoco hay.
+    entre ambos y devuelve una frase verbal corta (p. ej. "nombrar", "acusar
+    por", "se enfrentar con"). No impone taxonomía: el TIPO se identifica
+    después (agrupando predicados o con LLM on-demand). Si no hay verbo útil en
+    el camino, cae al verbo raíz; None si solo encuentra verbos de reporte.
     """
     return _predicado(nlp(oracion), ent_a, ent_b)
 
@@ -147,11 +142,83 @@ def _predicado(doc, ent_a: str, ent_b: str) -> str | None:
     """Predicado conector entre dos entidades sobre un doc YA parseado."""
     ta, tb = _token_entidad(doc, ent_a), _token_entidad(doc, ent_b)
     if ta is not None and tb is not None:
-        verbos = [t for t in _camino_dep(ta, tb) if t.pos_ in {"VERB", "AUX"}]
-        if verbos:
-            return verbos[0].text.lower()
+        for verbo in [t for t in _camino_dep(ta, tb) if t.pos_ in {"VERB", "AUX"}]:
+            pred = _frase_predicado(verbo)
+            if pred:
+                return pred
     root = next((t for t in doc if t.dep_ == "ROOT"), None)
-    return root.text.lower() if root and root.pos_ in {"VERB", "AUX"} else None
+    if root and root.pos_ in {"VERB", "AUX"}:
+        pred = _frase_predicado(root)
+        if pred:
+            return pred
+    # Verbos de reporte como raíz suelen alojar la relación real en subordinadas.
+    for verbo in doc:
+        if verbo.pos_ in {"VERB", "AUX"}:
+            pred = _frase_predicado(verbo)
+            if pred:
+                return pred
+    return None
+
+
+_VERBOS_REPORTE = {
+    "afirmar",
+    "agregar",
+    "anunciar",
+    "asegurar",
+    "comentar",
+    "contar",
+    "declarar",
+    "decir",
+    "detallar",
+    "explicar",
+    "indicar",
+    "informar",
+    "manifestar",
+    "mencionar",
+    "precisar",
+    "referir",
+    "responder",
+    "senalar",
+    "sostener",
+    "subrayar",
+}
+
+
+def _lemma(token) -> str:
+    """Lema estable; cae a texto normalizado si spaCy no trae lematizador."""
+    lema = (getattr(token, "lemma_", "") or "").strip().lower()
+    if not lema or lema == "-pron-":
+        lema = token.text.lower()
+    return _norm(lema)
+
+
+def _frase_predicado(verbo) -> str | None:
+    """Normaliza verbo conector y añade preposición informativa si existe."""
+    lema = _lemma(verbo)
+    if not lema or lema in _VERBOS_REPORTE:
+        return None
+
+    partes: list[str] = []
+    if any(_norm(h.text) == "se" and h.i < verbo.i for h in verbo.children):
+        partes.append("se")
+    partes.append(lema)
+
+    prep = _prep_del_verbo(verbo)
+    if prep:
+        partes.append(prep)
+    return " ".join(partes)
+
+
+def _prep_del_verbo(verbo) -> str | None:
+    """Preposición asociada al complemento verbal: acusar por, renunciar a."""
+    for child in sorted(verbo.children, key=lambda t: t.i):
+        if child.dep_ in {"case", "mark"} and child.pos_ == "ADP":
+            return _norm(child.text)
+        if child.dep_ in {"obl", "obj", "iobj", "nmod"}:
+            for nieto in sorted(child.children, key=lambda t: t.i):
+                if nieto.dep_ == "case" and nieto.pos_ == "ADP":
+                    return _norm(nieto.text)
+    return None
 
 
 @lru_cache(maxsize=1)
@@ -161,14 +228,16 @@ def _nlp_dep():
     Modelo configurable via SPACY_DEP_MODEL (default: es_core_news_lg).
     """
     import spacy
+
     model = os.environ.get("SPACY_DEP_MODEL", "es_core_news_lg")
-    return spacy.load(model, disable=["ner", "lemmatizer"])
+    return spacy.load(model, disable=["ner"])
 
 
 # ── API pública ────────────────────────────────────────────────────────────
 
+
 def extraer_coocurrencias(
-    docs:      list[Documento],
+    docs: list[Documento],
     entidades: list[EntityNode],
     *,
     min_entidades: int = 2,
@@ -192,7 +261,7 @@ def extraer_coocurrencias(
     for doc in docs:
         for oracion in _segmentar(doc.texto):
             oracion_norm = _norm(oracion)
-            presentes    = [e for e in entidades if _menciona(oracion_norm, e)]
+            presentes = [e for e in entidades if _menciona(oracion_norm, e)]
 
             if len(presentes) < min_entidades:
                 continue
@@ -200,14 +269,14 @@ def extraer_coocurrencias(
             triple = _dep_triple(oracion, nlp)
 
             for i, ea in enumerate(presentes):
-                for eb in presentes[i + 1:]:
+                for eb in presentes[i + 1 :]:
                     yield Coocurrencia(
-                        entity_a = ea,
-                        entity_b = eb,
-                        oracion  = oracion,
-                        doc_id   = doc.doc_id,
-                        fecha    = doc.fecha_pub,
-                        triple   = triple,
+                        entity_a=ea,
+                        entity_b=eb,
+                        oracion=oracion,
+                        doc_id=doc.doc_id,
+                        fecha=doc.fecha_pub,
+                        triple=triple,
                     )
 
 
@@ -220,16 +289,16 @@ class RelacionAbierta:
     varias a lo largo del tiempo → permite ver cómo evoluciona la relación.
     """
 
-    entity_a:  EntityNode
-    entity_b:  EntityNode
+    entity_a: EntityNode
+    entity_b: EntityNode
     predicado: str
-    oracion:   str
-    doc_id:    str
-    fecha:     date
+    oracion: str
+    doc_id: str
+    fecha: date
 
 
 def extraer_relaciones_abiertas(
-    docs:      list[Documento],
+    docs: list[Documento],
     entidades: list[EntityNode],
     *,
     min_entidades: int = 2,
@@ -245,15 +314,19 @@ def extraer_relaciones_abiertas(
     for doc in docs:
         for oracion in _segmentar(doc.texto):
             oracion_norm = _norm(oracion)
-            presentes    = [e for e in entidades if _menciona(oracion_norm, e)]
+            presentes = [e for e in entidades if _menciona(oracion_norm, e)]
             if len(presentes) < min_entidades:
                 continue
             parsed = nlp(oracion)
             for i, ea in enumerate(presentes):
-                for eb in presentes[i + 1:]:
+                for eb in presentes[i + 1 :]:
                     pred = _predicado(parsed, ea.nombre, eb.nombre)
                     if pred:
                         yield RelacionAbierta(
-                            entity_a = ea, entity_b = eb, predicado = pred,
-                            oracion = oracion, doc_id = doc.doc_id, fecha = doc.fecha_pub,
+                            entity_a=ea,
+                            entity_b=eb,
+                            predicado=pred,
+                            oracion=oracion,
+                            doc_id=doc.doc_id,
+                            fecha=doc.fecha_pub,
                         )

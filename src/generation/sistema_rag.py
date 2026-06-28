@@ -40,9 +40,9 @@ class SistemaRAG:
             try:
                 resumen = _llm.completar(_SYSTEM, f"PASAJES:\n{pasajes}")
             except Exception:
-                continue   # cuota agotada u otro error → descarta
+                continue  # cuota agotada u otro error → descarta
             if not resumen or _SIN_RESPALDO in resumen:
-                continue   # descarta lo no respaldado (§2.6)
+                continue  # descarta lo no respaldado (§2.6)
             salida.append(
                 TimelineEntry(
                     fecha=c.fecha_normalizada,
