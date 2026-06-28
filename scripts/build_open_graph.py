@@ -20,35 +20,18 @@ import argparse
 import json
 import logging
 import os
-import re
 from pathlib import Path
 
 import pandas as pd
 
 from src import manifiesto
 from src.pipeline.entity_discovery import descubrir_entidades
+from src.pipeline.preprocess import es_espanol
 from src.pipeline.relations import extraer_relaciones_abiertas
 from src.schemas import Documento, RelationEdge
 from src.storage import KnowledgeGraph
 
 log = logging.getLogger(__name__)
-
-# Filtro de idioma (heurístico, sin dependencias): palabras función ES vs EN.
-_ES = {"de", "la", "el", "que", "en", "los", "del", "las", "una", "por",
-       "con", "para", "su", "al", "se", "lo", "como", "más"}
-_EN = {"the", "of", "and", "to", "in", "for", "on", "with", "as", "by",
-       "that", "is", "was", "from", "at", "this"}
-_RE_TOK = re.compile(r"[a-záéíóúñ]+")
-
-
-def es_espanol(texto: str) -> bool:
-    """True si el texto parece español (más stopwords ES que EN en el inicio)."""
-    toks = _RE_TOK.findall(texto[:400].lower())
-    if not toks:
-        return True
-    es = sum(t in _ES for t in toks)
-    en = sum(t in _EN for t in toks)
-    return es >= en
 
 
 def _cargar(slug: str, jsonl: Path | None) -> list[Documento]:
