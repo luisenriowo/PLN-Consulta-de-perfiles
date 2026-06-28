@@ -72,6 +72,15 @@
 
     <section id="grafo-vista" class="grafo-vista oculto" aria-label="Grafo de relaciones">
       <div class="grafo-controles">
+        <div class="g-buscar-wrap">
+          <input id="g-buscar" class="g-buscar" type="search" placeholder="Buscar entidad…" autocomplete="off" />
+          <div id="g-resultados" class="g-resultados"></div>
+        </div>
+        <div class="g-acciones">
+          <button id="g-ver-todo" class="g-btn" type="button" title="Volver al grafo completo">Ver grafo completo</button>
+          <button id="g-modo-evolucion" class="g-btn" type="button" title="Seleccionar dos entidades para ver su evolución temporal">Modo evolución</button>
+          <span id="g-evolucion-estado" class="g-evolucion-estado"></span>
+        </div>
         <div class="g-tipos" id="g-tipos"></div>
         <label class="g-conf">Confianza ≥ <output id="g-conf-val">0.0</output>
           <input type="range" id="g-conf" min="0" max="1" step="0.05" value="0" />

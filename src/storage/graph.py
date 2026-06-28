@@ -98,6 +98,18 @@ class KnowledgeGraph:
     def _init_schema(self) -> None:
         self._conn.execute(_DDL)
 
+    # ── Compat esquema viejo/nuevo ─────────────────────────────────────────
+
+    def _has_column(self, table: str, column: str) -> bool:
+        """True si la columna existe en la tabla (esquema viejo sin predicado)."""
+        cols = {r[0] for r in self._conn.execute(f"DESCRIBE {table}").fetchall()}
+        return column in cols
+
+    def _predicado_select(self) -> str:
+        """Snippet SQL para la columna `predicado` (r.predicado o NULL AS predicado)."""
+        return "r.predicado AS predicado" if self._has_column("relations", "predicado") \
+            else "NULL AS predicado"
+
     # ── Escritura ──────────────────────────────────────────────────────────
 
     def upsert_entity(self, node: EntityNode) -> None:
@@ -153,6 +165,31 @@ class KnowledgeGraph:
     def entities(self) -> list[dict]:
         """Devuelve todas las entidades del grafo."""
         return self._conn.execute("SELECT * FROM entities").df().to_dict("records")
+
+    def entity(self, entity_id: str) -> dict | None:
+        """Una entidad por entity_id, o None si no existe."""
+        row = self._conn.execute(
+            "SELECT * FROM entities WHERE entity_id = ?", [entity_id],
+        ).fetchone()
+        if row is None:
+            return None
+        cols = [d[0] for d in self._conn.description]
+        return dict(zip(cols, row))
+
+    def _entities_by_ids(self, ids: "set[str]") -> list[dict]:
+        """Resuelve varias entidades en una sola query IN (?,?,…).
+        Evita el N+1 de llamar a ``entity()`` por separado (fix B2).
+        Devuelve lista (orden estable: como vengan de la BD). Vacío si ids=∅.
+        """
+        if not ids:
+            return []
+        placeholders = ",".join("?" for _ in ids)
+        rows = self._conn.execute(
+            f"SELECT * FROM entities WHERE entity_id IN ({placeholders})",
+            list(ids),
+        ).fetchall()
+        cols = [d[0] for d in self._conn.description]
+        return [dict(zip(cols, r)) for r in rows]
 
     def relations(
         self,
@@ -230,6 +267,364 @@ class KnowledgeGraph:
             """,
             [self.slug],
         ).df().to_dict("records")
+
+    def search_entities(self, q: str = "", *, limit: int = 20) -> list[dict]:
+        """Búsqueda de entidades por nombre, entity_id o alias.
+
+        - q vacío: top por n_docs DESC, n_menciones DESC (sugerencias iniciales).
+        - q no vacío: case-insensitive, ordenado por relevancia:
+            1) match exacto en entity_id o nombre;
+            2) prefijo;
+            3) contiene;
+            4) mayor n_docs;
+            5) mayor n_menciones.
+        `alias` se deserializa defensivamente (puede venir como string JSON).
+
+        Fix B1: el corte top-N se hace en SQL (LIMIT ?) en ambas ramas; la rama
+        con `q` además filtra primero en SQL con ILIKE sobre nombre+entity_id+alias
+        (candidato acotado, reordenado en Python por relevancia). Alias se parsea
+        sólo cuando hay `q` (no se necesita para el top inicial).
+        """
+        limit = max(1, min(int(limit), 50))
+        cols = ["entity_id", "nombre", "tipo", "n_docs", "n_menciones", "alias"]
+
+        def _alias(reg: dict) -> list:
+            a = reg.get("alias")
+            if isinstance(a, list):
+                return a
+            if isinstance(a, str):
+                try:
+                    val = json.loads(a) if a else []
+                    return val if isinstance(val, list) else []
+                except (json.JSONDecodeError, TypeError):
+                    return []
+            return []
+
+        qn = (q or "").strip().lower()
+
+        if not qn:
+            # Top por n_docs en SQL — no carga toda la tabla en Python.
+            filas = self._conn.execute(
+                f"SELECT {', '.join(cols)} FROM entities "
+                f"ORDER BY n_docs DESC, n_menciones DESC LIMIT ?",
+                [limit],
+            ).fetchall()
+            regs = [dict(zip(cols, r)) for r in filas]
+            for r in regs:
+                r["alias"] = _alias(r)
+            return regs
+
+        # Rama con q: candidato acotado en SQL con ILIKE sobre nombre+entity_id+alias,
+        # luego reordenado en Python por (exacto, prefijo, contiene, n_docs).
+        like = f"%{qn}%"
+        filas = self._conn.execute(
+            f"SELECT {', '.join(cols)} FROM entities "
+            f"WHERE LOWER(nombre) LIKE ? "
+            f"   OR LOWER(entity_id) LIKE ? "
+            f"   OR LOWER(CAST(alias AS VARCHAR)) LIKE ? "
+            f"ORDER BY n_docs DESC, n_menciones DESC LIMIT ?",
+            [like, like, like, max(limit * 5, 50)],
+        ).fetchall()
+        regs = [dict(zip(cols, r)) for r in filas]
+        for r in regs:
+            r["alias"] = _alias(r)
+
+        def score(reg: dict) -> tuple:
+            nombre = (reg.get("nombre") or "").lower()
+            eid = (reg.get("entity_id") or "").lower()
+            alias = [str(a).lower() for a in (reg.get("alias") or [])]
+            exacto = int(eid == qn or nombre == qn or qn in alias)
+            prefijo = int(
+                eid.startswith(qn) or nombre.startswith(qn)
+                or any(str(a).startswith(qn) for a in alias)
+            )
+            contiene = int(
+                qn in eid or qn in nombre
+                or any(qn in str(a) for a in alias)
+            )
+            return (exacto, prefijo, contiene, reg.get("n_docs") or 0, reg.get("n_menciones") or 0)
+
+        def _match(reg: dict) -> bool:
+            nombre = (reg.get("nombre") or "").lower()
+            eid = (reg.get("entity_id") or "").lower()
+            alias = [str(a).lower() for a in (reg.get("alias") or [])]
+            return (
+                eid == qn or nombre == qn or qn in alias
+                or eid.startswith(qn) or nombre.startswith(qn)
+                or any(a.startswith(qn) for a in alias)
+                or qn in eid or qn in nombre or any(qn in a for a in alias)
+            )
+
+        # Re-valida _match para ordenar/podar con alias ya parseado.
+        scored = sorted(regs, key=score, reverse=True)
+        out = [r for r in scored if _match(r)]
+        return out[:limit]
+
+    def relations_page(
+        self,
+        *,
+        desde: date | None = None,
+        hasta: date | None = None,
+        tipo: str | None = None,
+        origen_id: str | None = None,
+        destino_id: str | None = None,
+        min_confianza: float = 0.0,
+        limit: int = 100,
+        offset: int = 0,
+        include_total: bool = False,
+    ) -> dict:
+        """Relaciones con paginación server-side (offset/limit). Columnas
+        explícitas + `predicado` siempre presente (NULL si esquema viejo)."""
+        cond, params = self._relation_filters(
+            desde=desde, hasta=hasta, tipo=tipo, origen_id=origen_id,
+            destino_id=destino_id, min_confianza=min_confianza,
+        )
+        where = " AND ".join(cond)
+        total: int | None = None
+        if include_total:
+            total = int(self._conn.execute(
+                f"SELECT COUNT(*) FROM relations r WHERE {where}", params,
+            ).fetchone()[0])
+
+        sql = f"""
+            SELECT r.id, r.figura_slug, r.origen_id, r.destino_id, r.tipo,
+                   {self._predicado_select()},
+                   r.fecha, r.confianza, r.metodo,
+                   e_o.nombre AS origen_nombre,
+                   e_d.nombre AS destino_nombre
+            FROM relations r
+            LEFT JOIN entities e_o ON r.origen_id  = e_o.entity_id
+            LEFT JOIN entities e_d ON r.destino_id = e_d.entity_id
+            WHERE {where}
+            ORDER BY r.fecha, r.id
+            LIMIT ? OFFSET ?
+        """
+        params_p = params + [limit, offset]
+        items = self._rows(self._conn.execute(sql, params_p))
+        for it in items:
+            it.setdefault("predicado", None)
+        return {
+            "items": items,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        }
+
+    def _relation_filters(
+        self,
+        *,
+        desde: date | None = None,
+        hasta: date | None = None,
+        tipo: str | None = None,
+        origen_id: str | None = None,
+        destino_id: str | None = None,
+        min_confianza: float = 0.0,
+    ) -> tuple[list[str], list]:
+        """Construye WHERE compartido para relations. Devuelve (cláusulas, params)."""
+        cond: list[str] = ["r.figura_slug = ?"]
+        params: list = [self.slug]
+        if desde:
+            cond.append("r.fecha >= ?"); params.append(desde.isoformat())
+        if hasta:
+            cond.append("r.fecha <= ?"); params.append(hasta.isoformat())
+        if tipo:
+            cond.append("r.tipo = ?"); params.append(tipo)
+        if origen_id:
+            cond.append("r.origen_id = ?"); params.append(origen_id)
+        if destino_id:
+            cond.append("r.destino_id = ?"); params.append(destino_id)
+        if min_confianza > 0.0:
+            cond.append("r.confianza >= ?"); params.append(min_confianza)
+        return cond, params
+
+    @staticmethod
+    def _rows(cur) -> list[dict]:
+        """Convierte cursor DuckDB en lista de dicts con fechas ISO."""
+        cols = [d[0] for d in cur.description]
+        out = []
+        for row in cur.fetchall():
+            d = dict(zip(cols, row))
+            f = d.get("fecha")
+            if isinstance(f, date):
+                d["fecha"] = f.isoformat()
+            out.append(d)
+        return out
+
+    def evolucion_filtrada(
+        self,
+        entidad_a: str,
+        entidad_b: str,
+        *,
+        desde: date | None = None,
+        hasta: date | None = None,
+        tipo: str | None = None,
+        min_confianza: float = 0.0,
+        limit: int | None = None,
+    ) -> dict:
+        """Evolución temporal bidireccional entre dos entidades en una sola query
+        SQL (ambas direcciones + filtros fecha/tipo/confianza). `predicado`
+        siempre presente (NULL si esquema viejo).
+
+        Fix B3: si ``limit`` no es None, se aplica ``LIMIT limit+1`` en SQL para
+        detectar truncamiento y se devuelve un dict ``{items, truncado, limit}``;
+        si ``limit`` es None, se devuelven todas las filas (comportamiento
+        legacy) en un dict ``{items, truncado: False, limit: None}``.
+        """
+        cond, params = self._relation_filters(
+            desde=desde, hasta=hasta, tipo=tipo, min_confianza=min_confianza,
+        )
+        cond.append(
+            "((r.origen_id = ? AND r.destino_id = ?) "
+            "OR (r.origen_id = ? AND r.destino_id = ?))"
+        )
+        params.extend([entidad_a, entidad_b, entidad_b, entidad_a])
+
+        sql = f"""
+            SELECT r.id, r.figura_slug, r.origen_id, r.destino_id, r.tipo,
+                   {self._predicado_select()},
+                   r.fecha, r.confianza, r.metodo,
+                   e_o.nombre AS origen_nombre,
+                   e_d.nombre AS destino_nombre
+            FROM relations r
+            LEFT JOIN entities e_o ON r.origen_id  = e_o.entity_id
+            LEFT JOIN entities e_d ON r.destino_id = e_d.entity_id
+            WHERE {" AND ".join(cond)}
+            ORDER BY r.fecha, r.id
+        """
+        if limit is not None:
+            limit = max(1, min(int(limit), 2000))
+            sql = sql + " LIMIT ?"
+            params = params + [limit + 1]
+        rows = self._rows(self._conn.execute(sql, params))
+        truncado = limit is not None and len(rows) > limit
+        items = rows[:limit] if (limit is not None and truncado) else rows
+        for it in items:
+            it.setdefault("predicado", None)
+        return {"items": items, "truncado": truncado, "limit": limit}
+
+    def ego(
+        self,
+        entity_id: str,
+        *,
+        profundidad: int = 1,
+        desde: date | None = None,
+        hasta: date | None = None,
+        tipo: str | None = None,
+        min_confianza: float = 0.0,
+        limit: int = 500,
+    ) -> dict:
+        """Ego-grafo on-demand de `entity_id` (debe existir).
+
+        profundidad=1: incidentes al centro en SQL (LIMIT limit+1).
+        profundidad=2: suma incidentes a los vecinos directos.
+        Filtros (desde/hasta/tipo/min_confianza) van al WHERE; LIMIT va temprano.
+        `truncado=True` si se pidió limit+1 y llegaron más de `limit` filas.
+        Deduplica por `r.id` (una arista centro↔vecino aparece en ambos pasos).
+        No llama a `self.relations(...)` sin filtro de entidad.
+        """
+        if profundidad not in (1, 2):
+            profundidad = 1
+        limit = max(1, min(int(limit), 2000))
+
+        cond_base, params_base = self._relation_filters(
+            desde=desde, hasta=hasta, tipo=tipo, min_confianza=min_confianza,
+        )
+
+        def _ego_select(extra_cond: list[str], extra_params: list, lim: int) -> list[dict]:
+            cond = list(cond_base) + extra_cond
+            params = list(params_base) + extra_params
+            sql = f"""
+                SELECT r.id, r.figura_slug, r.origen_id, r.destino_id, r.tipo,
+                       {self._predicado_select()},
+                       r.fecha, r.confianza, r.metodo,
+                       e_o.nombre AS origen_nombre,
+                       e_d.nombre AS destino_nombre
+                FROM relations r
+                LEFT JOIN entities e_o ON r.origen_id  = e_o.entity_id
+                LEFT JOIN entities e_d ON r.destino_id = e_d.entity_id
+                WHERE {" AND ".join(cond)}
+                ORDER BY r.fecha, r.id
+                LIMIT ?
+            """
+            return self._rows(self._conn.execute(sql, params + [lim]))
+
+        # p=1: incidentes al centro (LIMIT limit+1 para detectar truncamiento).
+        # Sólo se ingieren las primeras `limit` filas; la limit+1-ésima se
+        # descarta y NO contamina entidades/vecinos (fix A1).
+        rows_p1 = _ego_select(
+            ["(r.origen_id = ? OR r.destino_id = ?)"], [entity_id, entity_id],
+            lim=limit + 1,
+        )
+        truncado_p1 = len(rows_p1) > limit
+        rows_p1 = rows_p1[:limit]
+
+        vistos: set[int] = set()
+        incidentes: list[dict] = []
+        vecinos: set[str] = set()
+
+        def _ingest(rows: list[dict]) -> None:
+            for r in rows:
+                rid = r.get("id")
+                if rid is not None and rid in vistos:
+                    continue
+                if rid is not None:
+                    vistos.add(rid)
+                incidentes.append(r)
+                vecinos.add(r["origen_id"]); vecinos.add(r["destino_id"])
+
+        _ingest(rows_p1)
+        vecinos.discard(entity_id)
+
+        # p=2: incidentes a vecinos (cupo = limit+1 siempre, se dedup por id)
+        truncado_p2 = False
+        if profundidad == 2 and vecinos:
+            placeholders = ",".join("?" for _ in vecinos)
+            cond_v = [f"(r.origen_id IN ({placeholders}) OR r.destino_id IN ({placeholders}))"]
+            params_v = list(vecinos) + list(vecinos)
+            rows_p2 = _ego_select(cond_v, params_v, lim=limit + 1)
+            truncado_p2 = len(rows_p2) > limit
+            _ingest(rows_p2[:limit])
+
+        # Orden estable (fecha, id) y slice final a `limit`.
+        todas = sorted(incidentes, key=lambda r: (str(r["fecha"]), r.get("id") or 0))
+        truncado = truncado_p1 or truncado_p2 or len(todas) > limit
+        relaciones_out = todas[:limit]
+        for r in relaciones_out:
+            r.setdefault("predicado", None)
+
+        # Entidades = exactamente las que aparecen en relaciones_out + el centro.
+        # Se reconstruyen desde relaciones_out para evitar contaminación por la
+        # fila sentinel (fix A1). Resueltas en una sola query IN (?,?,…) (fix B2).
+        entidades_ids: set[str] = {entity_id}
+        for r in relaciones_out:
+            entidades_ids.add(r["origen_id"])
+            entidades_ids.add(r["destino_id"])
+        entidades = self._entities_by_ids(entidades_ids)
+
+        return {
+            "centro": entity_id,
+            "profundidad": profundidad,
+            "entidades": entidades,
+            "relaciones": relaciones_out,
+            "truncado": truncado,
+            "limit": limit,
+        }
+
+    # ── Stats (C6) ────────────────────────────────────────────────────────
+
+    def stats(self) -> dict:
+        """Conteos rápidos para que el frontend decida si cargar todo el grafo."""
+        n_ent = int(self._conn.execute("SELECT COUNT(*) FROM entities").fetchone()[0])
+        n_rel, fmin, fmax = self._conn.execute(
+            "SELECT COUNT(*), MIN(fecha), MAX(fecha) "
+            "FROM relations WHERE figura_slug = ?", [self.slug],
+        ).fetchone()
+        return {
+            "n_entidades": n_ent,
+            "n_relaciones": int(n_rel or 0),
+            "fecha_min": fmin.isoformat() if fmin else None,
+            "fecha_max": fmax.isoformat() if fmax else None,
+        }
 
     # ── NetworkX ──────────────────────────────────────────────────────────
 
