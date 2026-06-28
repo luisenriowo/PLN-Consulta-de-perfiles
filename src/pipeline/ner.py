@@ -149,6 +149,22 @@ def get_ner_model() -> NERModel:
         model = os.environ.get(
             "TRANSFORMER_NER_MODEL", "PlanTL-GOB-ES/roberta-base-bne-capiter"
         )
-        return TransformerNER(model=model)
+        return TransformerNER(model=model, device=_ner_device())
     model = os.environ.get("SPACY_NER_MODEL", "es_core_news_lg")
     return SpacyNER(model=model)
+
+
+def _ner_device() -> int:
+    """Device para TransformerNER: NER_DEVICE si está, si no auto (GPU si hay CUDA).
+
+    `0` = primera GPU, `-1` = CPU. Auto-detecta CUDA para no quedarse en CPU por
+    accidente cuando hay GPU disponible (clave para el run a escala).
+    """
+    env = os.environ.get("NER_DEVICE")
+    if env is not None:
+        return int(env)
+    try:
+        import torch
+        return 0 if torch.cuda.is_available() else -1
+    except Exception:
+        return -1

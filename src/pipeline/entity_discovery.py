@@ -239,6 +239,7 @@ def descubrir_entidades(
     enriquecer_wikidata: bool = True,
     tipos: frozenset[str] | set[str] | None = None,
     excluir: frozenset[str] | set[str] | None = None,
+    menciones: list[tuple[str, str, str]] | None = None,
 ) -> list[EntityNode]:
     """Descubre y rankea las entidades más relevantes del corpus.
 
@@ -257,6 +258,9 @@ def descubrir_entidades(
         excluir:             Formas canónicas (se normalizan) a descartar como
                              genéricas (default `_GENERICOS`; pasa `set()` para
                              no excluir ninguna).
+        menciones:           Menciones NER ya computadas como (texto, tipo, doc_id).
+                             Si se pasan, se OMITE el NER (clave a escala: NER
+                             persistido por `scripts/ner_corpus.py`).
 
     Returns:
         Lista de EntityNode ordenada por relevancia (n_docs × peso de tipo).
@@ -269,13 +273,16 @@ def descubrir_entidades(
         frozenset(_norm(e) for e in excluir) if excluir is not None else _GENERICOS
     )
 
-    ner    = get_ner_model()
-    textos = [d.texto for d in docs]
-
-    menciones_raw: list[tuple[str, str, str]] = []
-    for doc, menciones in zip(docs, ner(textos)):
-        for m in menciones:
-            menciones_raw.append((m.texto, m.tipo, doc.doc_id))
+    if menciones is not None:
+        # Menciones ya computadas (NER persistido) → no re-correr NER (escala).
+        menciones_raw: list[tuple[str, str, str]] = list(menciones)
+    else:
+        ner    = get_ner_model()
+        textos = [d.texto for d in docs]
+        menciones_raw = []
+        for doc, ms in zip(docs, ner(textos)):
+            for m in ms:
+                menciones_raw.append((m.texto, m.tipo, doc.doc_id))
 
     grupos = _agrupar(menciones_raw)
     grupos = {
