@@ -1,11 +1,32 @@
 [
   {
+    "slug": "keiko",
+    "nombre": "Keiko Fujimori",
+    "tipo": "figura",
+    "rango_fechas": [
+      "2021-09-29",
+      "2026-06-06"
+    ],
+    "n_eventos": 26
+  },
+  {
     "slug": "humala",
     "nombre": "Ollanta Humala",
+    "tipo": "figura",
     "rango_fechas": [
       "2021-01-26",
       "2025-10-20"
     ],
     "n_eventos": 17
+  },
+  {
+    "slug": "roberto-sanchez",
+    "nombre": "Roberto Sánchez",
+    "tipo": "figura",
+    "rango_fechas": [
+      "2021-06-12",
+      "2026-06-06"
+    ],
+    "n_eventos": 15
   }
 ]
