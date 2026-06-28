@@ -16,6 +16,18 @@ graph backbone (`pipeline/entity_discovery.py`, `pipeline/relations.py`,
 `/api/figuras/{slug}/grafo/*`; the topic orchestrator is
 `scripts/precompute_tema.py`. See "Topic-centric pipeline" below.
 
+**Full-archive / open-temporal direction (current target).** Beyond a single
+topic, the project is scaling to a **complete crawl of Andina 2021-2026, all
+topics** (by ID enumeration, `scripts/crawl_andina.py`), and to **open relations
+typed later**: instead of classifying into a fixed taxonomy at extraction time,
+it extracts the **free connecting verb** between two entities (OpenIE-lite,
+`relations.relacion_abierta`) and keeps **one dated edge per co-occurrence** (a
+**temporal multigraph** — the same pair has many dated edges, so a relationship's
+**evolution** over time is reconstructable via `graph.evolucion`). Types are
+*induced later* (predicate clustering). Builder: `scripts/build_open_graph.py`.
+The relation goal is now a general knowledge-graph explorer, not only a focused
+political graph. Plan: `reports/roadmap-paper.md`. See "Open-temporal relations".
+
 ## Commands
 
 ```bash
@@ -61,6 +73,13 @@ python scripts/export_entidades_gold.py <slug> [--top 60]   # → annotation/gol
 python -m eval.entities annotation/gold_entidades/<slug>.csv   # actor precision/recall, type accuracy, splits
 python scripts/test_entities.py             # validate the entity harness with known-answer fixtures (no gold/network)
 python scripts/test_multifuente.py          # validate multi-source layer (multi_fuente signal, cross-source dedup, collector dispatch)
+
+# Full Andina crawl by ID (all topics, 2021-2026; resumable via checkpoint)
+python scripts/crawl_andina.py --desde-id 825000 --hasta-id 1100000 \
+  --salida data/andina_crawl.jsonl --delay 0.4 --desde 2021-01-01 --hasta 2026-12-31
+# Build the TEMPORAL OPEN-relation graph from a corpus (jsonl crawl or parquet)
+python scripts/build_open_graph.py <slug> --jsonl data/andina_crawl.jsonl --top-n 300
+python scripts/build_open_graph.py <slug> --corpus-slug <otro> --top-n 40   # reuse a parquet corpus
 
 # Smoke test ingest (lightweight, no full scrape)
 python scripts/smoke_ingest.py
@@ -125,9 +144,13 @@ These are the data contract — almost immutable. Changes affect all four condit
 
 ```
 data/
-  figuras.json                  # manifest of precomputed figures
+  figuras.json                  # manifest of precomputed figures/topics
   figuras_dinamicas.json        # figures created via the web UI
-  corpus_<slug>.parquet         # ingested + annotated corpus per figure
+  corpus_<slug>.parquet         # ingested + annotated corpus per figure/topic
+  graph_<slug>.duckdb           # knowledge graph per figure/topic (entities + relations)
+  andina_crawl.jsonl            # full-archive crawl output (scripts/crawl_andina.py)
+  andina_crawl.ckpt.json        # crawl checkpoint (resume point: ultimo_id, ok, vistos)
+  wikidata_cache.json           # cached Wikidata lookups
   salidas/<slug>/
     b0_lead.json
     b1_extractive.json
@@ -136,6 +159,8 @@ data/
   jobs/<slug>.json              # background job state (running/done/error)
   jobs/<slug>.log               # job stdout
 ```
+Gold annotations live under `annotation/` (not `data/`): `gold_relaciones/`,
+`gold_entidades/`, plus the `GUIA_ANOTACION.md` conventions. Reports/roadmap in `reports/`.
 
 ### Adding a new figure
 
@@ -221,8 +246,12 @@ initials (NDP/FHG/HTC) don't enter the graph as spurious ORG entities.
 
 **Graph schemas** (`src/schemas.py`): `EntityNode` (graph node; `entity_id` is a
 Wikidata QID when linked, else a slug), `RelationResult` (classifier output),
-`RelationEdge` (graph edge with `evidencia`, `fuentes`, `confianza`, `metodo`).
-`metodo` ∈ {rules, llm, hybrid, human} preserves provenance for auditing/curation.
+`RelationEdge` (graph edge with `evidencia`, `fuentes`, `confianza`, `metodo`,
+plus `predicado` = the OPEN relation verb and `tipo` now **nullable** = the
+category, assigned later or left None). `metodo` ∈ {rules, llm, hybrid, human,
+openie} preserves provenance for auditing/curation. An edge can be **typed**
+(`tipo` set, `predicado` None — the classifier route) or **open** (`predicado`
+set, `tipo` None — the OpenIE/temporal route, typed later).
 
 **Storage** (`src/storage/graph.py`): one `KnowledgeGraph` per slug, file
 `data/graph_<slug>.duckdb`. DuckDB for SQL queries (filter relations by date /
@@ -236,6 +265,34 @@ evidence inline, fetched on demand per edge).
 The manifest (`data/figuras.json`) now tags each entry with `tipo`:
 `"figura"` (4-condition timeline) or `"tema"` (graph; carries `n_entidades`,
 `n_relaciones`, `rango_fechas` instead of `n_eventos`).
+
+### Open-temporal relations (OpenIE, type later) + full Andina crawl
+
+Parallel regime to the typed topic graph, for the full-archive direction.
+
+**Full crawl** (`scripts/crawl_andina.py`): Andina's *search* is capped (~300
+results/query, ~2021). To get **everything, all topics, incl. pre-2021 history**,
+enumerate article IDs — `andina.pe/agencia/noticia-x-<id>.aspx` accepts any slug
+and redirects to the real note. Resumable (checkpoint `data/andina_crawl.ckpt.json`),
+date-filtered, writes `data/andina_crawl.jsonl` (same 5-field schema as the corpus
+parquet). Measured: ~96% of IDs are notes, ~2 ids/s, ~130 notes/calendar-day; id
+1.0M ≈ 2024-09; **2021-2026 ≈ ids 828k–1.085M (~38 h)**. ⚠ English notes are mixed
+in (Andina's English service) — filter by language.
+
+**Open relations (OpenIE-lite).** `relations.relacion_abierta(oracion, a, b, nlp)`
+/ `relations.extraer_relaciones_abiertas(docs, entidades)` return the **free
+connecting verb** between two entities via the dependency path (surface form —
+`_nlp_dep` disables the lemmatizer). No taxonomy at extraction; the **type is
+induced later** (predicate clustering, WS3 in `reports/roadmap-paper.md`).
+
+**Temporal multigraph.** `scripts/build_open_graph.py` consumes a corpus
+(`--jsonl` crawl or `corpus_<slug>.parquet` via `--corpus-slug`), applies a
+language filter (`es_espanol`), discovers entities, then inserts **one dated open
+edge per co-occurrence** (deduped by pair+date+predicate) — it does **not**
+collapse per pair. So the same pair has many dated edges and
+`graph.evolucion(a, b)` (bidirectional, date-sorted) reconstructs how the
+relationship **evolves over time**. Validated on the roberto-sanchez corpus:
+40 entities, 5573 dated open edges.
 
 ### Web app and background jobs (`src/app/`)
 
