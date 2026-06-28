@@ -55,19 +55,36 @@ Conclusión.
 - ⬜ **Datasheet** (origen, recolección, ética, usos).
 
 ## F2 · Backbone NLP a escala  → §Método
-- 🟡 **NER**: spaCy md (dev). **Falta**: comparar md/lg/transformer y reportar; batch a escala.
-- 🟡 **Resolución de entidades**: contención + filtro actor (PER+ORG) + Wikidata.
-  **Falta**: dedup de QIDs, coref básica, escalar (blocking), evaluar (gold de entidades).
-- ✅ **Extracción de relaciones ABIERTAS** (OpenIE-lite, dep-path) + modelo TEMPORAL
-  (arista fechada por co-ocurrencia, no colapsa; `extraer_relaciones_abiertas`, `build_open_graph.py`).
-- ⬜ **Mejorar el predicado**: filtrar verbos de reporte (dijo/señaló), capturar frase
-  (verbo+preposición), lematizar; evaluar precisión de la extracción.
+> Hallazgos detallados (con números): **`reports/resultados-escala.md`**.
+- ✅ **NER transformer a escala**: `mrm8488/bert-spanish-cased-finetuned-ner` (BETO),
+  GPU `cu128`, ventaneo por oraciones (512 tok), menciones persistidas (376.846).
+  PlanTL/BSC gated (401). **Falta**: ablación md/lg/transformer con gold (F6).
+- ✅ **Resolución de entidades escalada (blocking)**: índice token→grupos,
+  376.846 menciones → actores en ~53 s; filtro actor (PER+ORG) + **fragmentos**.
+  **Hallazgo**: sobre-fusión por tokens comunes (Policía Nacional⊃Min. Salud,
+  JNE⊃Tribunal Constitucional). **Falta**: contención por token distintivo, dedup
+  QIDs, coref; **gold de entidades listo** (`gold_entidades/andina-v1.csv`).
+- ✅ **Relaciones ABIERTAS** (OpenIE-lite, dep-path) + modelo TEMPORAL
+  (arista fechada por co-ocurrencia, no colapsa; `build_open_graph.py`).
+- ✅ **Predicado mejorado**: filtra verbos de reporte y vacíos, captura frase
+  (verbo+preposición); **match por límite de palabra** (fix del *substring* que
+  explotaba el grafo: 379k→128k aristas); **precision-first** (sin fallback a
+  cualquier verbo; co-ocurrencia≠relación; 163k→93k). Gold OpenIE listo para evaluar.
 
 ## F3 · Tipado INDUCIDO de relaciones  → §Método + §Resultados
-- ⬜ **Embedding de predicados** (frase/verbo) + **clustering** → tipos emergentes.
-- ⬜ **Etiquetado humano de clusters** (nombrar cada cluster con un tipo interpretable).
-- ⬜ **Mapeo arista→tipo** vía su cluster; persistir `tipo` (hoy nullable en el schema).
-- ⬜ **Evaluación**: coherencia de clusters, cobertura, y gold de tipos (P/R/F1).
+> Hallazgos (con números): **`reports/resultados-escala.md`** §5.
+- ✅ **Embedding de predicados + clustering** → tipos emergentes (`relation_typing.py`,
+  `export_relation_type_clusters.py`). Fix de escala: clusterizar predicados ÚNICOS
+  (6.703), no aristas (93k→OOM). Umbral 0.10 (0.35 colapsaba en mega-cluster).
+  **454 clusters** sobre andina-v1.
+- 🟡 **Etiquetado humano de clusters**: CSV listo
+  (`relation_type_clusters.csv`, anotar `tipo_label`). **Falta**: que lo etiqueten.
+- ✅ **Mapeo arista→tipo** vía cluster (`apply_relation_type_labels.py`,
+  `relations.tipo` nullable + `update_relation_type`).
+- 🟡 **Evaluación**: arnés listo (`eval/relation_typing`, `eval/openie`,
+  `test_relation_typing` ✅). **Falta**: correr contra el gold etiquetado.
+- 💡 **Hallazgo**: a escala la relación típica es una **acción genérica** (~46 % de
+  aristas), no la taxonomía política → justifica "abrir y tipar después".
 - ✅ **Comparación reglas vs LLM** (ruta política, 135 ej.): 0.27 → 0.75. → §Resultados/hallazgo.
 - ⬜ **(opcional) LLM on-demand** para tipar al explorar (escala con la exploración, no el corpus).
 
