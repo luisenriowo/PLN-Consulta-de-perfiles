@@ -167,12 +167,9 @@ def _predicado(doc, ent_a: str, ent_b: str) -> str | None:
         pred = _frase_predicado(root)
         if pred:
             return pred
-    # Verbos de reporte como raíz suelen alojar la relación real en subordinadas.
-    for verbo in doc:
-        if verbo.pos_ in {"VERB", "AUX"}:
-            pred = _frase_predicado(verbo)
-            if pred:
-                return pred
+    # Precision-first: NO se cae a "cualquier verbo de la oración". Si ningún
+    # verbo CONECTA a las dos entidades (camino) ni es la acción principal (raíz),
+    # no hay relación entre ELLAS → None (co-ocurrencia ≠ relación).
     return None
 
 
