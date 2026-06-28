@@ -111,7 +111,10 @@ def cargar_modelo(nombre: str = MODELO_DEFECTO):
 
 
 def link_entities(
-    docs: list[Documento], *, gazetteer: dict | None = None, modelo: str = MODELO_DEFECTO
+    docs: list[Documento],
+    *,
+    gazetteer: dict | None = None,
+    modelo: str = MODELO_DEFECTO,
 ) -> list[Documento]:
     """Detecta entidades y resuelve menciones a entidades canónicas.
 

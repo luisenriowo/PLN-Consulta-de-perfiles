@@ -43,7 +43,7 @@ class B1Extractive:
                     fecha=c.fecha_normalizada,
                     resumen=resumen,
                     fuentes=list(c.fuentes),
-                    confianza=1.0,   # fiel por construcción (texto copiado)
+                    confianza=1.0,  # fiel por construcción (texto copiado)
                     cluster_id=c.cluster_id,
                 )
             )

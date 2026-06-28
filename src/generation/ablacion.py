@@ -38,12 +38,12 @@ class Ablacion:
             try:
                 resumen = _llm.completar(_SYSTEM, user)
             except Exception:
-                continue   # cuota agotada u otro error → descarta
+                continue  # cuota agotada u otro error → descarta
             salida.append(
                 TimelineEntry(
                     fecha=c.fecha_normalizada,
                     resumen=resumen,
-                    fuentes=list(c.fuentes),   # mismas fuentes, resumen NO anclado
+                    fuentes=list(c.fuentes),  # mismas fuentes, resumen NO anclado
                     confianza=None,
                     cluster_id=c.cluster_id,
                 )

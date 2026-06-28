@@ -19,15 +19,16 @@ from src.generation import _llm
 from src.generation.ablacion import Ablacion
 from src.generation.b0_lead import B0Lead
 from src.generation.b1_extractive import B1Extractive
+from src.generation.base import GenerationCondition
 from src.generation.sistema_rag import SistemaRAG
 from src.pipeline import cluster, salience
 from src.schemas import Documento
 
 CORPUS = Path("data/corpus_humala.parquet")
-SALIDAS = Path("data/salidas/humala")   # layout por-figura (slug=humala)
+SALIDAS = Path("data/salidas/humala")  # layout por-figura (slug=humala)
 
 # B0/B1 no usan LLM. Sistema/Ablación sí: solo se añaden si hay API key.
-CONDICIONES = [B0Lead(), B1Extractive()]
+CONDICIONES: list[GenerationCondition] = [B0Lead(), B1Extractive()]
 if _llm.disponible():
     CONDICIONES += [SistemaRAG(), Ablacion()]
 
@@ -37,10 +38,13 @@ def cargar_protagonistas() -> list[Documento]:
     df = df[df["humala_protagonista"]]
     return [
         Documento(
-            doc_id=r.doc_id, fuente=r.fuente, url=r.url,
-            fecha_pub=date.fromisoformat(r.fecha_pub), texto=r.texto,
+            doc_id=r["doc_id"],
+            fuente=r["fuente"],
+            url=r["url"],
+            fecha_pub=date.fromisoformat(r["fecha_pub"]),
+            texto=r["texto"],
         )
-        for r in df.itertuples()
+        for r in df.to_dict(orient="records")
     ]
 
 
@@ -71,7 +75,8 @@ def main() -> None:
         ruta.write_text(
             json.dumps(
                 [{**e.model_dump(), "fecha": e.fecha.isoformat()} for e in entries],
-                ensure_ascii=False, indent=2,
+                ensure_ascii=False,
+                indent=2,
             ),
             encoding="utf-8",
         )

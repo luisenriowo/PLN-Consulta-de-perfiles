@@ -14,7 +14,7 @@ Para AÑADIR una figura nueva:
        - `familia_otros`: ids de homónimos a EXCLUIR del protagonismo.
        - `queries`: términos de búsqueda en Andina (términos sueltos, no frases).
        - `desde`/`hasta`: ventana temporal alcanzable.
-  2. Corre `python scripts/precompute_figura.py <slug>`.
+  2. Corre `uv run python scripts/precompute_figura.py <slug>`.
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ from datetime import date
 from pathlib import Path
 
 from src.ingest._util import FECHA_CORTE_HUMALA, FECHA_INICIO_HUMALA
+
 # Fuente única del gazetteer/familia de Humala (definidos en el backbone):
 from src.pipeline.entities import _GAZETTEER as _GZ_HUMALA
 from src.pipeline.entities import _norm
@@ -75,8 +76,12 @@ FIGURAS: dict[str, FiguraConfig] = {
         nombre="Ollanta Humala",
         sujeto_id="humala:ollanta",
         queries=(
-            "Ollanta Humala", "Odebrecht", "Gasoducto Sur", "Madre Mía",
-            "Lava Jato", "Nadine Heredia",
+            "Ollanta Humala",
+            "Odebrecht",
+            "Gasoducto Sur",
+            "Madre Mía",
+            "Lava Jato",
+            "Nadine Heredia",
         ),
         gazetteer=_GZ_HUMALA,
         familia_otros=frozenset(_FAM_HUMALA),
@@ -89,7 +94,11 @@ FIGURAS: dict[str, FiguraConfig] = {
         nombre="Keiko Fujimori",
         sujeto_id="fujimori:keiko",
         queries=(
-            "Keiko Fujimori", "Fuerza Popular", "Cócteles", "Lava Jato", "Fujimori",
+            "Keiko Fujimori",
+            "Fuerza Popular",
+            "Cócteles",
+            "Lava Jato",
+            "Fujimori",
         ),
         gazetteer={
             "keiko fujimori": ("fujimori:keiko", "Keiko Fujimori"),
@@ -110,7 +119,10 @@ FIGURAS: dict[str, FiguraConfig] = {
         nombre="Roberto Sánchez",
         sujeto_id="sanchez:roberto",
         queries=(
-            "Roberto Sánchez", "Sánchez Palomino", "Juntos por el Perú", "Mincetur",
+            "Roberto Sánchez",
+            "Sánchez Palomino",
+            "Juntos por el Perú",
+            "Mincetur",
         ),
         gazetteer={
             "roberto sanchez": ("sanchez:roberto", "Roberto Sánchez"),
@@ -128,12 +140,19 @@ TEMAS: dict[str, TemaConfig] = {
         slug="elecciones-2021-2026",
         nombre="Elecciones generales 2021–2026",
         queries=(
-            "elecciones generales", "segunda vuelta", "JNE", "ONPE",
-            "Pedro Castillo", "Keiko Fujimori", "Perú Libre", "Fuerza Popular",
-            "Dina Boluarte", "vacancia presidencial",
+            "elecciones generales",
+            "segunda vuelta",
+            "JNE",
+            "ONPE",
+            "Pedro Castillo",
+            "Keiko Fujimori",
+            "Perú Libre",
+            "Fuerza Popular",
+            "Dina Boluarte",
+            "vacancia presidencial",
         ),
         top_n=20,
-        fuentes=("andina", "gdelt"),   # multi-fuente: Andina + medios independientes
+        fuentes=("andina", "gdelt"),  # multi-fuente: Andina + medios independientes
     ),
 }
 
@@ -167,14 +186,15 @@ def cargar_tema(slug: str) -> TemaConfig:
             f"Temas: {sorted(TEMAS)} | Figuras: {sorted(FIGURAS)}"
         ) from None
     return TemaConfig(
-        slug=fig.slug, nombre=fig.nombre, queries=fig.queries,
-        desde=fig.desde, hasta=fig.hasta,
+        slug=fig.slug,
+        nombre=fig.nombre,
+        queries=fig.queries,
+        desde=fig.desde,
+        hasta=fig.hasta,
     )
 
 
-def construir_config(
-    slug: str, nombre: str, homonimos=(), terminos=()
-) -> FiguraConfig:
+def construir_config(slug: str, nombre: str, homonimos=(), terminos=()) -> FiguraConfig:
     """Arma un FiguraConfig desde input de formulario.
 
     El gazetteer exige el NOMBRE COMPLETO para enlazar (vía contención de
@@ -193,28 +213,38 @@ def construir_config(
         familia.add(hid)
     queries = tuple([nombre] + [t.strip() for t in terminos if t and t.strip()])
     return FiguraConfig(
-        slug=slug, nombre=nombre, sujeto_id=sid, queries=queries,
-        gazetteer=gazetteer, familia_otros=frozenset(familia),
+        slug=slug,
+        nombre=nombre,
+        sujeto_id=sid,
+        queries=queries,
+        gazetteer=gazetteer,
+        familia_otros=frozenset(familia),
     )
 
 
 def _cfg_to_json(c: FiguraConfig) -> dict:
     return {
-        "slug": c.slug, "nombre": c.nombre, "sujeto_id": c.sujeto_id,
+        "slug": c.slug,
+        "nombre": c.nombre,
+        "sujeto_id": c.sujeto_id,
         "queries": list(c.queries),
         "gazetteer": {k: list(v) for k, v in c.gazetteer.items()},
         "familia_otros": sorted(c.familia_otros),
-        "desde": c.desde.isoformat(), "hasta": c.hasta.isoformat(),
+        "desde": c.desde.isoformat(),
+        "hasta": c.hasta.isoformat(),
     }
 
 
 def _cfg_from_json(d: dict) -> FiguraConfig:
     return FiguraConfig(
-        slug=d["slug"], nombre=d["nombre"], sujeto_id=d["sujeto_id"],
+        slug=d["slug"],
+        nombre=d["nombre"],
+        sujeto_id=d["sujeto_id"],
         queries=tuple(d["queries"]),
         gazetteer={k: tuple(v) for k, v in d["gazetteer"].items()},
         familia_otros=frozenset(d["familia_otros"]),
-        desde=date.fromisoformat(d["desde"]), hasta=date.fromisoformat(d["hasta"]),
+        desde=date.fromisoformat(d["desde"]),
+        hasta=date.fromisoformat(d["hasta"]),
     )
 
 
@@ -227,6 +257,12 @@ def _cargar_dinamicas() -> dict[str, FiguraConfig]:
 
 def guardar_dinamica(cfg: FiguraConfig) -> None:
     _DINAMICAS.parent.mkdir(parents=True, exist_ok=True)
-    data = json.loads(_DINAMICAS.read_text(encoding="utf-8")) if _DINAMICAS.exists() else {}
+    data = (
+        json.loads(_DINAMICAS.read_text(encoding="utf-8"))
+        if _DINAMICAS.exists()
+        else {}
+    )
     data[cfg.slug] = _cfg_to_json(cfg)
-    _DINAMICAS.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    _DINAMICAS.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )

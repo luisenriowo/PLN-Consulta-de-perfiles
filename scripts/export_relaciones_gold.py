@@ -25,6 +25,7 @@ import random
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -37,9 +38,16 @@ from src.storage import KnowledgeGraph
 log = logging.getLogger(__name__)
 
 CAMPOS = [
-    "entity_a", "entity_b", "oracion", "doc_id", "fecha",
-    "triple_sujeto", "triple_verbo", "triple_objeto",
-    "tipo_sugerido", "tipo_gold",
+    "entity_a",
+    "entity_b",
+    "oracion",
+    "doc_id",
+    "fecha",
+    "triple_sujeto",
+    "triple_verbo",
+    "triple_objeto",
+    "tipo_sugerido",
+    "tipo_gold",
 ]
 SALIDA_DIR = Path("annotation/gold_relaciones")
 
@@ -56,22 +64,33 @@ def _entidades_del_grafo(slug: str) -> list[EntityNode]:
                 alias = json.loads(alias)
             except (json.JSONDecodeError, TypeError):
                 alias = []
-        nodos.append(EntityNode(
-            entity_id=e["entity_id"], nombre=e["nombre"], tipo=e["tipo"],
-            alias=list(alias or []),
-            n_docs=int(e.get("n_docs", 0) or 0),
-            n_menciones=int(e.get("n_menciones", 0) or 0),
-        ))
+        nodos.append(
+            EntityNode(
+                entity_id=e["entity_id"],
+                nombre=e["nombre"],
+                tipo=e["tipo"],
+                alias=list(alias or []),
+                n_docs=int(e.get("n_docs", 0) or 0),
+                n_menciones=int(e.get("n_menciones", 0) or 0),
+            )
+        )
     return nodos
 
 
 def _docs(slug: str) -> list[Documento]:
     df = pd.read_parquet(manifiesto.corpus_path(slug))
-    return [
-        Documento(doc_id=r.doc_id, fuente=r.fuente, url=r.url,
-                  fecha_pub=pd.Timestamp(r.fecha_pub).date(), texto=r.texto)
-        for r in df.itertuples()
-    ]
+    docs = []
+    for r in df.to_dict(orient="records"):
+        docs.append(
+            Documento(
+                doc_id=r["doc_id"],
+                fuente=r["fuente"],
+                url=r["url"],
+                fecha_pub=pd.Timestamp(r["fecha_pub"]).date(),  # ty: ignore[invalid-argument-type]
+                texto=r["texto"],
+            )
+        )
+    return docs
 
 
 def exportar(slug: str, *, n: int = 140, semilla: int = 42) -> tuple[Path, int]:
@@ -95,14 +114,17 @@ def exportar(slug: str, *, n: int = 140, semilla: int = 42) -> tuple[Path, int]:
     for cooc in extraer_coocurrencias(docs, entidades):
         por_tipo[reglas.classify(cooc).tipo].append(cooc)
         total += 1
-    log.info("co-ocurrencias=%d  tipos sugeridos=%s",
-             total, {t: len(v) for t, v in por_tipo.items()})
+    log.info(
+        "co-ocurrencias=%d  tipos sugeridos=%s",
+        total,
+        {t: len(v) for t, v in por_tipo.items()},
+    )
 
     # Muestreo estratificado: reparte n entre los tipos presentes.
     rng = random.Random(semilla)
     tipos = list(por_tipo)
     por_cada = max(1, n // max(1, len(tipos)))
-    seleccion: list[tuple[str, object]] = []
+    seleccion: list[tuple[str, Any]] = []
     for t in tipos:
         grupo = list(por_tipo[t])
         rng.shuffle(grupo)
@@ -116,18 +138,26 @@ def exportar(slug: str, *, n: int = 140, semilla: int = 42) -> tuple[Path, int]:
         w.writeheader()
         for tipo_sug, c in seleccion:
             tr = c.triple or ("", "", "")
-            w.writerow({
-                "entity_a": c.entity_a.nombre, "entity_b": c.entity_b.nombre,
-                "oracion": c.oracion, "doc_id": c.doc_id,
-                "fecha": c.fecha.isoformat(),
-                "triple_sujeto": tr[0], "triple_verbo": tr[1], "triple_objeto": tr[2],
-                "tipo_sugerido": tipo_sug, "tipo_gold": "",
-            })
+            w.writerow(
+                {
+                    "entity_a": c.entity_a.nombre,
+                    "entity_b": c.entity_b.nombre,
+                    "oracion": c.oracion,
+                    "doc_id": c.doc_id,
+                    "fecha": c.fecha.isoformat(),
+                    "triple_sujeto": tr[0],
+                    "triple_verbo": tr[1],
+                    "triple_objeto": tr[2],
+                    "tipo_sugerido": tipo_sug,
+                    "tipo_gold": "",
+                }
+            )
     return salida, len(seleccion)
 
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
+
     load_dotenv()
     os.environ.setdefault("SPACY_DEP_MODEL", "es_core_news_md")
     logging.basicConfig(level=logging.INFO, format="%(levelname)-8s %(message)s")
@@ -142,6 +172,8 @@ if __name__ == "__main__":
 
     ruta, k = exportar(args[0], n=n)
     print(f"\nExportadas {k} filas -> {ruta}")
-    print("Completa la columna 'tipo_gold' (alianza|conflicto|pertenencia|"
-          "nombramiento|acusacion|ruptura|mencion) y evalúa con:")
+    print(
+        "Completa la columna 'tipo_gold' (alianza|conflicto|pertenencia|"
+        "nombramiento|acusacion|ruptura|mencion) y evalúa con:"
+    )
     print(f"  python -m eval.relations {ruta}")

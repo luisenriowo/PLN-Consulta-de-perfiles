@@ -18,7 +18,7 @@ import functools
 from src.pipeline.preprocess import segmentar_oraciones
 
 MODELO_NLI = "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli"
-UMBRAL_ENTAILMENT = 0.5   # prob mínima de entailment para considerar respaldada
+UMBRAL_ENTAILMENT = 0.5  # prob mínima de entailment para considerar respaldada
 
 
 @functools.lru_cache(maxsize=1)
@@ -45,7 +45,9 @@ def _probs(premisa: str, hipotesis: str) -> dict[str, float]:
     return {id2label[i]: probs[i] for i in range(len(probs))}
 
 
-def respaldado(resumen: str, premisa: str, *, umbral: float = UMBRAL_ENTAILMENT) -> bool:
+def respaldado(
+    resumen: str, premisa: str, *, umbral: float = UMBRAL_ENTAILMENT
+) -> bool:
     """True si TODA oración del resumen está implicada por la premisa."""
     if not premisa.strip():
         return False

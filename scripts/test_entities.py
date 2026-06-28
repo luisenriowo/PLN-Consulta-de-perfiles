@@ -50,8 +50,12 @@ def test_agrupar_contencion() -> None:
 
 
 def test_es_actor() -> None:
-    assert _es_actor({"tipo": "PER", "nombre": "Keiko Fujimori"}, _TIPOS_ACTOR, _GENERICOS)
-    assert _es_actor({"tipo": "ORG", "nombre": "Fuerza Popular"}, _TIPOS_ACTOR, _GENERICOS)
+    assert _es_actor(
+        {"tipo": "PER", "nombre": "Keiko Fujimori"}, _TIPOS_ACTOR, _GENERICOS
+    )
+    assert _es_actor(
+        {"tipo": "ORG", "nombre": "Fuerza Popular"}, _TIPOS_ACTOR, _GENERICOS
+    )
     assert not _es_actor({"tipo": "LOC", "nombre": "Lima"}, _TIPOS_ACTOR, _GENERICOS)
     assert not _es_actor({"tipo": "MISC", "nombre": "Ley"}, _TIPOS_ACTOR, _GENERICOS)
     # Genérico aunque sea ORG ("Estado").
@@ -61,28 +65,41 @@ def test_es_actor() -> None:
 
 def test_descubrir_filtra() -> None:
     docs = [
-        Documento(doc_id=f"andina:{i}", fuente="andina.pe", url="u",
-                  fecha_pub=date(2021, 1, 1), texto=f"texto {i}")
+        Documento(
+            doc_id=f"andina:{i}",
+            fuente="andina.pe",
+            url="u",
+            fecha_pub=date(2021, 1, 1),
+            texto=f"texto {i}",
+        )
         for i in range(3)
     ]
     menciones_por_doc = [
-        [EntidadMencion(texto="Keiko Fujimori", tipo="PER", inicio=0, fin=1),
-         EntidadMencion(texto="Lima", tipo="LOC", inicio=2, fin=3)],
-        [EntidadMencion(texto="Keiko Fujimori", tipo="PER", inicio=0, fin=1),
-         EntidadMencion(texto="Fuerza Popular", tipo="ORG", inicio=2, fin=3)],
-        [EntidadMencion(texto="Estado", tipo="ORG", inicio=0, fin=1),
-         EntidadMencion(texto="Pedro Castillo", tipo="PER", inicio=2, fin=3)],
+        [
+            EntidadMencion(texto="Keiko Fujimori", tipo="PER", inicio=0, fin=1),
+            EntidadMencion(texto="Lima", tipo="LOC", inicio=2, fin=3),
+        ],
+        [
+            EntidadMencion(texto="Keiko Fujimori", tipo="PER", inicio=0, fin=1),
+            EntidadMencion(texto="Fuerza Popular", tipo="ORG", inicio=2, fin=3),
+        ],
+        [
+            EntidadMencion(texto="Estado", tipo="ORG", inicio=0, fin=1),
+            EntidadMencion(texto="Pedro Castillo", tipo="PER", inicio=2, fin=3),
+        ],
     ]
 
     original = ed.get_ner_model
-    ed.get_ner_model = lambda: (lambda textos: menciones_por_doc)
+    ed.get_ner_model = lambda: lambda textos: menciones_por_doc  # ty: ignore[invalid-assignment]
     try:
         nodos = descubrir_entidades(docs, top_n=10, enriquecer_wikidata=False)
     finally:
         ed.get_ner_model = original
 
     nombres = [n.nombre for n in nodos]
-    assert set(nombres) == {"Keiko Fujimori", "Fuerza Popular", "Pedro Castillo"}, nombres
+    assert set(nombres) == {"Keiko Fujimori", "Fuerza Popular", "Pedro Castillo"}, (
+        nombres
+    )
     assert "Lima" not in nombres and "Estado" not in nombres, nombres
     # Ranking: Keiko (2 docs × PER) primero.
     assert nodos[0].nombre == "Keiko Fujimori", nombres
@@ -91,22 +108,52 @@ def test_descubrir_filtra() -> None:
 
 def test_eval_entidades() -> None:
     filas = [
-        {"nombre": "Keiko Fujimori", "tipo": "PER", "retenida": "1",
-         "es_actor_gold": "1", "tipo_correcto": "PER", "nombre_canonico": "Keiko Fujimori"},
-        {"nombre": "Lima", "tipo": "LOC", "retenida": "0",
-         "es_actor_gold": "0", "tipo_correcto": "LOC", "nombre_canonico": ""},
-        {"nombre": "Estado", "tipo": "ORG", "retenida": "0",
-         "es_actor_gold": "0", "tipo_correcto": "", "nombre_canonico": ""},
-        {"nombre": "Keiko", "tipo": "PER", "retenida": "1",
-         "es_actor_gold": "1", "tipo_correcto": "PER", "nombre_canonico": "Keiko Fujimori"},
-        {"nombre": "Fuerza Popular", "tipo": "PER", "retenida": "1",
-         "es_actor_gold": "1", "tipo_correcto": "ORG", "nombre_canonico": "Fuerza Popular"},
+        {
+            "nombre": "Keiko Fujimori",
+            "tipo": "PER",
+            "retenida": "1",
+            "es_actor_gold": "1",
+            "tipo_correcto": "PER",
+            "nombre_canonico": "Keiko Fujimori",
+        },
+        {
+            "nombre": "Lima",
+            "tipo": "LOC",
+            "retenida": "0",
+            "es_actor_gold": "0",
+            "tipo_correcto": "LOC",
+            "nombre_canonico": "",
+        },
+        {
+            "nombre": "Estado",
+            "tipo": "ORG",
+            "retenida": "0",
+            "es_actor_gold": "0",
+            "tipo_correcto": "",
+            "nombre_canonico": "",
+        },
+        {
+            "nombre": "Keiko",
+            "tipo": "PER",
+            "retenida": "1",
+            "es_actor_gold": "1",
+            "tipo_correcto": "PER",
+            "nombre_canonico": "Keiko Fujimori",
+        },
+        {
+            "nombre": "Fuerza Popular",
+            "tipo": "PER",
+            "retenida": "1",
+            "es_actor_gold": "1",
+            "tipo_correcto": "ORG",
+            "nombre_canonico": "Fuerza Popular",
+        },
     ]
     m = evalent.evaluar(filas)
     assert abs(m["actor_precision"] - 1.0) < 1e-9, m
     assert abs(m["actor_recall"] - 1.0) < 1e-9, m
-    assert abs(m["type_accuracy"] - 0.75) < 1e-9, m   # Fuerza Popular: PER vs ORG
-    assert m["splits"] == {"Keiko Fujimori": 2}, m     # "Keiko" + "Keiko Fujimori"
+    assert abs(m["type_accuracy"] - 0.75) < 1e-9, m  # Fuerza Popular: PER vs ORG
+    assert m["splits"] == {"Keiko Fujimori": 2}, m  # "Keiko" + "Keiko Fujimori"
     print("  OK eval/entities: precision/recall/type_accuracy/splits correctos")
 
 

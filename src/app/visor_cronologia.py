@@ -5,7 +5,7 @@ regenera nada: no llama al LLM ni recalcula clusters/embeddings. Lee el esquema
 `TimelineEntry` actual (fecha, resumen, fuentes) y ordena por fecha ascendente.
 Consistente con el producto (§9) y con las convenciones de CLAUDE.md.
 
-Correr:  streamlit run src/app/visor_cronologia.py
+Correr:  uv run streamlit run src/app/visor_cronologia.py
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-# Permite `from src...` al ejecutar con `streamlit run` (añade la raíz del repo).
+# Permite `from src...` al ejecutar con `uv run streamlit run` (añade la raíz del repo).
 _RAIZ = Path(__file__).resolve().parents[2]
 if str(_RAIZ) not in sys.path:
     sys.path.insert(0, str(_RAIZ))
@@ -57,12 +57,14 @@ def cargar_salidas() -> dict[str, list[dict]]:
                 fuentes=e.get("fuentes", []),
                 confianza=e.get("confianza"),
             )
-            entradas.append({
-                "fecha": te.fecha,
-                "resumen": te.resumen,
-                "fuentes": te.fuentes,
-                "cluster_id": te.cluster_id,
-            })
+            entradas.append(
+                {
+                    "fecha": te.fecha,
+                    "resumen": te.resumen,
+                    "fuentes": te.fuentes,
+                    "cluster_id": te.cluster_id,
+                }
+            )
         out[cond] = entradas
     return out
 
@@ -74,10 +76,10 @@ def cargar_fuentes() -> dict[str, dict]:
         return {}
     df = pd.read_parquet(CORPUS, columns=["doc_id", "url", "texto"])
     mapa: dict[str, dict] = {}
-    for r in df.itertuples():
-        lineas = str(r.texto).split("\n")
-        mapa[r.doc_id] = {
-            "url": r.url,
+    for r in df.to_dict(orient="records"):
+        lineas = str(r["texto"]).split("\n")
+        mapa[r["doc_id"]] = {
+            "url": r["url"],
             "titulo": lineas[0] if lineas else "",
             "lead": lineas[1] if len(lineas) > 1 else "",
         }
@@ -121,11 +123,11 @@ def _caja(cond: str, resumen: str | None, *, no_respaldado: bool = False) -> Non
     if no_respaldado:
         st.error(resumen)
     elif cond == "sistema_rag":
-        st.success(resumen)      # anclado = "bueno"
+        st.success(resumen)  # anclado = "bueno"
     elif cond == "ablacion":
-        st.warning(resumen)      # sin anclaje = riesgo de alucinación
+        st.warning(resumen)  # sin anclaje = riesgo de alucinación
     else:
-        st.info(resumen)         # baselines
+        st.info(resumen)  # baselines
 
 
 def vista_principal(salidas, cond, en_rango) -> None:
@@ -152,7 +154,7 @@ def vista_comparacion(salidas, conds, en_rango) -> None:
             d = indice.setdefault(
                 clave, {"fecha": e["fecha"], "fuentes": set(), "cond": {}}
             )
-            d["fuentes"].update(e["fuentes"])   # unión: robusto si divergen
+            d["fuentes"].update(e["fuentes"])  # unión: robusto si divergen
             d["cond"][cond] = e["resumen"]
 
     eventos = sorted(
@@ -187,8 +189,10 @@ def main() -> None:
     salidas = cargar_salidas()
     FUENTES_MAP = cargar_fuentes()
     if not salidas:
-        st.error("No hay salidas en `data/salidas/`. Corre primero "
-                 "`python scripts/run_generation.py`.")
+        st.error(
+            "No hay salidas en `data/salidas/`. Corre primero "
+            "`uv run python scripts/run_generation.py`."
+        )
         st.stop()
 
     conds = [c for c in COND_ORDEN if c in salidas]
@@ -198,17 +202,25 @@ def main() -> None:
     st.sidebar.header("Controles")
     comparar = st.sidebar.toggle("Comparar condiciones", value=False)
     cond_sel = st.sidebar.selectbox(
-        "Condición (vista principal)", conds,
-        format_func=lambda c: ETIQUETAS[c], index=0, disabled=comparar,
+        "Condición (vista principal)",
+        conds,
+        format_func=lambda c: ETIQUETAS[c],
+        index=0,
+        disabled=comparar,
     )
     if fmin < fmax:
         rango = st.sidebar.slider(
-            "Rango de fechas", min_value=fmin, max_value=fmax,
-            value=(fmin, fmax), format="YYYY-MM-DD",
+            "Rango de fechas",
+            min_value=fmin,
+            max_value=fmax,
+            value=(fmin, fmax),
+            format="YYYY-MM-DD",
         )
     else:
         rango = (fmin, fmax)
-    st.sidebar.caption(f"{len(conds)} condiciones cargadas · {len(todas)} entradas totales")
+    st.sidebar.caption(
+        f"{len(conds)} condiciones cargadas · {len(todas)} entradas totales"
+    )
 
     def en_rango(f: date) -> bool:
         return rango[0] <= f <= rango[1]

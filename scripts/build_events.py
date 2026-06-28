@@ -74,22 +74,35 @@ def main() -> None:
 
     print("\n== LÍNEA DE TIEMPO SALIENTE (cronológica) ==")
     for e in salientes:
-        ss = "+".join(k for k, v in salience.senales(e, sujeto_patron=patron).items() if v)
-        print(f"  {e.fecha_normalizada} [{len(e.fuentes):2d}n] {e.pasajes_evidencia[0][:72]}  ({ss})")
+        ss = "+".join(
+            k for k, v in salience.senales(e, sujeto_patron=patron).items() if v
+        )
+        print(
+            f"  {e.fecha_normalizada} [{len(e.fuentes):2d}n] {e.pasajes_evidencia[0][:72]}  ({ss})"
+        )
 
-    filas = [{
-        "cluster_id": e.cluster_id,
-        "fecha_normalizada": e.fecha_normalizada.isoformat(),
-        "n_notas": len(e.fuentes),
-        "n_fechas": len(set(e.fechas_evidencia)),
-        "saliente": e.cluster_id in sal_ids,
-        "senales": "+".join(k for k, v in salience.senales(e, sujeto_patron=patron).items() if v),
-        "fuentes": ",".join(e.fuentes),
-        "pasaje_representativo": e.pasajes_evidencia[0] if e.pasajes_evidencia else "",
-    } for e in eventos]
+    filas = [
+        {
+            "cluster_id": e.cluster_id,
+            "fecha_normalizada": e.fecha_normalizada.isoformat(),
+            "n_notas": len(e.fuentes),
+            "n_fechas": len(set(e.fechas_evidencia)),
+            "saliente": e.cluster_id in sal_ids,
+            "senales": "+".join(
+                k for k, v in salience.senales(e, sujeto_patron=patron).items() if v
+            ),
+            "fuentes": ",".join(e.fuentes),
+            "pasaje_representativo": e.pasajes_evidencia[0]
+            if e.pasajes_evidencia
+            else "",
+        }
+        for e in eventos
+    ]
     SALIDA.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(filas).to_parquet(SALIDA, index=False)
-    print(f"\n== PERSISTIDO ==\n  {SALIDA} ({len(filas)} eventos, {len(salientes)} salientes)")
+    print(
+        f"\n== PERSISTIDO ==\n  {SALIDA} ({len(filas)} eventos, {len(salientes)} salientes)"
+    )
 
 
 if __name__ == "__main__":

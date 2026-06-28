@@ -57,12 +57,14 @@ def evaluar(filas: list[dict]) -> dict:
     # Precision: de las retenidas, cuántas son actores reales.
     actor_precision = (
         sum(_verdadero(r.get("es_actor_gold")) for r in retenidas) / len(retenidas)
-        if retenidas else 0.0
+        if retenidas
+        else 0.0
     )
     # Recall del filtro: de los actores reales, cuántos fueron retenidos.
     actor_recall = (
         sum(_verdadero(r.get("retenida")) for r in actores) / len(actores)
-        if actores else 0.0
+        if actores
+        else 0.0
     )
     # Exactitud de tipo (solo filas con tipo_correcto anotado).
     con_tipo = [r for r in filas if str(r.get("tipo_correcto") or "").strip()]
@@ -70,8 +72,10 @@ def evaluar(filas: list[dict]) -> dict:
         sum(
             (r.get("tipo") or "").strip() == (r.get("tipo_correcto") or "").strip()
             for r in con_tipo
-        ) / len(con_tipo)
-        if con_tipo else None
+        )
+        / len(con_tipo)
+        if con_tipo
+        else None
     )
     # Splits: nombre_canonico que aparece en >1 fila etiquetada.
     canon = Counter(
@@ -83,7 +87,8 @@ def evaluar(filas: list[dict]) -> dict:
 
     f1 = (
         2 * actor_precision * actor_recall / (actor_precision + actor_recall)
-        if (actor_precision + actor_recall) else 0.0
+        if (actor_precision + actor_recall)
+        else 0.0
     )
     return {
         "n": n,

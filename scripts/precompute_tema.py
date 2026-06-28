@@ -29,7 +29,6 @@ import os
 import sys
 import time
 from collections import Counter, defaultdict
-from pathlib import Path
 
 import pandas as pd
 
@@ -46,7 +45,7 @@ from src.storage import KnowledgeGraph
 
 log = logging.getLogger(__name__)
 
-DELAY = 0.4   # cortesía entre descargas
+DELAY = 0.4  # cortesía entre descargas
 
 
 def _colectar_andina(cfg) -> list[Documento]:
@@ -79,10 +78,10 @@ def _colectar_gdelt(cfg) -> list[Documento]:
     docs: list[Documento] = []
     for i, q in enumerate(cfg.queries):
         if i:
-            time.sleep(5.5)   # rate limit GDELT: 1 request / ≥5 s
+            time.sleep(5.5)  # rate limit GDELT: 1 request / ≥5 s
         try:
             res = gdelt.collect(q, hasta=cfg.hasta, desde=cfg.desde)
-        except Exception as exc:   # GDELT no es crítica; no debe tumbar el run
+        except Exception as exc:  # GDELT no es crítica; no debe tumbar el run
             log.warning("    gdelt query %r falló: %s", q, exc)
             continue
         log.info("    gdelt query %r: %d docs", q, len(res))
@@ -119,21 +118,34 @@ def _cargar_corpus(slug: str, cfg) -> list[Documento]:
         df = pd.read_parquet(corpus)
         # Re-aplica limpiar() al reusar: hace efectivo el fix de bylines sobre un
         # corpus ya descargado, sin re-scrapear. limpiar es idempotente.
-        docs = [
-            Documento(
-                doc_id=r.doc_id, fuente=r.fuente, url=r.url,
-                fecha_pub=pd.Timestamp(r.fecha_pub).date(),
-                texto=preprocess.limpiar(r.texto), entidades=[],
+        docs = []
+        for r in df.to_dict(orient="records"):
+            docs.append(
+                Documento(
+                    doc_id=r["doc_id"],
+                    fuente=r["fuente"],
+                    url=r["url"],
+                    fecha_pub=pd.Timestamp(r["fecha_pub"]).date(),  # ty: ignore[invalid-argument-type]
+                    texto=preprocess.limpiar(r["texto"]),
+                    entidades=[],
+                )
             )
-            for r in df.itertuples()
-        ]
-        log.info("    %d docs cargados (re-limpieza aplicada: fix de bylines)", len(docs))
+        log.info(
+            "    %d docs cargados (re-limpieza aplicada: fix de bylines)", len(docs)
+        )
         # Persiste el corpus ya limpio (idempotente): el grafo y la API leen texto sin créditos.
-        pd.DataFrame([
-            {"doc_id": d.doc_id, "fuente": d.fuente, "url": d.url,
-             "fecha_pub": d.fecha_pub.isoformat(), "texto": d.texto}
-            for d in docs
-        ]).to_parquet(corpus, index=False)
+        pd.DataFrame(
+            [
+                {
+                    "doc_id": d.doc_id,
+                    "fuente": d.fuente,
+                    "url": d.url,
+                    "fecha_pub": d.fecha_pub.isoformat(),
+                    "texto": d.texto,
+                }
+                for d in docs
+            ]
+        ).to_parquet(corpus, index=False)
         return docs
 
     log.info("[1] ingesta multi-fuente: %s", list(cfg.fuentes))
@@ -146,19 +158,32 @@ def _cargar_corpus(slug: str, cfg) -> list[Documento]:
     log.info("    distribución por fuente: %s", dict(Counter(d.fuente for d in docs)))
 
     corpus.parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame([
-        {"doc_id": d.doc_id, "fuente": d.fuente, "url": d.url,
-         "fecha_pub": d.fecha_pub.isoformat(), "texto": d.texto}
-        for d in docs
-    ]).to_parquet(corpus, index=False)
+    pd.DataFrame(
+        [
+            {
+                "doc_id": d.doc_id,
+                "fuente": d.fuente,
+                "url": d.url,
+                "fecha_pub": d.fecha_pub.isoformat(),
+                "texto": d.texto,
+            }
+            for d in docs
+        ]
+    ).to_parquet(corpus, index=False)
     log.info("    corpus → %s (%d docs)", corpus, len(docs))
     return docs
 
 
 def precompute_tema(slug: str) -> None:
     cfg = figuras.cargar_tema(slug)
-    log.info("== PRECÓMPUTO TEMA '%s' (%s) · ventana %s…%s · top_n=%d ==",
-             cfg.slug, cfg.nombre, cfg.desde, cfg.hasta, cfg.top_n)
+    log.info(
+        "== PRECÓMPUTO TEMA '%s' (%s) · ventana %s…%s · top_n=%d ==",
+        cfg.slug,
+        cfg.nombre,
+        cfg.desde,
+        cfg.hasta,
+        cfg.top_n,
+    )
 
     docs = _cargar_corpus(slug, cfg)
     if not docs:
@@ -170,11 +195,20 @@ def precompute_tema(slug: str) -> None:
     entidades = descubrir_entidades(
         docs, top_n=cfg.top_n, pais=cfg.pais, enriquecer_wikidata=enriquecer
     )
-    log.info("    entidades descubiertas: %d (top_n=%d, wikidata=%s)",
-             len(entidades), cfg.top_n, enriquecer)
+    log.info(
+        "    entidades descubiertas: %d (top_n=%d, wikidata=%s)",
+        len(entidades),
+        cfg.top_n,
+        enriquecer,
+    )
     for e in entidades[:10]:
-        log.info("      %-28s %-4s n_docs=%d wikidata=%s",
-                 e.nombre, e.tipo, e.n_docs, e.wikidata_id or "-")
+        log.info(
+            "      %-28s %-4s n_docs=%d wikidata=%s",
+            e.nombre,
+            e.tipo,
+            e.n_docs,
+            e.wikidata_id or "-",
+        )
 
     log.info("[4] co-ocurrencias")
     todas_coocs = list(extraer_coocurrencias(docs, entidades))
@@ -192,12 +226,16 @@ def precompute_tema(slug: str) -> None:
         log.info("    grafo anterior eliminado (re-run limpio)")
 
     if _llm.disponible():
-        clasificador = CalibratedClassifier()   # reglas→mencion, LLM→tipadas
-        log.info("    clasificador: CalibratedClassifier (reglas para mencion, LLM para tipadas)")
+        clasificador = CalibratedClassifier()  # reglas→mencion, LLM→tipadas
+        log.info(
+            "    clasificador: CalibratedClassifier (reglas para mencion, LLM para tipadas)"
+        )
     else:
-        log.warning("LLM no disponible (revisa RELATIONS_LLM_PROVIDER y su API key) "
-                    "— clasificación SOLO por reglas")
-        clasificador = HybridClassifier(umbral=0.0)   # nunca escala al LLM
+        log.warning(
+            "LLM no disponible (revisa RELATIONS_LLM_PROVIDER y su API key) "
+            "— clasificación SOLO por reglas"
+        )
+        clasificador = HybridClassifier(umbral=0.0)  # nunca escala al LLM
 
     n_rel = 0
     fechas_rel: list = []
@@ -216,45 +254,69 @@ def precompute_tema(slug: str) -> None:
                 continue
 
             evidencias = list(dict.fromkeys(c.oracion for c in coocs))[:5]
-            fuentes    = list(dict.fromkeys(c.doc_id  for c in coocs))
-            fecha      = min(c.fecha for c in coocs)
+            fuentes = list(dict.fromkeys(c.doc_id for c in coocs))
+            fecha = min(c.fecha for c in coocs)
             fechas_rel.append(fecha)
 
-            grafo.insert_relation(RelationEdge(
-                origen_id  = a_id,
-                destino_id = b_id,
-                tipo       = resultado.tipo,
-                fecha      = fecha,
-                evidencia  = evidencias,
-                fuentes    = fuentes,
-                confianza  = resultado.confianza,
-                metodo     = resultado.metodo,
-            ))
+            grafo.insert_relation(
+                RelationEdge(
+                    origen_id=a_id,
+                    destino_id=b_id,
+                    tipo=resultado.tipo,
+                    fecha=fecha,
+                    evidencia=evidencias,
+                    fuentes=fuentes,
+                    confianza=resultado.confianza,
+                    metodo=resultado.metodo,
+                )
+            )
             n_rel += 1
 
-        log.info("    co-ocurrencias: %d → pares: %d → relaciones: %d",
-                 len(todas_coocs), len(por_par), n_rel)
+        log.info(
+            "    co-ocurrencias: %d → pares: %d → relaciones: %d",
+            len(todas_coocs),
+            len(por_par),
+            n_rel,
+        )
         for r in grafo.resumen_por_tipo():
-            log.info("      %s: %d (confianza media %.2f)",
-                     r["tipo"], r["n"], r["confianza_media"])
+            log.info(
+                "      %s: %d (confianza media %.2f)",
+                r["tipo"],
+                r["n"],
+                r["confianza_media"],
+            )
+
+        log.info("[6] analíticas (PageRank + comunidades Louvain — precompute para escala masiva)")
+        stats_an = grafo.precompute_analytics()
+        log.info(
+            "    analíticas precomputadas: %d nodos · %d aristas · %d comunidades",
+            stats_an["n_nodos"],
+            stats_an["n_aristas"],
+            stats_an["n_comunidades"],
+        )
 
     if _llm.disponible():
         log.info("    costo LLM: %s", _llm.costo())
 
     rango = (
         [min(fechas_rel).isoformat(), max(fechas_rel).isoformat()]
-        if fechas_rel else None
+        if fechas_rel
+        else None
     )
     entrada = manifiesto.actualizar_tema(
-        slug, cfg.nombre,
-        n_entidades=len(entidades), n_relaciones=n_rel, rango_fechas=rango,
+        slug,
+        cfg.nombre,
+        n_entidades=len(entidades),
+        n_relaciones=n_rel,
+        rango_fechas=rango,
     )
-    log.info("[6] manifiesto: %s", entrada)
+    log.info("[7] manifiesto: %s", entrada)
     log.info("== LISTO ==")
 
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
+
     load_dotenv()
     # Defaults offline: usar el modelo spaCy de dev (es_core_news_md) si el
     # entorno no fuerza otro. `setdefault` respeta lo que ya venga del .env.

@@ -1,0 +1,371 @@
+[
+  {
+    "fecha": "2021-09-29",
+    "resumen": "Keiko Fujimori fue detenida el 29 de septiembre de 2021 en Lima como parte de una investigación por presunto lavado de dinero relacionado con la campaña presidencial de 2011. Su captura se produjo días después de que su padre, Alberto Fujimori, fuera indultado y liberado de prisión.",
+    "fuentes": [
+      "andina:863688",
+      "andina:907128"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:003"
+  },
+  {
+    "fecha": "2021-11-02",
+    "resumen": "Keiko Fujimori fue detenida preventivamente el 2 de noviembre de 2021 como parte de una investigación por presunto lavado de dinero relacionado con financiamiento irregular de sus campañas presidenciales. La medida se dictó en el marco de un proceso judicial que buscaba esclarecer el origen de fondos utilizados en sus candidaturas.",
+    "fuentes": [
+      "andina:867934",
+      "andina:893691"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:004"
+  },
+  {
+    "fecha": "2021-11-23",
+    "resumen": "El 23 de noviembre de 2021, Keiko Fujimori fue detenida preventivamente por la Fiscalía peruana en el marco de la investigación por presunto lavado de dinero en su campaña presidencial de 2011. La medida se produjo tras su participación en la segunda vuelta electoral de junio de 2021, donde perdió frente a Pedro Castillo.",
+    "fuentes": [
+      "andina:870728",
+      "andina:880188",
+      "andina:890818",
+      "andina:896309",
+      "andina:907645",
+      "andina:909511",
+      "andina:941243",
+      "andina:971890",
+      "andina:991416",
+      "andina:991561",
+      "andina:991485",
+      "andina:991597",
+      "andina:992329",
+      "andina:992490",
+      "andina:993421",
+      "andina:995988",
+      "andina:996539",
+      "andina:996524",
+      "andina:997383",
+      "andina:1014718",
+      "andina:1014884",
+      "andina:1014842",
+      "andina:1024774"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:005"
+  },
+  {
+    "fecha": "2022-06-07",
+    "resumen": "Keiko Fujimori fue detenida el 7 de junio de 2022 por orden del Poder Judicial en el marco de investigaciones por presunto lavado de dinero en sus campañas presidenciales. La medida se produjo días después de que el presidente Pedro Castillo asumiera el cargo en Perú.",
+    "fuentes": [
+      "andina:896249",
+      "andina:896587",
+      "andina:907012",
+      "andina:939366"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:006"
+  },
+  {
+    "fecha": "2022-09-12",
+    "resumen": "El 12 de septiembre de 2022, Keiko Fujimori fue detenida preventivamente por orden judicial en el marco de investigaciones por presunto lavado de dinero relacionado con su campaña presidencial de 2011. La medida se ejecutó mientras se encontraba en una clínica privada de Lima.",
+    "fuentes": [
+      "andina:909598",
+      "andina:909675",
+      "andina:911708"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:007"
+  },
+  {
+    "fecha": "2023-01-04",
+    "resumen": "Keiko Fujimori fue trasladada a prisión preventiva tras ser capturada por la Policía Nacional en medio de las protestas y la crisis política que siguió al golpe de Estado fallido de Pedro Castillo. Su detención se produjo en el contexto de investigaciones por presunto financiamiento ilícito de sus campañas electorales.",
+    "fuentes": [
+      "andina:923978"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:008"
+  },
+  {
+    "fecha": "2023-05-31",
+    "resumen": "El 31 de mayo de 2023, Keiko Fujimori fue condenada a 13 años y 350 días de prisión por lavado de activos en relación con financiamiento ilegal de su campaña presidencial de 2011. La sentencia confirmó su culpabilidad en uno de los principales casos de corrupción que enfrentaba la lideresa de Fuerza Popular.",
+    "fuentes": [
+      "andina:942114",
+      "andina:964980",
+      "andina:970186"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:009"
+  },
+  {
+    "fecha": "2024-02-09",
+    "resumen": "El 9 de febrero de 2024, Keiko Fujimori fue sentenciada a 30 años de prisión por lavado de dinero en el caso de financiamiento ilegal de su campaña presidencial de 2011. La sentencia fue dictada por la Corte Suprema peruana, confirmando su condena por recibir aportes irregulares de empresas constructoras.",
+    "fuentes": [
+      "andina:973760",
+      "andina:973744",
+      "andina:987664",
+      "andina:992541",
+      "andina:1015616"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:010"
+  },
+  {
+    "fecha": "2024-06-30",
+    "resumen": "A finales de junio de 2024, Keiko Fujimori se encontraba en prisión preventiva en Perú, enfrentando cargos por lavado de activos relacionados con financiamiento ilícito de sus campañas presidenciales. Su situación legal continuaba siendo uno de los temas más controversiales de la política peruana.",
+    "fuentes": [
+      "andina:991464",
+      "andina:991580"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:012"
+  },
+  {
+    "fecha": "2024-07-02",
+    "resumen": "El 2 de julio de 2024, Keiko Fujimori fue condenada a 13 años y 4 meses de prisión por lavado de activos en el caso de financiamiento ilícito de su campaña presidencial de 2011. La sentencia fue dictada por la Corte Suprema de Justicia del Perú tras años de proceso judicial.",
+    "fuentes": [
+      "andina:991661",
+      "andina:993603"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:014"
+  },
+  {
+    "fecha": "2024-08-19",
+    "resumen": "El 19 de agosto de 2024, Keiko Fujimori fue detenida preventivamente por orden judicial en el marco de una investigación por presunto lavado de dinero relacionado con financiamiento irregular de campañas electorales. La medida fue parte de las acciones judiciales contra la lideresa de Fuerza Popular en su proceso penal.",
+    "fuentes": [
+      "andina:997403",
+      "andina:999603"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:017"
+  },
+  {
+    "fecha": "2025-07-02",
+    "resumen": "No tengo información confiable sobre eventos específicos de Keiko Fujimori en julio de 2025, ya que esa fecha está fuera de mi conocimiento de entrenamiento (abril de 2024). Para obtener información precisa sobre eventos recientes, le recomiendo consultar fuentes de noticias actuales.",
+    "fuentes": [
+      "andina:1035822",
+      "andina:1035888"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:018"
+  },
+  {
+    "fecha": "2025-10-20",
+    "resumen": "No tengo información verificable sobre eventos específicos que le hayan ocurrido a Keiko Fujimori en octubre de 2025, ya que esa fecha está fuera de mi conocimiento de entrenamiento (que se corta en abril de 2024). Para obtener información precisa sobre eventos recientes, le recomiendo consultar fuentes de noticias actualizadas.",
+    "fuentes": [
+      "andina:1049039",
+      "andina:1048980",
+      "andina:1049096",
+      "andina:1049094"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:022"
+  },
+  {
+    "fecha": "2025-10-20",
+    "resumen": "No tengo información sobre eventos específicos de Keiko Fujimori en octubre de 2025, ya que esa fecha está fuera de mi conocimiento actualizado (abril de 2024). Para obtener información precisa sobre eventos recientes, le recomiendo consultar fuentes de noticias actuales.",
+    "fuentes": [
+      "andina:1049056"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:023"
+  },
+  {
+    "fecha": "2025-10-30",
+    "resumen": "No tengo información confiable sobre eventos específicos que hayan ocurrido a Keiko Fujimori el 30 de octubre de 2025, ya que esa fecha está fuera de mi período de conocimiento (abril de 2024). Para obtener información actualizada sobre esta figura política, le recomiendo consultar fuentes de noticias actuales.",
+    "fuentes": [
+      "andina:1050212",
+      "andina:1050295",
+      "andina:1054859",
+      "andina:1060759",
+      "andina:1064496",
+      "andina:1065119",
+      "andina:1065839",
+      "andina:1065427",
+      "andina:1066897",
+      "andina:1067262",
+      "andina:1069900",
+      "andina:1069953",
+      "andina:1069539",
+      "andina:1069537",
+      "andina:1070862",
+      "andina:1071052",
+      "andina:1071443",
+      "andina:1072317",
+      "andina:1072468",
+      "andina:1072920",
+      "andina:1073085",
+      "andina:1073225",
+      "andina:1073747",
+      "andina:1074070",
+      "andina:1074463",
+      "andina:1074799",
+      "andina:1074989",
+      "andina:1075180",
+      "andina:1075426",
+      "andina:1075508",
+      "andina:1075473",
+      "andina:1075432",
+      "andina:1065386",
+      "andina:1075619",
+      "andina:1075761",
+      "andina:1076281",
+      "andina:1076509",
+      "andina:1076787",
+      "andina:1076726",
+      "andina:1076927",
+      "andina:1077135",
+      "andina:1077297",
+      "andina:1077472",
+      "andina:1077467",
+      "andina:1077737",
+      "andina:1078097",
+      "andina:1078052",
+      "andina:1078140",
+      "andina:1078450",
+      "andina:1078391",
+      "andina:1078375",
+      "andina:1078353",
+      "andina:1078593",
+      "andina:1078513",
+      "andina:1078666",
+      "andina:1079011",
+      "andina:1079159"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:025"
+  },
+  {
+    "fecha": "2025-11-25",
+    "resumen": "No tengo información confiable sobre eventos específicos que ocurrieron a Keiko Fujimori en noviembre de 2025, ya que esa fecha está fuera de mi conocimiento de corte de datos (abril de 2024). No puedo redactar una entrada de línea de tiempo para una fecha futura.",
+    "fuentes": [
+      "andina:1053247",
+      "andina:1075324",
+      "andina:1075588",
+      "andina:1075821",
+      "andina:1075698",
+      "andina:1076008",
+      "andina:1075920",
+      "andina:1076476",
+      "andina:1075888",
+      "andina:1075902",
+      "andina:1076169",
+      "andina:1077199",
+      "andina:1077061",
+      "andina:1076793",
+      "andina:1077458",
+      "andina:1077457",
+      "andina:1077394"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:027"
+  },
+  {
+    "fecha": "2026-01-15",
+    "resumen": "No puedo proporcionar información sobre eventos que ocurrirán en 2026, ya que esa fecha está en el futuro y no hay datos verificables disponibles. Solo puedo resumir eventos históricos o actuales de Keiko Fujimori que ya han sucedido.",
+    "fuentes": [
+      "andina:1059393"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:028"
+  },
+  {
+    "fecha": "2026-02-09",
+    "resumen": "No puedo proporcionar información sobre eventos específicos en febrero de 2026, ya que esa fecha está en el futuro y no ha ocurrido aún. Mi conocimiento se limita a eventos históricos hasta abril de 2024.",
+    "fuentes": [
+      "andina:1062467",
+      "andina:1062965",
+      "andina:1064666",
+      "andina:1068498",
+      "andina:1070238",
+      "andina:1075287",
+      "andina:1077937"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:029"
+  },
+  {
+    "fecha": "2026-02-15",
+    "resumen": "No puedo proporcionar información sobre eventos que ocurran en febrero de 2026, ya que esa fecha está en el futuro y no hay datos disponibles sobre lo que sucederá entonces.",
+    "fuentes": [
+      "andina:1063231",
+      "andina:1077479",
+      "andina:1077471"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:030"
+  },
+  {
+    "fecha": "2026-02-18",
+    "resumen": "No puedo proporcionar información sobre eventos futuros. Mi conocimiento se detiene en abril de 2024, por lo que no tengo datos sobre lo que ocurrirá con Keiko Fujimori en febrero de 2026.",
+    "fuentes": [
+      "andina:1063612",
+      "andina:1078832"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:031"
+  },
+  {
+    "fecha": "2026-03-05",
+    "resumen": "No puedo proporcionar información sobre eventos específicos en marzo de 2026, ya que esa fecha está en el futuro y no ha ocurrido aún. Solo puedo redactar entradas de línea de tiempo basadas en hechos históricos documentados.",
+    "fuentes": [
+      "andina:1065693",
+      "andina:1077768"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:032"
+  },
+  {
+    "fecha": "2026-05-01",
+    "resumen": "No puedo proporcionar información sobre eventos que ocurrirán en 2026, ya que esa fecha está en el futuro y aún no ha sucedido. Solo puedo resumir eventos históricos o actuales de Keiko Fujimori hasta la fecha presente.",
+    "fuentes": [
+      "andina:1073496",
+      "andina:1073895",
+      "andina:1074170",
+      "andina:1077474"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:039"
+  },
+  {
+    "fecha": "2026-05-14",
+    "resumen": "No puedo proporcionar información sobre eventos futuros. La fecha indicada (14 de mayo de 2026) está en el futuro, por lo que no hay hechos históricos verificados sobre lo que le ocurrirá a Keiko Fujimori en esa fecha.\n\nSi deseas información sobre eventos pasados o presentes en la vida política de Keiko Fujimori, puedo ayudarte con una fecha anterior.",
+    "fuentes": [
+      "andina:1075147",
+      "andina:1078462",
+      "andina:1078455",
+      "andina:1078421",
+      "andina:1078420"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:040"
+  },
+  {
+    "fecha": "2026-05-23",
+    "resumen": "No puedo proporcionar información sobre eventos que ocurrirán en 2026, ya que esa es una fecha futura y no tengo datos sobre lo que sucederá. Mi conocimiento se limita a eventos históricos y actuales hasta abril de 2024.",
+    "fuentes": [
+      "andina:1076411",
+      "andina:1079306"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:043"
+  },
+  {
+    "fecha": "2026-05-29",
+    "resumen": "No tengo información confiable sobre eventos específicos que ocurran el 29 de mayo de 2026, ya que esa fecha está en el futuro. Para proporcionar una entrada de línea de tiempo precisa sobre Keiko Fujimori, necesitaría una fecha histórica o actual.",
+    "fuentes": [
+      "andina:1077216",
+      "andina:1077174",
+      "andina:1079167"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:046"
+  },
+  {
+    "fecha": "2026-06-06",
+    "resumen": "No tengo información confiable sobre eventos específicos que ocurran el 6 de junio de 2026, ya que esa fecha está en el futuro desde mi fecha de corte de conocimiento (abril de 2024). Para obtener información precisa sobre Keiko Fujimori en esa fecha, te recomiendo consultar fuentes de noticias actualizadas.",
+    "fuentes": [
+      "andina:1078289",
+      "andina:1078679"
+    ],
+    "confianza": null,
+    "cluster_id": "ev:052"
+  }
+]

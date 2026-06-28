@@ -8,7 +8,7 @@ ni llama al LLM en el request (eso es offline; ver scripts/precompute_figura.py)
 
 Sirve además el frontend estático en `src/app/web/`.
 
-Levantar:  uvicorn src.app.api:app --reload    →    http://127.0.0.1:8000
+Levantar:  uv run uvicorn src.app.api:app --reload    →    http://127.0.0.1:8000
 """
 
 from __future__ import annotations
@@ -45,6 +45,7 @@ app = FastAPI(title="timeline-gen", description="Líneas de tiempo de figuras po
 
 # ── Helpers internos ───────────────────────────────────────────────────────────
 
+
 @lru_cache(maxsize=16)
 def _fuentes_map_cached(slug: str, _mtime: float) -> dict[str, dict]:
     """doc_id -> {url, titulo, lead}. `_mtime` está en la clave de caché para que
@@ -54,10 +55,10 @@ def _fuentes_map_cached(slug: str, _mtime: float) -> dict[str, dict]:
         return {}
     df = pd.read_parquet(corpus, columns=["doc_id", "url", "texto"])
     mapa: dict[str, dict] = {}
-    for r in df.itertuples():
-        lineas = str(r.texto).split("\n")
-        mapa[r.doc_id] = {
-            "url": r.url,
+    for r in df.to_dict(orient="records"):
+        lineas = str(r["texto"]).split("\n")
+        mapa[r["doc_id"]] = {
+            "url": r["url"],
             "titulo": lineas[0] if lineas else "",
             "lead": lineas[1] if len(lineas) > 1 else "",
         }
@@ -94,7 +95,7 @@ def _check_grafo(slug: str) -> Path:
         raise HTTPException(
             404,
             f"Grafo de '{slug}' no existe — corre primero: "
-            f"python scripts/precompute_figura.py {slug}",
+            f"uv run python scripts/precompute_figura.py {slug}",
         )
     return ruta
 
@@ -116,12 +117,15 @@ def _abrir_grafo(slug: str):
             raise
         except Exception as exc:
             log.error("Error abriendo grafo de '%s': %s", slug, exc)
-            raise HTTPException(503, f"Grafo de '{slug}' no disponible temporalmente") from exc
+            raise HTTPException(
+                503, f"Grafo de '{slug}' no disponible temporalmente"
+            ) from exc
 
     return _cm()
 
 
 # ── Timeline ───────────────────────────────────────────────────────────────────
+
 
 def _eventos_figura(slug: str) -> dict:
     """Timeline alineado por cluster_id (todas las condiciones, fuentes
@@ -131,14 +135,25 @@ def _eventos_figura(slug: str) -> dict:
         raise HTTPException(404, f"figura '{slug}' no está en el manifiesto")
 
     fmap = _fuentes_map(slug)
-    conds = [c for c in CONDS_ORDEN if (manifiesto.salidas_dir(slug) / f"{c}.json").exists()]
+    conds = [
+        c for c in CONDS_ORDEN if (manifiesto.salidas_dir(slug) / f"{c}.json").exists()
+    ]
 
     indice: dict[str, dict] = {}
     for cond in conds:
         for e in _cargar_cond(slug, cond):
-            cid = e.get("cluster_id") or f"{e['fecha']}|{','.join(sorted(e.get('fuentes', [])))}"
+            cid = (
+                e.get("cluster_id")
+                or f"{e['fecha']}|{','.join(sorted(e.get('fuentes', [])))}"
+            )
             d = indice.setdefault(
-                cid, {"cluster_id": cid, "fecha": e["fecha"], "fuentes": set(), "por_condicion": {}}
+                cid,
+                {
+                    "cluster_id": cid,
+                    "fecha": e["fecha"],
+                    "fuentes": set(),
+                    "por_condicion": {},
+                },
             )
             d["fuentes"].update(e.get("fuentes", []))
             d["por_condicion"][cond] = e["resumen"]
@@ -149,17 +164,25 @@ def _eventos_figura(slug: str) -> dict:
             {"doc_id": f, **fmap.get(f, {"url": "", "titulo": "", "lead": ""})}
             for f in sorted(d["fuentes"])
         ]
-        eventos.append({
-            "cluster_id": d["cluster_id"],
-            "fecha": d["fecha"],
-            "fuentes": fuentes,
-            "por_condicion": d["por_condicion"],
-        })
+        eventos.append(
+            {
+                "cluster_id": d["cluster_id"],
+                "fecha": d["fecha"],
+                "fuentes": fuentes,
+                "por_condicion": d["por_condicion"],
+            }
+        )
 
-    return {"slug": slug, "nombre": figs[slug]["nombre"], "condiciones": conds, "eventos": eventos}
+    return {
+        "slug": slug,
+        "nombre": figs[slug]["nombre"],
+        "condiciones": conds,
+        "eventos": eventos,
+    }
 
 
 # ── Rutas: timeline ────────────────────────────────────────────────────────────
+
 
 @app.get("/api/figuras")
 def figuras() -> list[dict]:
@@ -196,6 +219,7 @@ def resumen(slug: str) -> dict:
 
 
 # ── Rutas: grafo de relaciones ─────────────────────────────────────────────────
+
 
 @app.get("/api/figuras/{slug}/grafo/entidades")
 def grafo_entidades(slug: str) -> list[dict]:
@@ -421,6 +445,22 @@ def grafo_evolucion(
         }
 
 
+@app.get("/api/figuras/{slug}/grafo/evolucion/cambios")
+def grafo_evolucion_cambios(
+    slug: str,
+    top_n: int = Query(20, ge=1, le=100, description="Número de pares a devolver (1-100)"),
+) -> list[dict]:
+    """Pares con más de un tipo de relación a lo largo del tiempo.
+
+    Útil para detectar evoluciones alianza→conflicto y similares.
+    Solo opera sobre relaciones tipadas. Devuelve los top_n pares con más
+    tipos distintos, cada uno con su secuencia temporal de tipos."""
+    _check_slug(slug)
+    _check_grafo(slug)
+    with _abrir_grafo(slug) as g:
+        return g.cambios_relacion(top_n=top_n)
+
+
 @app.get("/api/figuras/{slug}/grafo/ego/{entity_id}")
 def grafo_ego(
     slug: str,
@@ -468,6 +508,7 @@ def grafo_ego(
 
 
 # ── Rutas: figuras dinámicas ───────────────────────────────────────────────────
+
 
 class CrearFigura(BaseModel):
     nombre: str

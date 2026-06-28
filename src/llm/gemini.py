@@ -9,7 +9,7 @@ Usamos 12 RPM para tener margen.
 Variables de entorno requeridas:
   GEMINI_API_KEY — clave obtenida en https://aistudio.google.com/
 
-Instalar SDK: pip install openai>=1.60
+SDK: openai (incluido en pyproject.toml, se instala con `uv sync`)
 """
 
 from __future__ import annotations
@@ -33,8 +33,8 @@ class _RateLimiter:
 
     def __init__(self, calls_per_minute: int) -> None:
         self._interval = 60.0 / calls_per_minute
-        self._last     = 0.0
-        self._lock     = Lock()
+        self._last = 0.0
+        self._lock = Lock()
 
     def acquire(self) -> None:
         with self._lock:
@@ -54,14 +54,15 @@ class GeminiProvider:
     def __init__(
         self, *, model: str = _DEFAULT_MODEL, temperature: float = 0.0
     ) -> None:
-        self.model        = model
+        self.model = model
         self._temperature = temperature
-        self._usage       = {"input": 0, "output": 0, "llamadas": 0}
+        self._usage = {"input": 0, "output": 0, "llamadas": 0}
 
     @cached_property
     def _client(self):
         import os
         from openai import OpenAI
+
         api_key = os.environ.get("GEMINI_API_KEY", "")
         if not api_key:
             raise RuntimeError(
@@ -78,7 +79,7 @@ class GeminiProvider:
             temperature=self._temperature,
             messages=[
                 {"role": "system", "content": system},
-                {"role": "user",   "content": user},
+                {"role": "user", "content": user},
             ],
         )
         self._track(resp.usage)
@@ -106,7 +107,7 @@ class GeminiProvider:
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": system_con_schema},
-                {"role": "user",   "content": user},
+                {"role": "user", "content": user},
             ],
         )
         self._track(resp.usage)
@@ -122,8 +123,8 @@ class GeminiProvider:
     def _track(self, usage) -> None:
         if usage is None:
             return
-        self._usage["input"]    += getattr(usage, "prompt_tokens", 0)
-        self._usage["output"]   += getattr(usage, "completion_tokens", 0)
+        self._usage["input"] += getattr(usage, "prompt_tokens", 0)
+        self._usage["output"] += getattr(usage, "completion_tokens", 0)
         self._usage["llamadas"] += 1
 
     def costo(self) -> dict:

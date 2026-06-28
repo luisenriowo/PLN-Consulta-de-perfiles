@@ -46,6 +46,12 @@ _RUIDO = re.compile(r"/{3,}|LAS M[ÁA]S LE[ÍI]DAS|M[áa]s en Andina", re.IGNORE
 _RE_TARGET = re.compile(r"__doPostBack\('([^']+)'")
 
 
+def _attr(tag, name: str, default: str = "") -> str:
+    """Acceso tipado a atributos de BeautifulSoup (esquiva AttributeValueList)."""
+    val = tag.get(name, default)
+    return str(val) if val else default
+
+
 def _absolutizar(href: str) -> str:
     href = href.split("?", 1)[0]
     if href.startswith("http"):
@@ -56,7 +62,9 @@ def _absolutizar(href: str) -> str:
 def _campos_ocultos(sopa: BeautifulSoup) -> dict[str, str]:
     """Todos los inputs (incluye __VIEWSTATE) para reenviar en el postback."""
     return {
-        i["name"]: i.get("value", "") for i in sopa.find_all("input") if i.get("name")
+        str(i["name"]): str(i.get("value", ""))
+        for i in sopa.find_all("input")
+        if i.get("name")
     }
 
 
@@ -64,7 +72,7 @@ def _targets_pager(sopa: BeautifulSoup) -> dict[str, str]:
     """Mapa etiqueta_de_página -> __EVENTTARGET del paginador ASP.NET."""
     out: dict[str, str] = {}
     for a in sopa.select("a[href*=dlPaging]"):
-        m = _RE_TARGET.search(a.get("href", ""))
+        m = _RE_TARGET.search(_attr(a, "href"))
         if m:
             out[a.get_text(strip=True)] = m.group(1)
     return out
@@ -82,8 +90,8 @@ def buscar(session, consulta: str, *, max_paginas: int = 15) -> list[str]:
     urls: list[str] = []
     for pagina in range(1, max_paginas + 1):
         for a in sopa.find_all("a", href=True):
-            if _RE_NOTA.search(a["href"]):
-                u = _absolutizar(a["href"])
+            if _RE_NOTA.search(_attr(a, "href")):
+                u = _absolutizar(_attr(a, "href"))
                 if u not in urls:
                     urls.append(u)
         targets = _targets_pager(sopa)
@@ -125,12 +133,12 @@ def parse_nota(session, url: str) -> Documento | None:
     cuerpo_el = sopa.select_one("div.linknotas")
     if h1 is None or meta_fecha is None:
         return None
-    fecha_pub = _parse_fecha(meta_fecha.get("content", ""))
+    fecha_pub = _parse_fecha(_attr(meta_fecha, "content"))
     if fecha_pub is None:
         return None
 
     titulo = h1.get_text(strip=True)
-    lead = meta_lead.get("content", "").strip() if meta_lead else ""
+    lead = _attr(meta_lead, "content").strip() if meta_lead else ""
     cuerpo = ""
     if cuerpo_el:
         for w in cuerpo_el.select(

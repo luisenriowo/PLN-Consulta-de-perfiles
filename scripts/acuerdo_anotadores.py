@@ -30,7 +30,7 @@ from pathlib import Path
 import pandas as pd
 
 
-def _arg(flag: str, default: str | None = None) -> str | None:
+def _arg(flag: str, default: str = "") -> str:
     return sys.argv[sys.argv.index(flag) + 1] if flag in sys.argv else default
 
 
@@ -39,7 +39,7 @@ def blank(gold_path: str, *, n: int, col: str, seed: int = 7) -> Path:
     n = min(n, len(df))
     muestra = df.sample(n=n, random_state=seed).copy()
     muestra.insert(0, "fila_id", muestra.index)
-    muestra[col] = ""                       # vaciar la columna objetivo
+    muestra[col] = ""  # vaciar la columna objetivo
     out = Path(gold_path).with_name(Path(gold_path).stem + "_muestraB.csv")
     muestra.to_csv(out, index=False, encoding="utf-8")
     return out
@@ -68,7 +68,7 @@ def acuerdo(a_path: str, b_path: str, *, col: str) -> None:
     for _, rb in b.iterrows():
         val_b = str(rb.get(col) or "").strip()
         if not val_b:
-            continue                        # B no etiquetó esa fila
+            continue  # B no etiquetó esa fila
         idx = int(rb["fila_id"])
         val_a = str(a.iloc[idx][col] or "").strip()
         pares.append((idx, val_a, val_b))
@@ -95,11 +95,16 @@ def acuerdo(a_path: str, b_path: str, *, col: str) -> None:
 
 
 def _interpretar_kappa(k: float) -> str:
-    if k < 0.0:   return "peor que azar"
-    if k < 0.20:  return "leve"
-    if k < 0.40:  return "aceptable"
-    if k < 0.60:  return "moderado"
-    if k < 0.80:  return "sustancial"
+    if k < 0.0:
+        return "peor que azar"
+    if k < 0.20:
+        return "leve"
+    if k < 0.40:
+        return "aceptable"
+    if k < 0.60:
+        return "moderado"
+    if k < 0.80:
+        return "sustancial"
     return "casi perfecto"
 
 
@@ -116,12 +121,10 @@ def main() -> None:
 
     # Posicionales = args sin '--' y que no sean el valor que sigue a un flag.
     valores_flag = {
-        sys.argv[sys.argv.index(f) + 1]
-        for f in ("--col", "--n") if f in sys.argv
+        sys.argv[sys.argv.index(f) + 1] for f in ("--col", "--n") if f in sys.argv
     }
     posicionales = [
-        a for a in sys.argv[1:]
-        if not a.startswith("--") and a not in valores_flag
+        a for a in sys.argv[1:] if not a.startswith("--") and a not in valores_flag
     ]
     if len(posicionales) != 2:
         print(__doc__)

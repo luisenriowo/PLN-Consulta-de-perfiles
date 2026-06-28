@@ -1,0 +1,371 @@
+[
+  {
+    "fecha": "2021-09-29",
+    "resumen": "Fiscalía presenta acusaciones contra otros 12 implicados en caso Cócteles La fiscalía planteó acusar a doce personas implicadas en el caso Cócteles, referido a los aportes económicos recibidos para las campañas presidenciales de Keiko Fujimori el 2011 y 2016.",
+    "fuentes": [
+      "andina:863688",
+      "andina:907128"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:003"
+  },
+  {
+    "fecha": "2021-11-02",
+    "resumen": "Caso Cócteles: pruebas deben ser notificadas por la Fiscalía hasta este 11 de noviembre El juez Víctor Zúñiga Urday decidió que el fiscal José Domingo Pérez termine de notificar los elementos de convicción y pruebas del caso Cócteles (Odebrecht) hasta el siguiente jueves 11 de noviembre.",
+    "fuentes": [
+      "andina:867934",
+      "andina:893691"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:004"
+  },
+  {
+    "fecha": "2021-11-23",
+    "resumen": "Keiko Fujimori: instalan juicio por caso cócteles tras rechazar pedido de nulidad El Tercer Juzgado Penal Colegiado Nacional instaló oficialmente el inicio del juicio oral contra Keiko Fujimori y más de 40 procesados por organización criminal, lavado de activos y otros, en agravio del Estado en el caso Cócteles, tras declarar improcedente el pedido de nulidad presentado por cinco acusados.",
+    "fuentes": [
+      "andina:870728",
+      "andina:880188",
+      "andina:890818",
+      "andina:896309",
+      "andina:907645",
+      "andina:909511",
+      "andina:941243",
+      "andina:971890",
+      "andina:991416",
+      "andina:991561",
+      "andina:991485",
+      "andina:991597",
+      "andina:992329",
+      "andina:992490",
+      "andina:993421",
+      "andina:995988",
+      "andina:996539",
+      "andina:996524",
+      "andina:997383",
+      "andina:1014718",
+      "andina:1014884",
+      "andina:1014842",
+      "andina:1024774"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:005"
+  },
+  {
+    "fecha": "2022-06-07",
+    "resumen": "Keiko Fujimori: sala continúa audiencia de control por lavado de activos El Cuarto Juzgado de Investigación Preparatoria de la Corte Superior Nacional reanudó esta mañana la audiencia de control de requerimiento mixto en el proceso contra Keiko Fujimori y otros por el delito de lavado de activos, en el marco del caso Cocteles.",
+    "fuentes": [
+      "andina:896249",
+      "andina:896587",
+      "andina:907012",
+      "andina:939366"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:006"
+  },
+  {
+    "fecha": "2022-09-12",
+    "resumen": "Keiko Fujimori: juez rechaza pedido para anular acusación por lavado de activos El juez Víctor Zúñiga Urday rechazó los recursos de la defensa de Keiko Fujimori y otros investigados que buscaban anular la acusación por lavado de activos en sus contra, en el marco del caso Cócteles.",
+    "fuentes": [
+      "andina:909598",
+      "andina:909675",
+      "andina:911708"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:007"
+  },
+  {
+    "fecha": "2023-01-04",
+    "resumen": "Caso Odebrecht: Fiscalía está a la espera de decisión judicial en casos emblemáticos El fiscal coordinador de las fiscalías especializadas en delitos de lavado de activo Rafael Vela señaló que en varios casos emblemáticos vinculados al tema Lava Jato, como los correspondientes al expresidente Ollanta Humala y la exprimera dama, Keiko Fujimori, la fiscalía ha cumplido con su trabajo de presentar las acusaciones correspondientes.",
+    "fuentes": [
+      "andina:923978"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:008"
+  },
+  {
+    "fecha": "2023-05-31",
+    "resumen": "PJ revocó impedimento de salida del país contra Keiko Fujimori y otros La Segunda Sala Penal de Apelaciones Nacional revocó la resolución de primera instancia que impuso 36 meses de impedimento de salida del país contra Keiko Fujimori y otros por la presunta comisión del delito de lavado de activos en el denominado caso Cocteles.",
+    "fuentes": [
+      "andina:942114",
+      "andina:964980",
+      "andina:970186"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:009"
+  },
+  {
+    "fecha": "2024-02-09",
+    "resumen": "José Domingo Pérez: se pide mi suspensión para frustrar juicio por caso Cocteles El fiscal José Domingo Pérez señaló que el pedido de Keiko Fujimori para que se le aparte del caso Cocteles “no es una posición nueva de esa acusada”, y refirió que hay otros pedidos para evitar el inicio del juicio oral sobre dicho tema.",
+    "fuentes": [
+      "andina:973760",
+      "andina:973744",
+      "andina:987664",
+      "andina:992541",
+      "andina:1015616"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:010"
+  },
+  {
+    "fecha": "2024-06-30",
+    "resumen": "Keiko Fujimori sostiene que dará la cara en juicio oral y se solidariza con coacusados La lideresa de Fuerza Popular, Keiko Fujimori, sostuvo que continuará dando la cara durante el juicio oral por el caso Cócteles, que inicia este lunes, y expresó su solidaridad con las más de 40 personas que han sido acusados junto con ella en el marco de este proceso.",
+    "fuentes": [
+      "andina:991464",
+      "andina:991580"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:012"
+  },
+  {
+    "fecha": "2024-07-02",
+    "resumen": "Jaime Villanueva afirma que acudirá a declarar en el caso cócteles El exasesor de Patricia Benavides, Jaime Villanueva, informó que acudirá como testigo en el caso cócteles, el cual involucra a la lideresa de Fuerza Popular, Keiko Fujimori y otras personas por presunto lavado de activos y organización criminal.",
+    "fuentes": [
+      "andina:991661",
+      "andina:993603"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:014"
+  },
+  {
+    "fecha": "2024-08-19",
+    "resumen": "Fiscal José Domingo Pérez es excluido de la investigación contra Keiko Fujimori La Fiscalía Superior Coordinadora del Equipo Especial de fiscales excluyó de \"manera excepcional\" a José Domingo Pérez de la investigación contra la lideresa de Fuerza Popular, Keiko Fujimori, por presunto lavado de activos en la campaña presidencial de 2021.",
+    "fuentes": [
+      "andina:997403",
+      "andina:999603"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:017"
+  },
+  {
+    "fecha": "2025-07-02",
+    "resumen": "Galarreta cuestiona nueva acusación penal contra Keiko Fujimori por caso Cócteles El secretario general de Fuerza Popular, Luis Galarreta, cuestionó la nueva acusación penal presentada por el equipo especial de fiscales Lava Jato contra la lideresa de ese partido, Keiko Fujimori Higuchi, por el financiamiento a las campañas electorales del 2011 y 2016, en el denominado caso Cócteles.",
+    "fuentes": [
+      "andina:1035822",
+      "andina:1035888"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:018"
+  },
+  {
+    "fecha": "2025-10-20",
+    "resumen": "Keiko Fujimori: conoce los argumentos del TC para archivar el caso Cócteles El Tribunal Constitucional (TC) declaró fundada en la víspera la demanda presentada por la lideresa de Fuerza Popular, Keiko Fujimori, para dejar sin efecto el proceso que se le sigue por el presunto delito de lavado de activos en el denominado caso Cócteles.",
+    "fuentes": [
+      "andina:1049039",
+      "andina:1048980",
+      "andina:1049096",
+      "andina:1049094"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:022"
+  },
+  {
+    "fecha": "2025-10-20",
+    "resumen": "Humala anuncia que peleará por su libertad, tras conocerse fallo a favor de Keiko Fujimori El expresidente Ollanta Humala anunció que va a \"pelear\" por su libertad, luego de que el Tribunal Constitucional (TC) declarara fundada la demanda de Keiko Fujimori para dejar sin efecto el proceso en su contra por la presunta comisión de los delitos de lavado de activos y organización criminal.",
+    "fuentes": [
+      "andina:1049056"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:023"
+  },
+  {
+    "fecha": "2025-10-30",
+    "resumen": "Elecciones 2026: Keiko Fujimori presenta iniciativa para convocatoria de personeros La candidata presidencial por Fuerza Popular, Keiko Fujimori, presentó esta mañana una iniciativa con la finalidad de convocar a personeros que puedan apoyar la vigilancia del voto en la segunda vuelta electoral, prevista para el próximo domingo 7 de junio.",
+    "fuentes": [
+      "andina:1050212",
+      "andina:1050295",
+      "andina:1054859",
+      "andina:1060759",
+      "andina:1064496",
+      "andina:1065119",
+      "andina:1065839",
+      "andina:1065427",
+      "andina:1066897",
+      "andina:1067262",
+      "andina:1069900",
+      "andina:1069953",
+      "andina:1069539",
+      "andina:1069537",
+      "andina:1070862",
+      "andina:1071052",
+      "andina:1071443",
+      "andina:1072317",
+      "andina:1072468",
+      "andina:1072920",
+      "andina:1073085",
+      "andina:1073225",
+      "andina:1073747",
+      "andina:1074070",
+      "andina:1074463",
+      "andina:1074799",
+      "andina:1074989",
+      "andina:1075180",
+      "andina:1075426",
+      "andina:1075508",
+      "andina:1075473",
+      "andina:1075432",
+      "andina:1065386",
+      "andina:1075619",
+      "andina:1075761",
+      "andina:1076281",
+      "andina:1076509",
+      "andina:1076787",
+      "andina:1076726",
+      "andina:1076927",
+      "andina:1077135",
+      "andina:1077297",
+      "andina:1077472",
+      "andina:1077467",
+      "andina:1077737",
+      "andina:1078097",
+      "andina:1078052",
+      "andina:1078140",
+      "andina:1078450",
+      "andina:1078391",
+      "andina:1078375",
+      "andina:1078353",
+      "andina:1078593",
+      "andina:1078513",
+      "andina:1078666",
+      "andina:1079011",
+      "andina:1079159"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:025"
+  },
+  {
+    "fecha": "2025-11-25",
+    "resumen": "Elecciones 2026: estos son los temas que debatirán Keiko Fujimori y Roberto Sánchez El debate presidencial entre los candidatos Keiko Fujimori de Fuerza Popular y Roberto Sánchez de Juntos por el Perú se efectuará este domingo 31 de mayo, en el Centro de Convenciones de Lima y estará organizado por el Jurado Nacional de Elecciones.",
+    "fuentes": [
+      "andina:1053247",
+      "andina:1075324",
+      "andina:1075588",
+      "andina:1075821",
+      "andina:1075698",
+      "andina:1076008",
+      "andina:1075920",
+      "andina:1076476",
+      "andina:1075888",
+      "andina:1075902",
+      "andina:1076169",
+      "andina:1077199",
+      "andina:1077061",
+      "andina:1076793",
+      "andina:1077458",
+      "andina:1077457",
+      "andina:1077394"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:027"
+  },
+  {
+    "fecha": "2026-01-15",
+    "resumen": "Ollanta Humala: defensa legal de exmandatario pide al Poder Judicial su excarcelación La defensa legal del expresidente Ollanta Humala Tasso solicitó al Poder Judicial la excarcelación del exmandatario, quien fue condenado en abril del año pasado a 15 años de prisión por el delito de lavado de activos agravado.",
+    "fuentes": [
+      "andina:1059393"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:028"
+  },
+  {
+    "fecha": "2026-02-09",
+    "resumen": "Elecciones 2026: \"Les declaro la guerra a extorsionadores y sicarios\", dice Keiko Fujimori La candidata presidencial de Fuerza Popular, Keiko Fujimori, reafirmó que una de las principales medidas de su eventual gobierno será recuperar el orden mediante acciones como el control en fronteras y cárceles, y la lucha contra el crimen organizado.",
+    "fuentes": [
+      "andina:1062467",
+      "andina:1062965",
+      "andina:1064666",
+      "andina:1068498",
+      "andina:1070238",
+      "andina:1075287",
+      "andina:1077937"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:029"
+  },
+  {
+    "fecha": "2026-02-15",
+    "resumen": "Elecciones 2026: Keiko Fujimori señala que aspira a dejar un país con paz y progreso La candidata presidencial de Fuerza Popular, Keiko Fujimori, pidió a los electores tener la posibilidad de llegar a la presidencia, a pesar de las diferencias, y aseguró que aspira a \"transformar el Perú y dejar un país con paz y progreso\".",
+    "fuentes": [
+      "andina:1063231",
+      "andina:1077479",
+      "andina:1077471"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:030"
+  },
+  {
+    "fecha": "2026-02-18",
+    "resumen": "Elecciones 2026: Keiko Fujimori pide tender puentes de unidad ante fragmentación del país La candidata a la Presidencia de la República, por Fuerza Popular, Keiko Fujimori, sostuvo que se debe entender que el país está fragmentado y se requiere tender puentes de unidad, ello al comentar el avance de los resultados de la segunda vuelta electoral y la corta brecha que hoy la separa de su contendor, Roberto Sánchez, de Juntos por el Perú.",
+    "fuentes": [
+      "andina:1063612",
+      "andina:1078832"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:031"
+  },
+  {
+    "fecha": "2026-03-05",
+    "resumen": "Elecciones 2026: Keiko Fujimori plantea construir nuevas carreteras para integrar el país La candidata a la presidencia por Fuerza Popular, Keiko Fujimori, propuso invertir mayor presupuesto en el mantenimiento de carreteras y la construcción de nuevas vías, para lograr una mejor integración del país y potenciar actividades como el comercio de productos agrícolas y el turismo.",
+    "fuentes": [
+      "andina:1065693",
+      "andina:1077768"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:032"
+  },
+  {
+    "fecha": "2026-05-01",
+    "resumen": "Elecciones 2026: Fujimori anuncia que programas sociales \"volverán con fuerza\" La candidata presidencial por Fuerza Popular, Keiko Fujimori, indicó en la comunidad de Maypuco (Loreto) que los programas sociales volverán con fuerza, así como potenciar los servicios básicos para la población.",
+    "fuentes": [
+      "andina:1073496",
+      "andina:1073895",
+      "andina:1074170",
+      "andina:1077474"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:039"
+  },
+  {
+    "fecha": "2026-05-14",
+    "resumen": "Conteo rápido IPSOS al 100%: Roberto Sánchez 50.3 % y Keiko Fujimori 49.7 % El resultado del conteo rápido de la encuestadora Ipsos al 100 % a nivel nacional arrojó que el candidato presidencial de Juntos por el Perú, Roberto Sánchez, logró 50.3 % de los votos, mientras que la postulante de Fuerza Popular, Keiko Fujimori, obtuvo 49.7 % de las preferencias en la segunda vuelta electoral.",
+    "fuentes": [
+      "andina:1075147",
+      "andina:1078462",
+      "andina:1078455",
+      "andina:1078421",
+      "andina:1078420"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:040"
+  },
+  {
+    "fecha": "2026-05-23",
+    "resumen": "Elecciones 2026: Keiko Fujimori afirma que los puentes de diálogo siempre estarán abiertos La candidata presidencial de Fuerza Popular, Keiko Fujimori, sostuvo que los puentes de diálogo siempre estarán abiertos para conversar con el candidato de Juntos por el Perú, Roberto Sánchez.",
+    "fuentes": [
+      "andina:1076411",
+      "andina:1079306"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:043"
+  },
+  {
+    "fecha": "2026-05-29",
+    "resumen": "Elecciones 2026: piden compromisos explícitos a candidatos presidenciales en campaña El politólogo Fernando Tincopa, del Centro Wiñaq, sostuvo que los candidatos presidenciales Keiko Fujimori (Fuerza Popular) y Roberto Sánchez (Juntos por el Perú) deben considerar hacer concesiones y compromisos explícitos en el marco de esta segunda vuelta, ante la falta de una mayoría en el Congreso.",
+    "fuentes": [
+      "andina:1077216",
+      "andina:1077174",
+      "andina:1079167"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:046"
+  },
+  {
+    "fecha": "2026-06-06",
+    "resumen": "El presidente del Jurado Nacional de Elecciones, Roberto Burneo, ratificó que la proclamación de los resultados de la Segunda Elección Presidencial 2026, en la que participan los candidatos Keiko Fujimori y Roberto Sánchez, se realizará alrededor del 7 de julio e inclusive podría prolongarse unos días más; pero no más allá de la quincena de dicho mes.",
+    "fuentes": [
+      "andina:1078289",
+      "andina:1078679"
+    ],
+    "confianza": 1.0,
+    "cluster_id": "ev:052"
+  }
+]

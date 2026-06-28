@@ -19,14 +19,15 @@ from pathlib import Path
 import pandas as pd
 
 EVENTOS = Path("data/eventos_humala.parquet")
-SALIDAS = Path("data/salidas/humala")   # layout por-figura
+SALIDAS = Path("data/salidas/humala")  # layout por-figura
 
 
 def main() -> None:
     df = pd.read_parquet(EVENTOS)
     # frozenset(fuentes) -> cluster_id  (las fuentes identifican el cluster)
     por_fuentes = {
-        frozenset(str(r.fuentes).split(",")): r.cluster_id for r in df.itertuples()
+        frozenset(str(r["fuentes"]).split(",")): r["cluster_id"]
+        for r in df.to_dict(orient="records")
     }
 
     for ruta in sorted(SALIDAS.glob("*.json")):

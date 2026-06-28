@@ -33,18 +33,43 @@ from src.schemas import RelationResult, TIPOS_RELACION
 # Orden importa: el primero que matchee gana.
 # (patrón_regex, tipo, confianza_asignada)
 _LEXICON: list[tuple[re.Pattern, str, float]] = [
-    (re.compile(r"\b(nombr|design|eleg|postul|candid|propus|ascend)\w*",  re.I), "nombramiento", 0.82),
-    (re.compile(r"\b(acus|imput|investig|denunci|procesa|enjuici|fiscal)\w*", re.I), "acusacion",    0.82),
-    (re.compile(r"\b(renunci|alej|expuls|abandon|separ|destitu|dimit)\w*", re.I), "ruptura",       0.78),
-    (re.compile(r"\b(pertenec|integr|militan|afili|miembro|fundó|lider)\w*", re.I), "pertenencia",   0.78),
-    (re.compile(r"\b(apoy|respald|aval|defendi|aliado|pact|sumó)\w*",    re.I), "alianza",        0.75),
-    (re.compile(r"\b(rechaz|critic|enfrent|opuso|atac|cuestion|impugn)\w*", re.I), "conflicto",     0.72),
+    (
+        re.compile(r"\b(nombr|design|eleg|postul|candid|propus|ascend)\w*", re.I),
+        "nombramiento",
+        0.82,
+    ),
+    (
+        re.compile(r"\b(acus|imput|investig|denunci|procesa|enjuici|fiscal)\w*", re.I),
+        "acusacion",
+        0.82,
+    ),
+    (
+        re.compile(r"\b(renunci|alej|expuls|abandon|separ|destitu|dimit)\w*", re.I),
+        "ruptura",
+        0.78,
+    ),
+    (
+        re.compile(r"\b(pertenec|integr|militan|afili|miembro|fundó|lider)\w*", re.I),
+        "pertenencia",
+        0.78,
+    ),
+    (
+        re.compile(r"\b(apoy|respald|aval|defendi|aliado|pact|sumó)\w*", re.I),
+        "alianza",
+        0.75,
+    ),
+    (
+        re.compile(r"\b(rechaz|critic|enfrent|opuso|atac|cuestion|impugn)\w*", re.I),
+        "conflicto",
+        0.72,
+    ),
 ]
 
-_CONFIANZA_MENCION = 0.40   # cuando no matchea ningún patrón
+_CONFIANZA_MENCION = 0.40  # cuando no matchea ningún patrón
 
 
 # ── Protocolo ──────────────────────────────────────────────────────────────
+
 
 @runtime_checkable
 class RelationClassifier(Protocol):
@@ -56,6 +81,7 @@ class RelationClassifier(Protocol):
 
 
 # ── RuleBasedClassifier ────────────────────────────────────────────────────
+
 
 class RuleBasedClassifier:
     """Clasificación por lexicón de verbos sobre el triple del dep parse.
@@ -71,8 +97,10 @@ class RuleBasedClassifier:
         for patron, tipo, confianza in _LEXICON:
             if patron.search(texto_busqueda):
                 return RelationResult(
-                    tipo=tipo, confianza=confianza,
-                    evidencia=cooc.oracion, metodo="rules",
+                    tipo=tipo,
+                    confianza=confianza,
+                    evidencia=cooc.oracion,
+                    metodo="rules",
                 )
 
         # Fallback: buscar en la oración completa si el triple no matcheó.
@@ -80,23 +108,29 @@ class RuleBasedClassifier:
             for patron, tipo, confianza in _LEXICON:
                 if patron.search(cooc.oracion):
                     return RelationResult(
-                        tipo=tipo, confianza=confianza * 0.9,   # penalización leve
-                        evidencia=cooc.oracion, metodo="rules",
+                        tipo=tipo,
+                        confianza=confianza * 0.9,  # penalización leve
+                        evidencia=cooc.oracion,
+                        metodo="rules",
                     )
 
         return RelationResult(
-            tipo="mencion", confianza=_CONFIANZA_MENCION,
-            evidencia=cooc.oracion, metodo="rules",
+            tipo="mencion",
+            confianza=_CONFIANZA_MENCION,
+            evidencia=cooc.oracion,
+            metodo="rules",
         )
 
 
 # ── LLMClassifier ──────────────────────────────────────────────────────────
 
+
 class _LLMOutput(BaseModel):
     """Schema del output estructurado que devuelve el LLM."""
-    tipo:      str
-    confianza: float   # 0.0 – 1.0
-    razon:     str     # explicación breve (mejora trazabilidad y debug)
+
+    tipo: str
+    confianza: float  # 0.0 – 1.0
+    razon: str  # explicación breve (mejora trazabilidad y debug)
 
 
 _SYSTEM_LLM = (
@@ -123,6 +157,7 @@ class LLMClassifier:
     def _get_provider(self):
         if self._provider is None:
             from src.llm import get_provider
+
             self._provider = get_provider()
         return self._provider
 
@@ -132,15 +167,18 @@ class LLMClassifier:
             f"Entidad B: {cooc.entity_b.nombre}\n"
             f"Oración:   {cooc.oracion}"
         )
-        out  = self._get_provider().complete_json(_SYSTEM_LLM, user, _LLMOutput)
+        out = self._get_provider().complete_json(_SYSTEM_LLM, user, _LLMOutput)
         tipo = out.tipo if out.tipo in TIPOS_RELACION else "mencion"
         return RelationResult(
-            tipo=tipo, confianza=min(max(out.confianza, 0.0), 1.0),
-            evidencia=cooc.oracion, metodo="llm",
+            tipo=tipo,
+            confianza=min(max(out.confianza, 0.0), 1.0),
+            evidencia=cooc.oracion,
+            metodo="llm",
         )
 
 
 # ── HybridClassifier ───────────────────────────────────────────────────────
+
 
 class HybridClassifier:
     """Reglas primero; LLM solo cuando la confianza queda bajo el umbral.
@@ -156,10 +194,10 @@ class HybridClassifier:
     """
 
     def __init__(self, *, umbral: float = 0.65) -> None:
-        self._rules           = RuleBasedClassifier()
-        self._llm:            LLMClassifier | None = None
-        self._umbral          = umbral
-        self._llm_desactivado = False   # se activa en primer error de cuota
+        self._rules = RuleBasedClassifier()
+        self._llm: LLMClassifier | None = None
+        self._umbral = umbral
+        self._llm_desactivado = False  # se activa en primer error de cuota
 
     def _get_llm(self) -> LLMClassifier:
         if self._llm is None:
@@ -176,9 +214,11 @@ class HybridClassifier:
             msg = str(exc).lower()
             if "rate_limit" in msg or "429" in msg or "quota" in msg or "limit" in msg:
                 import logging as _log
+
                 _log.getLogger(__name__).warning(
                     "LLM desactivado por cuota/rate-limit — resto del run usará solo reglas. "
-                    "Error: %s", exc
+                    "Error: %s",
+                    exc,
                 )
                 self._llm_desactivado = True
             return None
@@ -226,6 +266,7 @@ class HybridClassifier:
 
 # ── CalibratedClassifier (enrutamiento por TIPO, calibrado con el gold) ──────
 
+
 class CalibratedClassifier:
     """Reglas SOLO para `mencion`; LLM para toda predicción TIPADA.
 
@@ -261,9 +302,11 @@ class CalibratedClassifier:
             msg = str(exc).lower()
             if "rate_limit" in msg or "429" in msg or "quota" in msg or "limit" in msg:
                 import logging as _log
+
                 _log.getLogger(__name__).warning(
                     "LLM desactivado por cuota/rate-limit — resto del run usará solo reglas. "
-                    "Error: %s", exc
+                    "Error: %s",
+                    exc,
                 )
                 self._llm_desactivado = True
             return None

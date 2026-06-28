@@ -26,13 +26,14 @@ from src.generation import _llm
 from src.generation.ablacion import Ablacion
 from src.generation.b0_lead import B0Lead
 from src.generation.b1_extractive import B1Extractive
+from src.generation.base import GenerationCondition
 from src.generation.sistema_rag import SistemaRAG
 from src.pipeline import cluster, salience
 from src.schemas import Documento, TimelineEntry
 
 CORPUS = Path("data/corpus_humala.parquet")
 GOLD_DIR = Path("annotation/gold")
-TOL_DIAS = 1   # fecha_normalizada es proxy de pub; tolera ±1 día vs evento
+TOL_DIAS = 1  # fecha_normalizada es proxy de pub; tolera ±1 día vs evento
 
 
 def cargar_gold() -> list[TimelineEntry]:
@@ -46,11 +47,11 @@ def cargar_gold() -> list[TimelineEntry]:
     df = pd.read_csv(csvs[0])
     return [
         TimelineEntry(
-            fecha=date.fromisoformat(str(r.fecha)),
-            resumen=str(r.descripcion),
-            fuentes=[s for s in str(r.fuentes).split(",") if s],
+            fecha=date.fromisoformat(str(r["fecha"])),
+            resumen=str(r["descripcion"]),
+            fuentes=[s for s in str(r["fuentes"]).split(",") if s],
         )
-        for r in df.itertuples()
+        for r in df.to_dict(orient="records")
     ]
 
 
@@ -63,9 +64,14 @@ def eventos_salientes() -> list:
     df = pd.read_parquet(CORPUS)
     df = df[df["humala_protagonista"]]
     docs = [
-        Documento(doc_id=r.doc_id, fuente=r.fuente, url=r.url,
-                  fecha_pub=date.fromisoformat(r.fecha_pub), texto=r.texto)
-        for r in df.itertuples()
+        Documento(
+            doc_id=r["doc_id"],
+            fuente=r["fuente"],
+            url=r["url"],
+            fecha_pub=date.fromisoformat(r["fecha_pub"]),
+            texto=r["texto"],
+        )
+        for r in df.to_dict(orient="records")
     ]
     return salience.select_salient(
         cluster.cluster_events(docs, umbral=cluster.UMBRAL_DEFECTO),
@@ -81,9 +87,11 @@ def run_experiment(n: int = 3) -> None:
     gold = cargar_gold()
     fuentes = mapa_fuentes()
     clusters = eventos_salientes()
-    print(f"gold={len(gold)}  eventos_salientes={len(clusters)}  N={n}  tol={TOL_DIAS}d")
+    print(
+        f"gold={len(gold)}  eventos_salientes={len(clusters)}  N={n}  tol={TOL_DIAS}d"
+    )
 
-    condiciones = [B0Lead(), B1Extractive()]
+    condiciones: list[GenerationCondition] = [B0Lead(), B1Extractive()]
     if _llm.disponible():
         condiciones += [SistemaRAG(), Ablacion()]
     else:
@@ -99,19 +107,27 @@ def run_experiment(n: int = 3) -> None:
             r1.append(metrics.rouge_vs_gold(pred, gold, tol_dias=TOL_DIAS)["rouge1"])
             al.append(metrics.tasa_alucinacion(pred, fuentes)["tasa"])
             ne.append(len(pred))
-        resultados[cond.name] = {"date_f1": _media_desv(df1), "rouge1": _media_desv(r1),
-                                 "aluc": _media_desv(al), "n": statistics.mean(ne)}
+        resultados[cond.name] = {
+            "date_f1": _media_desv(df1),
+            "rouge1": _media_desv(r1),
+            "aluc": _media_desv(al),
+            "n": statistics.mean(ne),
+        }
         m = resultados[cond.name]
-        print(f"{cond.name:<16}"
-              f"{m['date_f1'][0]:>8.3f}±{m['date_f1'][1]:<6.3f}"
-              f"{m['rouge1'][0]:>8.3f}±{m['rouge1'][1]:<6.3f}"
-              f"{m['aluc'][0]:>8.3f}±{m['aluc'][1]:<6.3f}"
-              f"{m['n']:>6.0f}")
+        print(
+            f"{cond.name:<16}"
+            f"{m['date_f1'][0]:>8.3f}±{m['date_f1'][1]:<6.3f}"
+            f"{m['rouge1'][0]:>8.3f}±{m['rouge1'][1]:<6.3f}"
+            f"{m['aluc'][0]:>8.3f}±{m['aluc'][1]:<6.3f}"
+            f"{m['n']:>6.0f}"
+        )
 
     if _llm.disponible():
         print(f"\ncosto LLM: {_llm.costo()}")
-    print("\n⚠ La tasa de alucinación es por el juez NLI: valídalo con "
-          "eval.nli.validar_juez sobre un subconjunto humano antes de reportarla.")
+    print(
+        "\n⚠ La tasa de alucinación es por el juez NLI: valídalo con "
+        "eval.nli.validar_juez sobre un subconjunto humano antes de reportarla."
+    )
 
 
 if __name__ == "__main__":

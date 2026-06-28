@@ -37,8 +37,17 @@ from src.schemas import Documento
 log = logging.getLogger(__name__)
 
 CAMPOS = [
-    "nombre", "tipo", "n_docs", "n_menciones", "alias", "rank_crudo", "retenida",
-    "es_actor_gold", "tipo_correcto", "nombre_canonico", "notas",
+    "nombre",
+    "tipo",
+    "n_docs",
+    "n_menciones",
+    "alias",
+    "rank_crudo",
+    "retenida",
+    "es_actor_gold",
+    "tipo_correcto",
+    "nombre_canonico",
+    "notas",
 ]
 SALIDA_DIR = Path("annotation/gold_entidades")
 _TODOS = frozenset({"PER", "ORG", "LOC", "MISC"})
@@ -46,11 +55,18 @@ _TODOS = frozenset({"PER", "ORG", "LOC", "MISC"})
 
 def _docs(slug: str) -> list[Documento]:
     df = pd.read_parquet(manifiesto.corpus_path(slug))
-    return [
-        Documento(doc_id=r.doc_id, fuente=r.fuente, url=r.url,
-                  fecha_pub=pd.Timestamp(r.fecha_pub).date(), texto=r.texto)
-        for r in df.itertuples()
-    ]
+    docs = []
+    for r in df.to_dict(orient="records"):
+        docs.append(
+            Documento(
+                doc_id=r["doc_id"],
+                fuente=r["fuente"],
+                url=r["url"],
+                fecha_pub=pd.Timestamp(r["fecha_pub"]).date(),  # ty: ignore[invalid-argument-type]
+                texto=r["texto"],
+            )
+        )
+    return docs
 
 
 def exportar(slug: str, *, top: int = 60) -> tuple[Path, int, int]:
@@ -76,19 +92,27 @@ def exportar(slug: str, *, top: int = 60) -> tuple[Path, int, int]:
             info = {"tipo": node.tipo, "nombre": node.nombre}
             retenida = _es_actor(info, _TIPOS_ACTOR, _GENERICOS)
             n_ret += int(retenida)
-            w.writerow({
-                "nombre": node.nombre, "tipo": node.tipo,
-                "n_docs": node.n_docs, "n_menciones": node.n_menciones,
-                "alias": " | ".join(node.alias[:6]),
-                "rank_crudo": rank, "retenida": int(retenida),
-                "es_actor_gold": "", "tipo_correcto": "",
-                "nombre_canonico": "", "notas": "",
-            })
+            w.writerow(
+                {
+                    "nombre": node.nombre,
+                    "tipo": node.tipo,
+                    "n_docs": node.n_docs,
+                    "n_menciones": node.n_menciones,
+                    "alias": " | ".join(node.alias[:6]),
+                    "rank_crudo": rank,
+                    "retenida": int(retenida),
+                    "es_actor_gold": "",
+                    "tipo_correcto": "",
+                    "nombre_canonico": "",
+                    "notas": "",
+                }
+            )
     return salida, min(top, len(crudo)), n_ret
 
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
+
     load_dotenv()
     os.environ.setdefault("SPACY_NER_MODEL", "es_core_news_md")
     logging.basicConfig(level=logging.INFO, format="%(levelname)-8s %(message)s")

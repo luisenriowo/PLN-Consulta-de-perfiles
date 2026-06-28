@@ -18,21 +18,24 @@ from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)
 
-_PRECIO_IN  = 1.0 / 1_000_000   # USD por token de entrada  (Haiku 4.5)
-_PRECIO_OUT = 5.0 / 1_000_000   # USD por token de salida
+_PRECIO_IN = 1.0 / 1_000_000  # USD por token de entrada  (Haiku 4.5)
+_PRECIO_OUT = 5.0 / 1_000_000  # USD por token de salida
 
 
 class AnthropicProvider:
     """Cliente Claude con soporte de texto libre y output estructurado."""
 
-    def __init__(self, *, model: str = "claude-haiku-4-5", temperature: float = 0.0) -> None:
-        self.model       = model
+    def __init__(
+        self, *, model: str = "claude-haiku-4-5", temperature: float = 0.0
+    ) -> None:
+        self.model = model
         self._temperature = temperature
-        self._usage      = {"input": 0, "output": 0, "llamadas": 0}
+        self._usage = {"input": 0, "output": 0, "llamadas": 0}
 
     @cached_property
     def _client(self):
         import anthropic
+
         return anthropic.Anthropic()
 
     # ── interfaz pública ───────────────────────────────────────────────────
@@ -83,13 +86,10 @@ class AnthropicProvider:
     # ── telemetría ─────────────────────────────────────────────────────────
 
     def _track(self, usage) -> None:
-        self._usage["input"]   += usage.input_tokens
-        self._usage["output"]  += usage.output_tokens
+        self._usage["input"] += usage.input_tokens
+        self._usage["output"] += usage.output_tokens
         self._usage["llamadas"] += 1
 
     def costo(self) -> dict:
-        usd = (
-            self._usage["input"]  * _PRECIO_IN +
-            self._usage["output"] * _PRECIO_OUT
-        )
+        usd = self._usage["input"] * _PRECIO_IN + self._usage["output"] * _PRECIO_OUT
         return {**self._usage, "modelo": self.model, "usd_aprox": round(usd, 4)}

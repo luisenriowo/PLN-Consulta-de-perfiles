@@ -14,7 +14,9 @@ import re
 
 from src.schemas import Documento
 
-_CORCHETES = re.compile(r"\[\s*(?:\d+|cita\s+requerida|sin fuentes?)\s*\]", re.IGNORECASE)
+_CORCHETES = re.compile(
+    r"\[\s*(?:\d+|cita\s+requerida|sin fuentes?)\s*\]", re.IGNORECASE
+)
 _ESPACIOS = re.compile(r"[ \t ]+")
 _SALTOS = re.compile(r"\n{2,}")
 
@@ -32,7 +34,7 @@ _CREDITO_BYLINE = re.compile(
 # Fin de oración: . ! ? (o cierre …) seguido de espacio y mayúscula/comilla/¿¡
 _FIN_ORACION = re.compile(r"(?<=[.!?…])\s+(?=[«\"¿¡A-ZÁÉÍÓÚÑ0-9])")
 
-_MIN_CARS = 60   # documentos más cortos se descartan como ruido
+_MIN_CARS = 60  # documentos más cortos se descartan como ruido
 
 
 def limpiar(texto: str) -> str:
@@ -56,6 +58,26 @@ def segmentar_oraciones(texto: str) -> list[str]:
 def _firma(texto: str) -> str:
     """Firma normalizada para detectar duplicados (minúsculas, solo alfanum)."""
     return re.sub(r"[^a-z0-9áéíóúñ]+", "", texto.lower())
+
+
+# Filtro de idioma (heurístico, sin dependencias): el archivo de Andina mezcla
+# notas en inglés (servicio en inglés). Se comparan palabras función ES vs EN
+# en el inicio del texto. Para el corpus de NLP en español hay que descartar EN.
+_STOP_ES = {"de", "la", "el", "que", "en", "los", "del", "las", "una", "por",
+            "con", "para", "su", "al", "se", "lo", "como", "más", "es", "un"}
+_STOP_EN = {"the", "of", "and", "to", "in", "for", "on", "with", "as", "by",
+            "that", "is", "was", "from", "at", "this", "be", "are"}
+_RE_PALABRA = re.compile(r"[a-záéíóúñ]+")
+
+
+def es_espanol(texto: str) -> bool:
+    """True si el texto parece español (más stopwords ES que EN en el inicio)."""
+    toks = _RE_PALABRA.findall(texto[:400].lower())
+    if not toks:
+        return True
+    es = sum(t in _STOP_ES for t in toks)
+    en = sum(t in _STOP_EN for t in toks)
+    return es >= en
 
 
 def preprocess(docs: list[Documento]) -> list[Documento]:
