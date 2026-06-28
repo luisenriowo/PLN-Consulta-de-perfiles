@@ -46,22 +46,24 @@ def _cargar(slug: str, jsonl: Path | None) -> list[Documento]:
                         doc_id=r["doc_id"],
                         fuente=r["fuente"],
                         url=r["url"],
-                        fecha_pub=pd.Timestamp(r["fecha_pub"]).date(),
+                        fecha_pub=pd.Timestamp(r["fecha_pub"]).date(),  # ty: ignore[invalid-argument-type]
                         texto=r["texto"],
                     )
                 )
         return docs
     df = pd.read_parquet(manifiesto.corpus_path(slug))
-    return [
-        Documento(
-            doc_id=r.doc_id,
-            fuente=r.fuente,
-            url=r.url,
-            fecha_pub=pd.Timestamp(r.fecha_pub).date(),
-            texto=r.texto,
+    docs = []
+    for r in df.to_dict(orient="records"):
+        docs.append(
+            Documento(
+                doc_id=r["doc_id"],
+                fuente=r["fuente"],
+                url=r["url"],
+                fecha_pub=pd.Timestamp(r["fecha_pub"]).date(),  # ty: ignore[invalid-argument-type]
+                texto=r["texto"],
+            )
         )
-        for r in df.itertuples()
-    ]
+    return docs
 
 
 def build(

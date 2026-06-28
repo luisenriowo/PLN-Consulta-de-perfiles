@@ -25,6 +25,7 @@ import random
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -78,16 +79,18 @@ def _entidades_del_grafo(slug: str) -> list[EntityNode]:
 
 def _docs(slug: str) -> list[Documento]:
     df = pd.read_parquet(manifiesto.corpus_path(slug))
-    return [
-        Documento(
-            doc_id=r.doc_id,
-            fuente=r.fuente,
-            url=r.url,
-            fecha_pub=pd.Timestamp(r.fecha_pub).date(),
-            texto=r.texto,
+    docs = []
+    for r in df.to_dict(orient="records"):
+        docs.append(
+            Documento(
+                doc_id=r["doc_id"],
+                fuente=r["fuente"],
+                url=r["url"],
+                fecha_pub=pd.Timestamp(r["fecha_pub"]).date(),  # ty: ignore[invalid-argument-type]
+                texto=r["texto"],
+            )
         )
-        for r in df.itertuples()
-    ]
+    return docs
 
 
 def exportar(slug: str, *, n: int = 140, semilla: int = 42) -> tuple[Path, int]:
@@ -121,7 +124,7 @@ def exportar(slug: str, *, n: int = 140, semilla: int = 42) -> tuple[Path, int]:
     rng = random.Random(semilla)
     tipos = list(por_tipo)
     por_cada = max(1, n // max(1, len(tipos)))
-    seleccion: list[tuple[str, object]] = []
+    seleccion: list[tuple[str, Any]] = []
     for t in tipos:
         grupo = list(por_tipo[t])
         rng.shuffle(grupo)

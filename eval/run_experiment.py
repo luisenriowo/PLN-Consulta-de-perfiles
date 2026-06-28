@@ -26,6 +26,7 @@ from src.generation import _llm
 from src.generation.ablacion import Ablacion
 from src.generation.b0_lead import B0Lead
 from src.generation.b1_extractive import B1Extractive
+from src.generation.base import GenerationCondition
 from src.generation.sistema_rag import SistemaRAG
 from src.pipeline import cluster, salience
 from src.schemas import Documento, TimelineEntry
@@ -46,11 +47,11 @@ def cargar_gold() -> list[TimelineEntry]:
     df = pd.read_csv(csvs[0])
     return [
         TimelineEntry(
-            fecha=date.fromisoformat(str(r.fecha)),
-            resumen=str(r.descripcion),
-            fuentes=[s for s in str(r.fuentes).split(",") if s],
+            fecha=date.fromisoformat(str(r["fecha"])),
+            resumen=str(r["descripcion"]),
+            fuentes=[s for s in str(r["fuentes"]).split(",") if s],
         )
-        for r in df.itertuples()
+        for r in df.to_dict(orient="records")
     ]
 
 
@@ -64,13 +65,13 @@ def eventos_salientes() -> list:
     df = df[df["humala_protagonista"]]
     docs = [
         Documento(
-            doc_id=r.doc_id,
-            fuente=r.fuente,
-            url=r.url,
-            fecha_pub=date.fromisoformat(r.fecha_pub),
-            texto=r.texto,
+            doc_id=r["doc_id"],
+            fuente=r["fuente"],
+            url=r["url"],
+            fecha_pub=date.fromisoformat(r["fecha_pub"]),
+            texto=r["texto"],
         )
-        for r in df.itertuples()
+        for r in df.to_dict(orient="records")
     ]
     return salience.select_salient(
         cluster.cluster_events(docs, umbral=cluster.UMBRAL_DEFECTO),
@@ -90,7 +91,7 @@ def run_experiment(n: int = 3) -> None:
         f"gold={len(gold)}  eventos_salientes={len(clusters)}  N={n}  tol={TOL_DIAS}d"
     )
 
-    condiciones = [B0Lead(), B1Extractive()]
+    condiciones: list[GenerationCondition] = [B0Lead(), B1Extractive()]
     if _llm.disponible():
         condiciones += [SistemaRAG(), Ablacion()]
     else:

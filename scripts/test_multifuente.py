@@ -27,14 +27,20 @@ def test_familia_fuente() -> None:
 
 
 def test_multi_fuente_decisiva() -> None:
-    base = dict(
+    mono = EventCluster(
         cluster_id="e",
         fecha_normalizada=date(2021, 1, 1),
         pasajes_evidencia=["Evento neutral sin gatillos lexicos"],
-        fechas_evidencia=[date(2021, 1, 1)],  # 1 fecha → cobertura False
+        fechas_evidencia=[date(2021, 1, 1)],
+        fuentes=["andina:1", "andina:2"],
     )
-    mono = EventCluster(**base, fuentes=["andina:1", "andina:2"])  # 2 notas, 1 fuente
-    multi = EventCluster(**base, fuentes=["andina:1", "gdelt:u"])  # 2 notas, 2 fuentes
+    multi = EventCluster(
+        cluster_id="e",
+        fecha_normalizada=date(2021, 1, 1),
+        pasajes_evidencia=["Evento neutral sin gatillos lexicos"],
+        fechas_evidencia=[date(2021, 1, 1)],
+        fuentes=["andina:1", "gdelt:u"],
+    )
     assert salience.senales(mono)["multi_fuente"] is False
     assert salience.senales(multi)["multi_fuente"] is True
     # mono: solo nota_dedicada (1 señal) → no saliente; multi: +multi_fuente (2) → saliente
@@ -88,6 +94,8 @@ def test_byline_stripping() -> None:
 
 def test_dispatcher_colectores() -> None:
     spec = importlib.util.spec_from_file_location("pt", "scripts/precompute_tema.py")
+    assert spec is not None
+    assert spec.loader is not None
     pt = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(pt)
     assert {"andina", "gdelt"} <= set(pt._COLECTORES), pt._COLECTORES.keys()

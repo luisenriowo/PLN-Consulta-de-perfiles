@@ -55,7 +55,7 @@ class GroqProvider:
 
     @cached_property
     def _client(self):
-        from groq import Groq
+        from groq import Groq  # ty: ignore[unresolved-import]
 
         # max_retries=0: el SDK no reintenta en 429 — el llamador decide
         # qué hacer (classify_grupo usa fallback a reglas).

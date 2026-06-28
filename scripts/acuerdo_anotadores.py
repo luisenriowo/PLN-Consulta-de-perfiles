@@ -30,7 +30,7 @@ from pathlib import Path
 import pandas as pd
 
 
-def _arg(flag: str, default: str | None = None) -> str | None:
+def _arg(flag: str, default: str = "") -> str:
     return sys.argv[sys.argv.index(flag) + 1] if flag in sys.argv else default
 
 

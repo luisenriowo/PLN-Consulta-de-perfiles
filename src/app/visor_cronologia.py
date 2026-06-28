@@ -76,10 +76,10 @@ def cargar_fuentes() -> dict[str, dict]:
         return {}
     df = pd.read_parquet(CORPUS, columns=["doc_id", "url", "texto"])
     mapa: dict[str, dict] = {}
-    for r in df.itertuples():
-        lineas = str(r.texto).split("\n")
-        mapa[r.doc_id] = {
-            "url": r.url,
+    for r in df.to_dict(orient="records"):
+        lineas = str(r["texto"]).split("\n")
+        mapa[r["doc_id"]] = {
+            "url": r["url"],
             "titulo": lineas[0] if lineas else "",
             "lead": lineas[1] if len(lineas) > 1 else "",
         }

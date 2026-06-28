@@ -55,16 +55,18 @@ _TODOS = frozenset({"PER", "ORG", "LOC", "MISC"})
 
 def _docs(slug: str) -> list[Documento]:
     df = pd.read_parquet(manifiesto.corpus_path(slug))
-    return [
-        Documento(
-            doc_id=r.doc_id,
-            fuente=r.fuente,
-            url=r.url,
-            fecha_pub=pd.Timestamp(r.fecha_pub).date(),
-            texto=r.texto,
+    docs = []
+    for r in df.to_dict(orient="records"):
+        docs.append(
+            Documento(
+                doc_id=r["doc_id"],
+                fuente=r["fuente"],
+                url=r["url"],
+                fecha_pub=pd.Timestamp(r["fecha_pub"]).date(),  # ty: ignore[invalid-argument-type]
+                texto=r["texto"],
+            )
         )
-        for r in df.itertuples()
-    ]
+    return docs
 
 
 def exportar(slug: str, *, top: int = 60) -> tuple[Path, int, int]:

@@ -33,19 +33,19 @@ def _partes_texto(texto: str) -> tuple[str, str]:
 def construir_spreadsheet(df: pd.DataFrame) -> pd.DataFrame:
     """Arma una tabla estable y directa para anotadores."""
     filas = []
-    for row in df.itertuples(index=False):
-        titulo, lead = _partes_texto(row.texto)
+    for row in df.to_dict(orient="records"):
+        titulo, lead = _partes_texto(row["texto"])
         filas.append(
             {
-                "doc_id": row.doc_id,
-                "fecha_pub": row.fecha_pub,
+                "doc_id": row["doc_id"],
+                "fecha_pub": row["fecha_pub"],
                 "titulo": titulo,
-                "url": row.url,
+                "url": row["url"],
                 "lead": lead,
-                "fuente": row.fuente,
-                "queries": row.queries,
-                "clase_protagonismo": row.clase_protagonismo,
-                "humala_protagonista": bool(row.humala_protagonista),
+                "fuente": row["fuente"],
+                "queries": row["queries"],
+                "clase_protagonismo": row["clase_protagonismo"],
+                "humala_protagonista": bool(row["humala_protagonista"]),
                 "anotar_en_gold": "",
                 "fecha_evento_gold": "",
                 "resumen_evento_gold": "",
