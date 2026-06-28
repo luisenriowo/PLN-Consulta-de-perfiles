@@ -69,16 +69,35 @@ def _docs(slug: str) -> list[Documento]:
     return docs
 
 
-def exportar(slug: str, *, top: int = 60) -> tuple[Path, int, int]:
-    corpus = manifiesto.corpus_path(slug)
+def exportar(
+    slug: str,
+    *,
+    top: int = 60,
+    corpus_slug: str | None = None,
+    usar_menciones: bool = False,
+) -> tuple[Path, int, int]:
+    fuente = corpus_slug or slug
+    corpus = manifiesto.corpus_path(fuente)
     if not corpus.exists():
         raise FileNotFoundError(
-            f"No existe {corpus}. Corre antes: python scripts/precompute_tema.py {slug}"
+            f"No existe {corpus}. Corre antes: python scripts/precompute_tema.py {fuente}"
         )
-    docs = _docs(slug)
+    docs = _docs(fuente)
+    # Reusar menciones NER persistidas (scripts/ner_corpus.py) en vez de re-NER.
+    menc = None
+    if usar_menciones:
+        from scripts.ner_corpus import cargar_menciones
+
+        menc = cargar_menciones(corpus)
+        log.info("usando %d menciones NER persistidas (sin re-NER)", len(menc))
     # CRUDO: todos los tipos, sin denylist; pedimos de más (top*3) para ver ruido.
     crudo = descubrir_entidades(
-        docs, top_n=top * 3, tipos=_TODOS, excluir=set(), enriquecer_wikidata=False
+        docs,
+        top_n=top * 3,
+        tipos=_TODOS,
+        excluir=set(),
+        enriquecer_wikidata=False,
+        menciones=menc,
     )
     log.info("entidades crudas descubiertas: %d", len(crudo))
 
@@ -117,15 +136,24 @@ if __name__ == "__main__":
     os.environ.setdefault("SPACY_NER_MODEL", "es_core_news_md")
     logging.basicConfig(level=logging.INFO, format="%(levelname)-8s %(message)s")
 
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    top = 60
-    if "--top" in sys.argv:
-        top = int(sys.argv[sys.argv.index("--top") + 1])
-    if not args:
-        print("Uso: python scripts/export_entidades_gold.py <slug> [--top 60]")
-        raise SystemExit(1)
+    import argparse
 
-    ruta, k, n_ret = exportar(args[0], top=top)
+    p = argparse.ArgumentParser(description="Exporta gold de entidades para etiquetado")
+    p.add_argument("slug", help="slug del grafo (nombra el CSV de salida)")
+    p.add_argument("--top", type=int, default=60)
+    p.add_argument(
+        "--corpus-slug", default=None, help="slug del corpus parquet a leer (si difiere)"
+    )
+    p.add_argument(
+        "--menciones",
+        action="store_true",
+        help="reusar menciones NER persistidas (scripts/ner_corpus.py) en vez de re-NER",
+    )
+    a = p.parse_args()
+
+    ruta, k, n_ret = exportar(
+        a.slug, top=a.top, corpus_slug=a.corpus_slug, usar_menciones=a.menciones
+    )
     print(f"\nExportadas {k} entidades ({n_ret} retenidas por el filtro) -> {ruta}")
     print("Completa es_actor_gold (1/0), tipo_correcto y nombre_canonico, luego:")
     print(f"  python -m eval.entities {ruta}")

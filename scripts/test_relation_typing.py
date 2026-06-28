@@ -49,12 +49,14 @@ def test_clusterizar_predicados() -> None:
         _inst(3, "apoyar"),
         _inst(4, "respaldar"),
     ]
+    # `vectores` se alinea al orden de predicados ÚNICOS ordenados:
+    # [acusar, apoyar, denunciar, respaldar]
     vectores = np.array(
         [
-            [1.0, 0.0],
-            [0.98, 0.02],
-            [0.0, 1.0],
-            [0.02, 0.98],
+            [1.0, 0.0],    # acusar
+            [0.0, 1.0],    # apoyar
+            [0.98, 0.02],  # denunciar
+            [0.02, 0.98],  # respaldar
         ]
     )
     clusters = clusterizar_predicados(

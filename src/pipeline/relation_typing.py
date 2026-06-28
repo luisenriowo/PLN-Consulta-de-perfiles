@@ -76,6 +76,10 @@ def cargar_predicados(grafo: KnowledgeGraph) -> list[PredicateInstance]:
         predicado = (row.get("predicado") or "").strip()
         if not predicado:
             continue
+        # Descartar artefactos de OpenIE: URLs y fragmentos largos no son predicados
+        # (p. ej. enlaces "https://andina.pe/...galeer" que el parser tomó por verbo).
+        if len(predicado) > 40 or "http" in predicado or "://" in predicado:
+            continue
         evidencia = grafo.evidencia(int(row["id"])).get("pasajes", [])
         instancias.append(
             PredicateInstance(
@@ -110,13 +114,22 @@ def clusterizar_predicados(
     """
     if not instancias:
         return []
+    # Clusterizar PREDICADOS ÚNICOS, no aristas. A escala hay decenas de miles de
+    # aristas pero solo unos miles de predicados distintos; embeber/clusterizar por
+    # arista es O(n_aristas²) y agota memoria (93k aristas → matriz inviable).
+    # `vectores` (tests offline) se alinea al orden de `predicados` (sorted).
+    by_pred: dict[str, list[PredicateInstance]] = {}
+    for inst in instancias:
+        by_pred.setdefault(_norm(inst.predicado), []).append(inst)
+    predicados = sorted(by_pred)
+
     if vectores is None:
         vectores = embeddings.modelo(modelo).encode(
-            [texto_embedding(i) for i in instancias], normalize_embeddings=True
+            [f"ENT_A {p} ENT_B" for p in predicados], normalize_embeddings=True
         )
     vectores = np.asarray(vectores)
 
-    if len(instancias) == 1:
+    if len(predicados) == 1:
         labels = np.array([0])
     else:
         labels = AgglomerativeClustering(
@@ -127,15 +140,15 @@ def clusterizar_predicados(
         ).fit_predict(vectores)
 
     grupos: dict[int, list[PredicateInstance]] = {}
-    for inst, label in zip(instancias, labels):
-        grupos.setdefault(int(label), []).append(inst)
+    for pred, label in zip(predicados, labels):
+        grupos.setdefault(int(label), []).extend(by_pred[pred])
 
     ordenados = sorted(
         grupos.values(),
         key=lambda xs: (
             -len(xs),
             Counter(i.predicado for i in xs).most_common(1)[0][0],
-            xs[0].relation_id,
+            min(i.relation_id for i in xs),
         ),
     )
     return [

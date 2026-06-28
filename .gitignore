@@ -234,6 +234,8 @@ data/*.ckpt.json
 data/menciones_*/
 # Salidas finales (data/salidas/ y data/figuras.json) SÍ se suben.
 # Provenance del corpus congelado (data/*.manifest.json) SÍ se sube.
+# Asignaciones arista->cluster (regenerable y grande); el CSV de clusters SÍ se sube.
+data/salidas/*/relation_type_assignments.csv
 
 # Project generated / local annotation workbooks
 annotation/gold/*.xlsx

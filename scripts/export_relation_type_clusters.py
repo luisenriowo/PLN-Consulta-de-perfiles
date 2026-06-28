@@ -21,7 +21,7 @@ from src.pipeline.relation_typing import (
 from src.storage import KnowledgeGraph
 
 
-def exportar(slug: str, *, threshold: float = 0.35) -> tuple[int, int]:
+def exportar(slug: str, *, threshold: float = 0.10) -> tuple[int, int]:
     out_dir = manifiesto.salidas_dir(slug)
     out_dir.mkdir(parents=True, exist_ok=True)
     clusters_path = out_dir / "relation_type_clusters.csv"
@@ -74,7 +74,7 @@ def main() -> None:
         description="Exporta clusters inducidos de relaciones abiertas"
     )
     p.add_argument("slug")
-    p.add_argument("--threshold", type=float, default=0.35)
+    p.add_argument("--threshold", type=float, default=0.10)
     args = p.parse_args()
     n_clusters, n_rel = exportar(args.slug, threshold=args.threshold)
     out_dir = manifiesto.salidas_dir(args.slug)
