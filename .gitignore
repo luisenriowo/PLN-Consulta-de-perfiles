@@ -219,6 +219,7 @@ __marimo__/
 
 # Datos intermedios/crudos — NO subir al repositorio
 data/*.parquet
+data/**/*.parquet
 data/*.duckdb
 data/*.csv
 data/*.xlsx
@@ -226,7 +227,13 @@ data/figuras_dinamicas.json
 data/jobs/
 data/wikidata_cache.json
 data/corpus_metrics.json
-# Salidas finales (data/salidas/ y data/figuras.json) SÍ se suben
+# Crawl de archivo completo (regenerable por scripts/crawl_andina.py)
+data/*.jsonl
+data/*.ckpt.json
+# Menciones NER persistidas (regenerable por scripts/ner_corpus.py)
+data/menciones_*/
+# Salidas finales (data/salidas/ y data/figuras.json) SÍ se suben.
+# Provenance del corpus congelado (data/*.manifest.json) SÍ se sube.
 
 # Project generated / local annotation workbooks
 annotation/gold/*.xlsx
