@@ -106,16 +106,16 @@ class KnowledgeGraph:
         self._conn.execute(_DDL)
 
     def _table_exists(self, name: str) -> bool:
-        return bool(
-            self._conn.execute(
-                """
-            SELECT COUNT(*)
-            FROM information_schema.tables
-            WHERE table_name = ?
-            """,
-                [name],
-            ).fetchone()[0]
-        )
+        row = self._conn.execute(
+            """
+        SELECT COUNT(*)
+        FROM information_schema.tables
+        WHERE table_name = ?
+        """,
+            [name],
+        ).fetchone()
+        assert row is not None
+        return bool(row[0])
 
     # ── Escritura ──────────────────────────────────────────────────────────
 
@@ -163,6 +163,7 @@ class KnowledgeGraph:
                 edge.metodo,
             ],
         ).fetchone()
+        assert row is not None
         rel_id: int = row[0]
 
         if edge.evidencia:

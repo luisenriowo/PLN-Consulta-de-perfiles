@@ -108,7 +108,7 @@ class TransformerNER:
     def _pipe(self):
         from transformers import pipeline
 
-        return pipeline(
+        return pipeline(  # ty: ignore[no-matching-overload]
             "ner",
             model=self._model_name,
             aggregation_strategy="simple",

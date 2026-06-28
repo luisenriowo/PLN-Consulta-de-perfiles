@@ -118,17 +118,18 @@ def _cargar_corpus(slug: str, cfg) -> list[Documento]:
         df = pd.read_parquet(corpus)
         # Re-aplica limpiar() al reusar: hace efectivo el fix de bylines sobre un
         # corpus ya descargado, sin re-scrapear. limpiar es idempotente.
-        docs = [
-            Documento(
-                doc_id=r.doc_id,
-                fuente=r.fuente,
-                url=r.url,
-                fecha_pub=pd.Timestamp(r.fecha_pub).date(),
-                texto=preprocess.limpiar(r.texto),
-                entidades=[],
+        docs = []
+        for r in df.to_dict(orient="records"):
+            docs.append(
+                Documento(
+                    doc_id=r["doc_id"],
+                    fuente=r["fuente"],
+                    url=r["url"],
+                    fecha_pub=pd.Timestamp(r["fecha_pub"]).date(),  # ty: ignore[invalid-argument-type]
+                    texto=preprocess.limpiar(r["texto"]),
+                    entidades=[],
+                )
             )
-            for r in df.itertuples()
-        ]
         log.info(
             "    %d docs cargados (re-limpieza aplicada: fix de bylines)", len(docs)
         )

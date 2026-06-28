@@ -33,6 +33,7 @@ from src.generation import _llm
 from src.generation.ablacion import Ablacion
 from src.generation.b0_lead import B0Lead
 from src.generation.b1_extractive import B1Extractive
+from src.generation.base import GenerationCondition
 from src.generation.sistema_rag import SistemaRAG
 from src.ingest import andina
 from src.ingest._util import dentro_de_ventana, http_session
@@ -75,17 +76,18 @@ def precompute(slug: str) -> None:
     if corpus.exists():
         log.info("[1-2] corpus ya existe — cargando desde %s (omite scraping)", corpus)
         df = pd.read_parquet(corpus)
-        docs = [
-            Documento(
-                doc_id=r.doc_id,
-                fuente=r.fuente,
-                url=r.url,
-                fecha_pub=pd.Timestamp(r.fecha_pub).date(),
-                texto=r.texto,
-                entidades=[],
+        docs = []
+        for r in df.to_dict(orient="records"):
+            docs.append(
+                Documento(
+                    doc_id=r["doc_id"],
+                    fuente=r["fuente"],
+                    url=r["url"],
+                    fecha_pub=pd.Timestamp(r["fecha_pub"]).date(),  # ty: ignore[invalid-argument-type]
+                    texto=r["texto"],
+                    entidades=[],
+                )
             )
-            for r in df.itertuples()
-        ]
         log.info("    %d docs cargados", len(docs))
     else:
         session = http_session()
@@ -208,7 +210,7 @@ def precompute(slug: str) -> None:
             )
 
     log.info("[7] generación")
-    conds = [B0Lead(), B1Extractive()]
+    conds: list[GenerationCondition] = [B0Lead(), B1Extractive()]
     if _llm.disponible():
         conds += [SistemaRAG(), Ablacion(sujeto=cfg.nombre)]
     else:

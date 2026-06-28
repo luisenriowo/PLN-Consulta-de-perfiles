@@ -90,7 +90,7 @@ def test_descubrir_filtra() -> None:
     ]
 
     original = ed.get_ner_model
-    ed.get_ner_model = lambda: lambda textos: menciones_por_doc
+    ed.get_ner_model = lambda: lambda textos: menciones_por_doc  # ty: ignore[invalid-assignment]
     try:
         nodos = descubrir_entidades(docs, top_n=10, enriquecer_wikidata=False)
     finally:
