@@ -9,7 +9,7 @@ Usamos 12 RPM para tener margen.
 Variables de entorno requeridas:
   GEMINI_API_KEY — clave obtenida en https://aistudio.google.com/
 
-Instalar SDK: `uv add openai`
+SDK: openai (incluido en pyproject.toml, se instala con `uv sync`)
 """
 
 from __future__ import annotations
