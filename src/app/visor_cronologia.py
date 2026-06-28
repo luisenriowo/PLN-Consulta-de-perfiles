@@ -5,7 +5,7 @@ regenera nada: no llama al LLM ni recalcula clusters/embeddings. Lee el esquema
 `TimelineEntry` actual (fecha, resumen, fuentes) y ordena por fecha ascendente.
 Consistente con el producto (§9) y con las convenciones de CLAUDE.md.
 
-Correr:  streamlit run src/app/visor_cronologia.py
+Correr:  uv run streamlit run src/app/visor_cronologia.py
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-# Permite `from src...` al ejecutar con `streamlit run` (añade la raíz del repo).
+# Permite `from src...` al ejecutar con `uv run streamlit run` (añade la raíz del repo).
 _RAIZ = Path(__file__).resolve().parents[2]
 if str(_RAIZ) not in sys.path:
     sys.path.insert(0, str(_RAIZ))
@@ -188,7 +188,7 @@ def main() -> None:
     FUENTES_MAP = cargar_fuentes()
     if not salidas:
         st.error("No hay salidas en `data/salidas/`. Corre primero "
-                 "`python scripts/run_generation.py`.")
+                 "`uv run python scripts/run_generation.py`.")
         st.stop()
 
     conds = [c for c in COND_ORDEN if c in salidas]

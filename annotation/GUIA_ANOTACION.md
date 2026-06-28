@@ -86,9 +86,9 @@ es con un tercero que no es ninguna de las dos, → **`mencion`**.
 
 1. El anotador A produce el gold completo siguiendo esta guía.
 2. Se genera una copia en blanco de una **muestra** (≥30 filas) para el anotador
-   B: `python scripts/acuerdo_anotadores.py --blank <gold.csv> --n 30`.
+   B: `uv run python scripts/acuerdo_anotadores.py --blank <gold.csv> --n 30`.
 3. B etiqueta la muestra **sin ver** las etiquetas de A.
-4. Se mide acuerdo: `python scripts/acuerdo_anotadores.py <A.csv> <B.csv> --col tipo_gold`.
+4. Se mide acuerdo: `uv run python scripts/acuerdo_anotadores.py <A.csv> <B.csv> --col tipo_gold`.
    Reporta % de acuerdo y κ de Cohen.
 5. Las discrepancias se discuten; si revelan ambigüedad de criterio, se actualiza
    esta guía (y se vuelve a 1 si el cambio es grande).

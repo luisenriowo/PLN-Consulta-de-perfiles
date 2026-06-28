@@ -31,58 +31,58 @@ political graph. Plan: `reports/roadmap-paper.md`. See "Open-temporal relations"
 ## Commands
 
 ```bash
-# Install (from repo root, activate .venv first)
-pip install -e .
-python -m spacy download es_core_news_md    # dev/smoke
-python -m spacy download es_core_news_lg    # production NER (precompute)
+# Install (from repo root; uv manages .venv)
+uv sync
+uv run python -m spacy download es_core_news_md    # dev/smoke
+uv run python -m spacy download es_core_news_lg    # production NER (precompute)
 
 # Run backend (serves http://127.0.0.1:8000 + static web frontend)
-uvicorn src.app.api:app --reload
+uv run uvicorn src.app.api:app --reload
 
 # Run Streamlit frontend (legacy; requires backend up)
-streamlit run src/app/streamlit_app.py
+uv run streamlit run src/app/streamlit_app.py
 
 # Offline precompute a figure (slug must exist in src/figuras.py)
-python scripts/precompute_figura.py <slug>      # e.g. humala, keiko, roberto-sanchez
+uv run python scripts/precompute_figura.py <slug>      # e.g. humala, keiko, roberto-sanchez
 
 # Offline precompute a TOPIC graph (slug in TEMAS in src/figuras.py, or reuse an
 # existing figure's corpus by passing its slug). Builds data/graph_<slug>.duckdb.
-python scripts/precompute_tema.py <slug>        # e.g. elecciones-2021-2026, humala
+uv run python scripts/precompute_tema.py <slug>        # e.g. elecciones-2021-2026, humala
 # Fully offline run (no Wikidata, rules-only relations):
-WIKIDATA_ENRIQUECER=0 ANTHROPIC_API_KEY= python scripts/precompute_tema.py <slug>
+WIKIDATA_ENRIQUECER=0 ANTHROPIC_API_KEY= uv run python scripts/precompute_tema.py <slug>
 
 # Build Humala corpus from scratch (scraping + NER + gate-metrics)
-python scripts/build_corpus.py
+uv run python scripts/build_corpus.py
 
 # Run generation only (reads existing corpus_humala.parquet)
-python scripts/run_generation.py
+uv run python scripts/run_generation.py
 
 # Evaluate: 4 conditions × N runs (requires gold in annotation/gold/)
-python -m eval.run_experiment [N]
+uv run python -m eval.run_experiment [N]
 
 # Validate eval harness with known-answer fixtures (no gold needed)
-python scripts/test_eval.py
+uv run python scripts/test_eval.py
 
 # Relation classifier evaluation (topic-centric headline metric)
-python scripts/export_relaciones_gold.py <slug> [--n 140]   # → annotation/gold_relaciones/<slug>.csv (fill tipo_gold by hand)
-python -m eval.relations annotation/gold_relaciones/<slug>.csv [--llm]   # P/R/F1 per relation type
-python scripts/test_relations.py            # validate the relation harness with known-answer fixtures (no gold/network)
+uv run python scripts/export_relaciones_gold.py <slug> [--n 140]   # → annotation/gold_relaciones/<slug>.csv (fill tipo_gold by hand)
+uv run python -m eval.relations annotation/gold_relaciones/<slug>.csv [--llm]   # P/R/F1 per relation type
+uv run python scripts/test_relations.py            # validate the relation harness with known-answer fixtures (no gold/network)
 
 # Entity resolution evaluation (graph node quality)
-python scripts/export_entidades_gold.py <slug> [--top 60]   # → annotation/gold_entidades/<slug>.csv (fill es_actor_gold, tipo_correcto, nombre_canonico)
-python -m eval.entities annotation/gold_entidades/<slug>.csv   # actor precision/recall, type accuracy, splits
-python scripts/test_entities.py             # validate the entity harness with known-answer fixtures (no gold/network)
-python scripts/test_multifuente.py          # validate multi-source layer (multi_fuente signal, cross-source dedup, collector dispatch)
+uv run python scripts/export_entidades_gold.py <slug> [--top 60]   # → annotation/gold_entidades/<slug>.csv (fill es_actor_gold, tipo_correcto, nombre_canonico)
+uv run python -m eval.entities annotation/gold_entidades/<slug>.csv   # actor precision/recall, type accuracy, splits
+uv run python scripts/test_entities.py             # validate the entity harness with known-answer fixtures (no gold/network)
+uv run python scripts/test_multifuente.py          # validate multi-source layer (multi_fuente signal, cross-source dedup, collector dispatch)
 
 # Full Andina crawl by ID (all topics, 2021-2026; resumable via checkpoint)
-python scripts/crawl_andina.py --desde-id 825000 --hasta-id 1100000 \
+uv run python scripts/crawl_andina.py --desde-id 825000 --hasta-id 1100000 \
   --salida data/andina_crawl.jsonl --delay 0.4 --desde 2021-01-01 --hasta 2026-12-31
 # Build the TEMPORAL OPEN-relation graph from a corpus (jsonl crawl or parquet)
-python scripts/build_open_graph.py <slug> --jsonl data/andina_crawl.jsonl --top-n 300
-python scripts/build_open_graph.py <slug> --corpus-slug <otro> --top-n 40   # reuse a parquet corpus
+uv run python scripts/build_open_graph.py <slug> --jsonl data/andina_crawl.jsonl --top-n 300
+uv run python scripts/build_open_graph.py <slug> --corpus-slug <otro> --top-n 40   # reuse a parquet corpus
 
 # Smoke test ingest (lightweight, no full scrape)
-python scripts/smoke_ingest.py
+uv run python scripts/smoke_ingest.py
 ```
 
 Environment variables (in a `.env` file, gitignored):
@@ -170,7 +170,7 @@ Gold annotations live under `annotation/` (not `data/`): `gold_relaciones/`,
    - `familia_otros`: homonym ids to **exclude** from protagonism (anti-contamination).
    - `queries`: search terms for Andina (single terms, not phrases — Andina searches by phrase internally).
    - `desde` / `hasta`: temporal window.
-2. Run `python scripts/precompute_figura.py <slug>`.
+2. Run `uv run python scripts/precompute_figura.py <slug>`.
 
 Figures created via the web UI are stored in `data/figuras_dinamicas.json` and do not appear in `src/figuras.py`.
 
@@ -298,7 +298,7 @@ relationship **evolves over time**. Validated on the roberto-sanchez corpus:
 
 The FastAPI backend (`api.py`) is **read-only at request time** — it never runs the pipeline or calls the LLM during a web request. All heavy work happens offline via `scripts/precompute_figura.py`.
 
-When a new figure is created from the web (POST `/api/figuras`), `jobs.py` launches `precompute_figura` as a **detached subprocess** (`python -m src.app.jobs <slug>`). The web polls `GET /api/jobs/{slug}` for state. `jobs.py` is intentionally lightweight (no spaCy/torch imports at module level).
+When a new figure is created from the web (POST `/api/figuras`), `jobs.py` launches `precompute_figura` as a **detached subprocess** (`uv run python -m src.app.jobs <slug>` in local uv workflows). The web polls `GET /api/jobs/{slug}` for state. `jobs.py` is intentionally lightweight (no spaCy/torch imports at module level).
 
 The static web frontend lives in `src/app/web/` and is mounted at `/` after all `/api/*` routes.
 
@@ -343,4 +343,4 @@ Gold format: CSV with columns `fecha`, `descripcion`, `fuentes` (comma-separated
 
 The hallucination rate (tasa de alucinación) is the headline metric. The NLI judge must be validated against a human-labeled subset before reporting (see `eval.nli.validar_juez`).
 
-Validate the metric harness **before** the gold arrives: `python scripts/test_eval.py`.
+Validate the metric harness **before** the gold arrives: `uv run python scripts/test_eval.py`.

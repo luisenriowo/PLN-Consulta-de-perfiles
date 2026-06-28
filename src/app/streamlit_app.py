@@ -5,7 +5,7 @@ tiempo del sujeto con sus fuentes citadas. Consume el backend FastAPI. Usable,
 nada más (no sobre-ingenierizar, §10).
 
 Levantar (con el backend ya corriendo):
-    streamlit run src/app/streamlit_app.py
+    uv run streamlit run src/app/streamlit_app.py
 """
 
 from __future__ import annotations
@@ -29,11 +29,11 @@ try:
     condiciones = info.get("condiciones", [])
 except requests.RequestException:
     st.error(f"No se pudo conectar al backend en {API}. Levántalo con "
-             "`uvicorn src.app.api:app`.")
+             "`uv run uvicorn src.app.api:app`.")
     st.stop()
 
 if not condiciones:
-    st.warning("No hay condiciones generadas. Corre `python scripts/run_generation.py`.")
+    st.warning("No hay condiciones generadas. Corre `uv run python scripts/run_generation.py`.")
     st.stop()
 
 st.markdown(f"**Sujeto:** {info.get('sujeto', '—')}")

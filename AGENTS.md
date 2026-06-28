@@ -4,19 +4,20 @@ Compact guidance for OpenCode sessions in this repo. For full background, read `
 
 ## Setup And Commands
 
-- Python package is `timeline-gen` and requires Python `>=3.11`; install from the repo root with `pip install -e .`.
-- Install spaCy Spanish model `es_core_news_md` for dev/smoke work; use `es_core_news_lg` for production precompute if available.
+- Python package is `timeline-gen` and requires Python `>=3.12,<3.14`; local development is pinned to Python `3.13` in `.python-version` because current spaCy wheels do not support Python 3.14.
+- Install dependencies from the repo root with `uv sync`; run project commands with `uv run`.
+- Install spaCy Spanish model `es_core_news_md` for dev/smoke work with `uv run python -m spacy download es_core_news_md`; use `es_core_news_lg` for production precompute if available.
 - Copy `.env.example` to `.env` locally. `RELATIONS_LLM_PROVIDER` controls both relation classification and timeline generation; only the active provider key is needed.
-- Run the backend/static frontend with `uvicorn src.app.api:app --reload` and open `http://127.0.0.1:8000`.
-- Useful focused checks are plain scripts, not a configured pytest suite: `python -m compileall -q src scripts eval`, `python scripts/test_relations.py`, `python scripts/test_entities.py`, `python scripts/test_multifuente.py`, `python scripts/test_eval.py`.
-- `python -m eval.run_experiment 3` requires frozen gold under `annotation/gold/`; relation/entity evals require their CSVs under `annotation/gold_relaciones/` and `annotation/gold_entidades/`.
+- Run the backend/static frontend with `uv run uvicorn src.app.api:app --reload` and open `http://127.0.0.1:8000`.
+- Useful focused checks are plain scripts, not a configured pytest suite: `uv run python -m compileall -q src scripts eval`, `uv run python scripts/test_relations.py`, `uv run python scripts/test_entities.py`, `uv run python scripts/test_multifuente.py`, `uv run python scripts/test_eval.py`.
+- `uv run python -m eval.run_experiment 3` requires frozen gold under `annotation/gold/`; relation/entity evals require their CSVs under `annotation/gold_relaciones/` and `annotation/gold_entidades/`.
 
 ## Offline Pipeline Boundary
 
 - `src/app/api.py` is read-only at request time: do not scrape, run spaCy/torch-heavy pipeline code, or call LLMs from web requests.
-- Figure precompute is offline via `python scripts/precompute_figura.py <slug>` and writes `data/corpus_<slug>.parquet`, `data/salidas/<slug>/*.json`, `data/graph_<slug>.duckdb`, and `data/figuras.json`.
-- Topic graph precompute is offline via `python scripts/precompute_tema.py <slug>`; it reuses `data/corpus_<slug>.parquet` if present, otherwise scrapes configured topic sources.
-- Open-temporal graph build is `python scripts/build_open_graph.py <slug> --jsonl data/andina_crawl.jsonl --top-n 300` or `--corpus-slug <other>`; it creates one dated open edge per co-occurrence and leaves `tipo=None` for later typing.
+- Figure precompute is offline via `uv run python scripts/precompute_figura.py <slug>` and writes `data/corpus_<slug>.parquet`, `data/salidas/<slug>/*.json`, `data/graph_<slug>.duckdb`, and `data/figuras.json`.
+- Topic graph precompute is offline via `uv run python scripts/precompute_tema.py <slug>`; it reuses `data/corpus_<slug>.parquet` if present, otherwise scrapes configured topic sources.
+- Open-temporal graph build is `uv run python scripts/build_open_graph.py <slug> --jsonl data/andina_crawl.jsonl --top-n 300` or `--corpus-slug <other>`; it creates one dated open edge per co-occurrence and leaves `tipo=None` for later typing.
 - Precompute/build scripts delete an existing `data/graph_<slug>.duckdb` for a clean rerun; do not run them casually when preserving a local graph matters.
 
 ## Architecture Invariants

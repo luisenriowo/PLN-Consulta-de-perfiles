@@ -6,7 +6,7 @@ system prompt para guiar la estructura — Groq no soporta Structured Outputs
 nativos con schema Pydantic, pero con JSON mode + instrucción explícita la
 tasa de cumplimiento es alta para modelos Llama 3.x.
 
-Instalar SDK: pip install groq>=0.11
+Instalar SDK: `uv add groq`
 Variable de entorno requerida: GROQ_API_KEY
 """
 

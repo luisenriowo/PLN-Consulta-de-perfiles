@@ -137,14 +137,14 @@ duplica el macro-F1 (0.29 → 0.58) frente a reglas, sobre los mismos 135 ejempl
 
 ```bash
 # Gold (export estratificado) y evaluación
-python scripts/export_relaciones_gold.py roberto-sanchez --n 140
-python -m eval.relations annotation/gold_relaciones/roberto-sanchez.csv          # reglas
-python -m eval.relations annotation/gold_relaciones/roberto-sanchez.csv --llm    # reglas vs híbrido vs LLM
-python -m eval.entities  annotation/gold_entidades/roberto-sanchez.csv           # resolución de entidades
+uv run python scripts/export_relaciones_gold.py roberto-sanchez --n 140
+uv run python -m eval.relations annotation/gold_relaciones/roberto-sanchez.csv          # reglas
+uv run python -m eval.relations annotation/gold_relaciones/roberto-sanchez.csv --llm    # reglas vs híbrido vs LLM
+uv run python -m eval.entities  annotation/gold_entidades/roberto-sanchez.csv           # resolución de entidades
 
 # Acuerdo inter-anotador
-python scripts/acuerdo_anotadores.py --blank annotation/gold_relaciones/roberto-sanchez.csv --n 30
-python scripts/acuerdo_anotadores.py annotation/gold_relaciones/roberto-sanchez.csv <B>.csv --col tipo_gold
+uv run python scripts/acuerdo_anotadores.py --blank annotation/gold_relaciones/roberto-sanchez.csv --n 30
+uv run python scripts/acuerdo_anotadores.py annotation/gold_relaciones/roberto-sanchez.csv <B>.csv --col tipo_gold
 ```
 
 Entorno: Claude Haiku vía `RELATIONS_LLM_PROVIDER=anthropic`; temperatura 0.7;

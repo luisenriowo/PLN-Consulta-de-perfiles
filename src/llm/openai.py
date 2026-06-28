@@ -4,7 +4,7 @@
 el schema Pydantic directamente — OpenAI garantiza JSON válido y tipado.
 Requiere modelos que soporten Structured Outputs (gpt-4o-mini en adelante).
 
-Instalar SDK: pip install openai>=1.40
+Instalar SDK: `uv add openai`
 Variable de entorno requerida: OPENAI_API_KEY
 """
 

@@ -8,7 +8,7 @@ ni llama al LLM en el request (eso es offline; ver scripts/precompute_figura.py)
 
 Sirve además el frontend estático en `src/app/web/`.
 
-Levantar:  uvicorn src.app.api:app --reload    →    http://127.0.0.1:8000
+Levantar:  uv run uvicorn src.app.api:app --reload    →    http://127.0.0.1:8000
 """
 
 from __future__ import annotations
@@ -94,7 +94,7 @@ def _check_grafo(slug: str) -> Path:
         raise HTTPException(
             404,
             f"Grafo de '{slug}' no existe — corre primero: "
-            f"python scripts/precompute_figura.py {slug}",
+            f"uv run python scripts/precompute_figura.py {slug}",
         )
     return ruta
 

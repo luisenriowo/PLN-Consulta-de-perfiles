@@ -14,7 +14,7 @@ Para AÑADIR una figura nueva:
        - `familia_otros`: ids de homónimos a EXCLUIR del protagonismo.
        - `queries`: términos de búsqueda en Andina (términos sueltos, no frases).
        - `desde`/`hasta`: ventana temporal alcanzable.
-  2. Corre `python scripts/precompute_figura.py <slug>`.
+  2. Corre `uv run python scripts/precompute_figura.py <slug>`.
 """
 
 from __future__ import annotations

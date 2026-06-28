@@ -6,30 +6,22 @@ Pipeline NLP (T02 — Generación de lenguaje) que construye cronologías de fig
 
 ## Configuración inicial
 
-### 1. Entrar al proyecto y crear entorno virtual
+### 1. Entrar al proyecto
 
 ```powershell
 cd PLN-Consulta-de-perfiles
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
 ```
 
-Si PowerShell bloquea la activación:
+Este proyecto usa `uv`. La versión local sugerida está en `.python-version` (`3.13`), y el paquete soporta Python `>=3.12,<3.14`.
+
+### 2. Crear entorno e instalar dependencias
 
 ```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
+uv sync
+uv run python -m spacy download es_core_news_md
 ```
 
-El prompt debe mostrar `(.venv)`.
-
-### 2. Instalar dependencias
-
-```powershell
-python -m pip install --upgrade pip
-python -m pip install -e .
-python -m spacy download es_core_news_md
-```
+`uv sync` crea y mantiene `.venv` automáticamente desde `pyproject.toml` y `uv.lock`.
 
 ### 3. Configurar variables de entorno
 
@@ -46,13 +38,13 @@ Las salidas ya generadas están en el repositorio (`data/salidas/`). No hace fal
 Si en algún momento necesitas regenerar una figura desde cero:
 
 ```powershell
-python scripts/precompute_figura.py humala
+uv run python scripts/precompute_figura.py humala
 ```
 
 ### 5. Levantar el backend
 
 ```powershell
-uvicorn src.app.api:app --reload
+uv run uvicorn src.app.api:app --reload
 ```
 
 Abre `http://127.0.0.1:8000` — muestra el frontend con las cronologías ya cargadas.
@@ -79,19 +71,19 @@ data/
 
 ```powershell
 # Verificar entorno
-python -c "import pandas, spacy; spacy.load('es_core_news_md'); print('OK')"
+uv run python -c "import pandas, spacy; spacy.load('es_core_news_md'); print('OK')"
 
 # Validar sintaxis del proyecto
-python -m compileall -q src scripts eval
+uv run python -m compileall -q src scripts eval
 
 # Evaluar condiciones (requiere gold en annotation/gold/)
-python -m eval.run_experiment 3
+uv run python -m eval.run_experiment 3
 
 # Smoke test ingest (sin scraping completo)
-python scripts/smoke_ingest.py
+uv run python scripts/smoke_ingest.py
 
 # Frontend legacy Streamlit (requiere backend activo)
-streamlit run src/app/streamlit_app.py
+uv run streamlit run src/app/streamlit_app.py
 ```
 
 ---
