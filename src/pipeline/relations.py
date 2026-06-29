@@ -319,6 +319,42 @@ class RelacionAbierta:
     fecha: date
 
 
+def _matcher_entidades(entidades: list[EntityNode]):
+    """Compila UNA regex-unión `\\b(forma1|forma2|…)\\b` de todas las formas de
+    todas las entidades (nombre + alias >=6 chars), y un mapa forma→entidades.
+
+    Reemplaza el escaneo O(n_entidades) por oración (`_menciona` por entidad) por
+    UN solo `finditer` por oración: es el freno #1 a escala.
+    """
+    forma_ents: dict[str, list[EntityNode]] = {}
+    for e in entidades:
+        formas = [_norm(e.nombre)] + [
+            a_norm for a in e.alias if len(a_norm := _norm(a)) >= 6
+        ]
+        for forma in formas:
+            if forma:
+                forma_ents.setdefault(forma, []).append(e)
+    if not forma_ents:
+        return None, {}
+    # Lookahead (match cero-ancho) para capturar formas SOLAPADAS: "Salud" dentro
+    # de "Ministerio de Salud" se detectan ambas (paridad con `_menciona` por
+    # entidad). Formas largas primero: gana la primera de la alternancia.
+    formas = sorted(forma_ents, key=len, reverse=True)
+    patron = re.compile(r"(?=\b(" + "|".join(re.escape(f) for f in formas) + r")\b)")
+    return patron, forma_ents
+
+
+def _presentes_matcher(oracion_norm: str, patron, forma_ents) -> list[EntityNode]:
+    """Entidades presentes en la oración vía la regex-unión (dedup por id)."""
+    if patron is None:
+        return []
+    vistos: dict[str, EntityNode] = {}
+    for m in patron.finditer(oracion_norm):
+        for e in forma_ents.get(m.group(1), ()):
+            vistos[e.entity_id] = e
+    return list(vistos.values())
+
+
 def extraer_relaciones_abiertas(
     docs: list[Documento],
     entidades: list[EntityNode],
@@ -338,22 +374,33 @@ def extraer_relaciones_abiertas(
     y su combinatoria (C(n,2)) hace explotar el grafo con ruido `mencion`.
     """
     nlp = _nlp_dep()
-    for doc in docs:
-        for oracion in _segmentar(doc.texto):
-            oracion_norm = _norm(oracion)
-            presentes = [e for e in entidades if _menciona(oracion_norm, e)]
-            if not (min_entidades <= len(presentes) <= max_entidades):
-                continue
-            parsed = nlp(oracion)
-            for i, ea in enumerate(presentes):
-                for eb in presentes[i + 1 :]:
-                    pred = _predicado(parsed, ea.nombre, eb.nombre)
-                    if pred:
-                        yield RelacionAbierta(
-                            entity_a=ea,
-                            entity_b=eb,
-                            predicado=pred,
-                            oracion=oracion,
-                            doc_id=doc.doc_id,
-                            fecha=doc.fecha_pub,
-                        )
+    n_process = int(os.environ.get("RELATIONS_NLP_PROCS", "1"))
+    patron, forma_ents = _matcher_entidades(entidades)
+
+    def _candidatos():
+        # Primera pasada (barata): solo oraciones con 2-6 entidades presentes,
+        # detectadas con UNA regex-unión por oración (no 150 checks). Se
+        # transmiten como (texto, contexto) a nlp.pipe, que PARSEA EN BATCH. El
+        # contexto se reensambla en el proceso principal, no va a los workers.
+        for doc in docs:
+            for oracion in _segmentar(doc.texto):
+                oracion_norm = _norm(oracion)
+                presentes = _presentes_matcher(oracion_norm, patron, forma_ents)
+                if min_entidades <= len(presentes) <= max_entidades:
+                    yield oracion, (doc, oracion, presentes)
+
+    for parsed, (doc, oracion, presentes) in nlp.pipe(
+        _candidatos(), as_tuples=True, batch_size=256, n_process=n_process
+    ):
+        for i, ea in enumerate(presentes):
+            for eb in presentes[i + 1 :]:
+                pred = _predicado(parsed, ea.nombre, eb.nombre)
+                if pred:
+                    yield RelacionAbierta(
+                        entity_a=ea,
+                        entity_b=eb,
+                        predicado=pred,
+                        oracion=oracion,
+                        doc_id=doc.doc_id,
+                        fecha=doc.fecha_pub,
+                    )
