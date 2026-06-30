@@ -64,7 +64,7 @@ def _fin_mes(valor: str) -> date:
 
 
 
-def _cargar(slug: str, jsonl: Path | None) -> list[Documento]:
+def _cargar(slug: str, jsonl: Path | None, limit: int | None = None) -> list[Documento]:
     if jsonl is not None:
         docs = []
         descartadas = 0
@@ -109,6 +109,8 @@ def _cargar(slug: str, jsonl: Path | None) -> list[Documento]:
                 texto=r["texto"],
             )
         )
+    if limit is not None:
+        docs = docs[-limit:] # Tomar los más recientes
     return docs
 
 
@@ -122,13 +124,14 @@ def build(
     usar_menciones: bool = False,
     inicio: date | None = None,
     fin: date | None = None,
+    limit: int | None = None,
 ) -> dict:
     if (inicio is None) != (fin is None):
         raise ValueError("inicio y fin deben usarse juntos")
     if inicio is not None and fin is not None and inicio > fin:
         raise ValueError("inicio no puede ser posterior a fin")
 
-    docs = _cargar(corpus_slug or slug, jsonl)
+    docs = _cargar(corpus_slug or slug, jsonl, limit)
     log.info("docs cargados: %d", len(docs))
 
     if inicio is not None and fin is not None:
@@ -228,6 +231,7 @@ if __name__ == "__main__":
         "--inicio", type=_inicio_mes, help="mes inicial inclusivo, formato MM-YYYY"
     )
     p.add_argument("--fin", type=_fin_mes, help="mes final inclusivo, formato MM-YYYY")
+    p.add_argument("--limit", type=int, default=None, help="Limitar a N artículos más recientes")
     args = p.parse_args()
     if (args.inicio is None) != (args.fin is None):
         p.error("--inicio y --fin deben usarse juntos")
@@ -242,4 +246,5 @@ if __name__ == "__main__":
         usar_menciones=args.menciones,
         inicio=args.inicio,
         fin=args.fin,
+        limit=args.limit,
     )

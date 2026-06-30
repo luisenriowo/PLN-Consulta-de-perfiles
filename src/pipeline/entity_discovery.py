@@ -187,6 +187,23 @@ def _agrupar(
 
     Retorna {slug: {nombre, tipo, alias, n_menciones, n_docs}}.
     """
+    from collections import defaultdict
+    from tqdm import tqdm
+
+    # 1) Pre-agregación exacta: Reduce O(8M) a O(100k) únicas.
+    conteo_exacto = defaultdict(lambda: {"doc_ids": set(), "count": 0})
+    for texto_raw, tipo, doc_id in tqdm(menciones, desc="Limpiando y pre-agrupando menciones"):
+        texto = _limpiar_span(texto_raw)
+        if not texto:
+            continue
+        toks = _tokens(texto)
+        if len(toks) < _MIN_TOKENS:
+            continue
+        
+        clave = (texto, tipo, frozenset(toks))
+        conteo_exacto[clave]["doc_ids"].add(doc_id)
+        conteo_exacto[clave]["count"] += 1
+
     grupos: list[dict] = []
     # BLOCKING: índice (tipo, token) -> índices de grupos que contienen ese token.
     # Cada mención solo se compara con grupos que comparten ≥1 token (mismo
@@ -194,14 +211,7 @@ def _agrupar(
     # pero O(menciones × candidatos) en vez de O(menciones × grupos)).
     indice: dict[tuple[str, str], set[int]] = {}
 
-    for texto_raw, tipo, doc_id in menciones:
-        texto = _limpiar_span(texto_raw)
-        if not texto:
-            continue
-        toks = _tokens(texto)
-        if len(toks) < _MIN_TOKENS:
-            continue
-
+    for (texto, tipo, toks), datos in tqdm(conteo_exacto.items(), desc="Calculando clusters semánticos"):
         candidatos: set[int] = set()
         for tok in toks:
             candidatos.update(indice.get((tipo, tok), ()))
@@ -216,15 +226,18 @@ def _agrupar(
                 mejor_gi = gi
                 mejor_ov = intersec
 
+        count = datos["count"]
+        doc_ids = datos["doc_ids"]
+
         if mejor_gi is None:
             gi = len(grupos)
             grupos.append(
                 {
                     "tokens": set(toks),
                     "tipo": tipo,
-                    "frecuencias": {texto: 1},  # {forma: count}
-                    "doc_ids": {doc_id},
-                    "n_menciones": 1,
+                    "frecuencias": {texto: count},  # {forma: count}
+                    "doc_ids": set(doc_ids),
+                    "n_menciones": count,
                 }
             )
             for tok in toks:
@@ -233,9 +246,9 @@ def _agrupar(
             g = grupos[mejor_gi]
             nuevos = toks - g["tokens"]
             g["tokens"] |= toks
-            g["n_menciones"] += 1
-            g["doc_ids"].add(doc_id)
-            g["frecuencias"][texto] = g["frecuencias"].get(texto, 0) + 1
+            g["n_menciones"] += count
+            g["doc_ids"].update(doc_ids)
+            g["frecuencias"][texto] = g["frecuencias"].get(texto, 0) + count
             for tok in nuevos:                 # indexar tokens nuevos del grupo
                 indice.setdefault((tipo, tok), set()).add(mejor_gi)
 
@@ -354,7 +367,9 @@ def descubrir_entidades(
 
     if menciones is not None:
         # Menciones ya computadas (NER persistido) → no re-correr NER (escala).
-        menciones_raw: list[tuple[str, str, str]] = list(menciones)
+        # Filtramos para quedarnos solo con las menciones de los documentos activos.
+        doc_ids_activos = {d.doc_id for d in docs}
+        menciones_raw: list[tuple[str, str, str]] = [m for m in menciones if m[2] in doc_ids_activos]
     else:
         ner = get_ner_model()
         textos = [d.texto for d in docs]

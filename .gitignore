@@ -243,3 +243,4 @@ data/salidas/*/relation_type_assignments.csv
 annotation/gold/*.xlsx
 annotation/gold/*.csv
 annotation/gold/*.parquet
+resultados_reales_paper*.txt

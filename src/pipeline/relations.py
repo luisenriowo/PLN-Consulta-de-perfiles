@@ -382,7 +382,8 @@ def extraer_relaciones_abiertas(
         # detectadas con UNA regex-unión por oración (no 150 checks). Se
         # transmiten como (texto, contexto) a nlp.pipe, que PARSEA EN BATCH. El
         # contexto se reensambla en el proceso principal, no va a los workers.
-        for doc in docs:
+        from tqdm import tqdm
+        for doc in tqdm(docs, desc="Escaneando oraciones en documentos"):
             for oracion in _segmentar(doc.texto):
                 oracion_norm = _norm(oracion)
                 presentes = _presentes_matcher(oracion_norm, patron, forma_ents)

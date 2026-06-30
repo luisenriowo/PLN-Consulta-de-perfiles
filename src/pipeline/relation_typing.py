@@ -125,7 +125,7 @@ def clusterizar_predicados(
 
     if vectores is None:
         vectores = embeddings.modelo(modelo).encode(
-            [f"ENT_A {p} ENT_B" for p in predicados], normalize_embeddings=True
+            [f"ENT_A {p} ENT_B" for p in predicados], normalize_embeddings=True, show_progress_bar=True
         )
     vectores = np.asarray(vectores)
 
