@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Red de poder · Perú 2021–2026 (temporal)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0}
+  :root{
+    --bg:oklch(0.165 0.006 255); --panel:oklch(0.20 0.008 255); --panel2:oklch(0.205 0.012 255);
+    --line:oklch(0.28 0.01 255); --txt:oklch(0.93 0.005 250); --mut:oklch(0.6 0.01 250);
+    --mut2:oklch(0.55 0.01 250); --accent:oklch(0.47 0.04 255);
+  }
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--txt);font-family:Archivo,system-ui,sans-serif;overflow:hidden}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:oklch(0.36 0.01 255);border-radius:6px}
+  ::-webkit-scrollbar-track{background:transparent}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .app{height:100vh;width:100%;display:flex;flex-direction:column}
+  .head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding:14px 22px;border-bottom:1px solid var(--line);flex:none}
+  .title{font-size:19px;font-weight:700;letter-spacing:-0.01em}
+  .sub{font-size:11px;color:var(--mut);margin-top:4px;max-width:640px;line-height:1.55}
+  .legend{display:flex;gap:16px;align-items:center;flex:none;padding-top:3px;font-size:11px;color:var(--mut)}
+  .legend span.dot{width:11px;height:11px;border-radius:50%;background:oklch(0.62 0.02 250);display:inline-block;margin-right:6px}
+  .legend span.sq{width:11px;height:11px;border-radius:3px;background:oklch(0.62 0.02 250);display:inline-block;margin-right:6px}
+  .body{flex:1;display:flex;min-height:0}
+  .side{width:340px;flex:none;border-right:1px solid var(--line);overflow-y:auto;padding:16px 16px 30px}
+  .secLbl{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--mut2);margin-bottom:9px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:9px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:11px}
+  .lensBtn{text-align:center;padding:8px 6px;border-radius:8px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid oklch(0.3 0.01 255);color:var(--mut)}
+  .lensBtn.on{border-color:var(--accent);background:oklch(0.28 0.016 255);color:oklch(0.96 0.01 250)}
+  .metBtn{text-align:center;padding:6px 4px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid oklch(0.3 0.01 255);color:var(--mut)}
+  .metBtn.on{border-color:var(--accent);background:oklch(0.28 0.016 255);color:oklch(0.96 0.01 250)}
+  .lensHint{font-size:10.5px;color:var(--mut2);font-family:'JetBrains Mono',monospace;line-height:1.5;margin-bottom:16px}
+  .insight{border:1px solid oklch(0.33 0.018 250);background:var(--panel2);border-radius:9px;padding:10px 11px;margin-bottom:12px;font-size:11.5px;line-height:1.45;color:oklch(0.84 0.01 250)}
+  .rankrow{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:7px;cursor:pointer}
+  .rankrow .rk{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--mut2);width:15px;flex:none;text-align:right}
+  .rankrow .sw{width:9px;height:9px;border-radius:2px;flex:none}
+  .rankrow .lbl{font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rankrow .barbg{height:4px;border-radius:2px;margin-top:4px;background:oklch(0.3 0.01 255);overflow:hidden}
+  .rankrow .bar{height:100%;border-radius:2px}
+  .rankrow .sc{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:oklch(0.72 0.01 250);flex:none}
+  .crit{font-size:8.5px;font-family:'JetBrains Mono',monospace;letter-spacing:0.04em;color:oklch(0.78 0.16 28);border:1px solid oklch(0.5 0.14 28);border-radius:4px;padding:1px 4px;flex:none}
+  .selrow{background:oklch(0.27 0.013 255)}
+  .sel2{background:oklch(0.21 0.009 255);color:oklch(0.92 0.01 250);border:1px solid oklch(0.34 0.01 255);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:Archivo,sans-serif;width:100%}
+  .pathbox{border:1px solid oklch(0.33 0.018 250);background:var(--panel2);border-radius:9px;padding:11px 12px}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:20px}
+  .card{border:1px solid oklch(0.3 0.01 255);background:var(--panel);border-radius:9px;padding:8px 10px}
+  .card .l{font-size:9px;letter-spacing:0.07em;text-transform:uppercase;color:var(--mut2)}
+  .card .v{font-size:17px;font-weight:700;margin-top:2px}
+  .chips{display:flex;flex-direction:column;gap:5px;margin-bottom:20px}
+  .chip{display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:8px;cursor:pointer;border:1px solid transparent;font-size:12px}
+  .chip.on{border-color:oklch(0.34 0.01 255);background:oklch(0.225 0.009 255)}
+  .chip.off{opacity:0.4}
+  .chip .bar{width:16px;height:3px;border-radius:2px;display:inline-block;flex:none}
+  .chip .sw{width:12px;height:12px;border-radius:3px;display:inline-block;flex:none}
+  .selbox{border:1px solid oklch(0.33 0.01 255);background:var(--panel);border-radius:11px;padding:13px;margin-bottom:20px}
+  .selbox .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .selbox .name{font-weight:700;font-size:15px}
+  .selbox .x{cursor:pointer;color:var(--mut);font-size:18px;line-height:0.8}
+  .selbox .meta{font-size:10.5px;color:var(--mut);margin-top:6px}
+  .rel{display:flex;gap:9px;align-items:flex-start;margin-top:9px}
+  .rel .d{width:7px;height:7px;border-radius:50%;margin-top:5px;flex:none}
+  .rel .c{font-size:12.5px;font-weight:500;line-height:1.25}
+  .rel .p{font-size:10px;color:var(--mut);margin-top:1px}
+  .graph{flex:1;min-width:0;position:relative;background:radial-gradient(circle at 50% 38%, oklch(0.205 0.011 258), oklch(0.15 0.006 255));display:flex;flex-direction:column}
+  .svgwrap{flex:1;position:relative;min-height:0}
+  .svgwrap svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .timebar{flex:none;border-top:1px solid var(--line);background:oklch(0.18 0.007 255);padding:11px 20px 13px;display:flex;flex-direction:column;gap:7px}
+  .timerow{display:flex;align-items:center;gap:14px}
+  .play{width:34px;height:34px;border-radius:50%;border:1px solid var(--accent);background:oklch(0.25 0.015 255);color:var(--txt);cursor:pointer;font-size:14px;flex:none;display:flex;align-items:center;justify-content:center}
+  .play:hover{background:oklch(0.3 0.02 255)}
+  .tmonth{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;min-width:96px;flex:none}
+  .slider{flex:1;-webkit-appearance:none;appearance:none;height:6px;border-radius:4px;background:oklch(0.3 0.01 255);outline:none}
+  .slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:oklch(0.78 0.04 250);cursor:pointer;border:2px solid oklch(0.2 0.01 255)}
+  .slider::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:oklch(0.78 0.04 250);cursor:pointer;border:2px solid oklch(0.2 0.01 255)}
+  .tmodes{display:flex;gap:6px;align-items:center}
+  .tmode{font-size:10.5px;padding:4px 9px;border-radius:7px;cursor:pointer;border:1px solid oklch(0.3 0.01 255);color:var(--mut);font-family:'JetBrains Mono',monospace}
+  .tmode.on{border-color:var(--accent);background:oklch(0.27 0.016 255);color:var(--txt)}
+  .ticks{display:flex;justify-content:space-between;font-size:9px;color:var(--mut2);font-family:'JetBrains Mono',monospace;padding:0 50px 0 48px}
+  .hint{font-size:10px;color:oklch(0.5 0.01 250);font-family:'JetBrains Mono',monospace;line-height:1.7;border-top:1px solid oklch(0.26 0.01 255);padding-top:13px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="head">
+    <div>
+      <div class="title">Red de poder · Perú 2021–2026</div>
+      <div class="sub mono">Vínculos entre personajes y organizaciones, con <b>línea de tiempo</b> y <b>análisis de red</b> que se recalcula en cada momento. Reconstrucción ilustrativa de dominio público.</div>
+    </div>
+    <div class="legend mono">
+      <span><span class="dot"></span>Persona</span>
+      <span><span class="sq"></span>Organización</span>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="side">
+      <div class="secLbl">Explorar el grafo</div>
+      <div style="position:relative;margin-bottom:8px">
+        <input id="search" type="search" placeholder="Buscar entidad…" autocomplete="off"
+          style="width:100%;background:oklch(0.21 0.009 255);color:var(--txt);border:1px solid oklch(0.34 0.01 255);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:Archivo,sans-serif">
+        <div id="searchres" style="position:absolute;left:0;right:0;top:38px;z-index:5;background:oklch(0.19 0.008 255);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:none;max-height:220px;overflow-y:auto"></div>
+      </div>
+      <div id="focusbar" style="margin-bottom:18px"></div>
+
+      <div class="secLbl">Enfoque de análisis</div>
+      <div class="grid2" id="lenses"></div>
+      <div class="lensHint" id="lensHint"></div>
+      <div id="lensPanel"></div>
+
+      <div class="secLbl">Métricas de la red <span id="m-temporal" style="color:oklch(0.7 0.1 250)"></span></div>
+      <div class="cards" id="cards"></div>
+
+      <div id="selwrap"></div>
+
+      <div class="secLbl">Tipo de vínculo</div>
+      <div class="chips" id="types"></div>
+
+      <div class="secLbl">Facción / entidad</div>
+      <div class="chips" id="facs"></div>
+
+      <div class="hint" id="hint">Clic en un nodo para enfocarlo · arrástralo para reordenar · usa el deslizador para viajar en el tiempo. Los análisis se recalculan según el mes elegido.</div>
+    </div>
+
+    <div class="graph">
+      <div class="svgwrap">
+        <svg id="svg" viewBox="0 0 1120 720" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div class="timebar">
+        <div class="timerow">
+          <button class="play" id="play" title="Reproducir evolución">▶</button>
+          <div class="tmonth mono" id="tmonth">—</div>
+          <input type="range" class="slider" id="slider" min="0" max="0" value="0" step="1">
+          <div class="tmodes">
+            <div class="tmode" id="mode-off" title="Mostrar toda la red sin filtro temporal">Todo</div>
+            <div class="tmode on" id="mode-vig" title="Relaciones vigentes en ese mes">Vigente</div>
+            <div class="tmode" id="mode-acc" title="Todas las relaciones hasta ese mes (acumulado)">Acumulado</div>
+          </div>
+        </div>
+        <div class="ticks" id="ticks"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+// ===================== DATOS (ilustrativos, dominio público) =====================
+const FAC = {
+  gobierno:{n:'Ejecutivo / Gobierno',c:'oklch(0.70 0.12 250)'},
+  peruLibre:{n:'Perú Libre',c:'oklch(0.64 0.17 25)'},
+  familia:{n:'Entorno familiar',c:'oklch(0.72 0.13 355)'},
+  fujimorismo:{n:'Fujimorismo',c:'oklch(0.64 0.15 330)'},
+  renovacion:{n:'Renovación Popular',c:'oklch(0.70 0.12 150)'},
+  app:{n:'Alianza para el Progreso',c:'oklch(0.74 0.12 78)'},
+  congreso:{n:'Congreso',c:'oklch(0.72 0.10 205)'},
+  justicia:{n:'Justicia / Fiscalía',c:'oklch(0.64 0.16 295)'}
+};
+const facOrder=['gobierno','peruLibre','familia','fujimorismo','renovacion','app','congreso','justicia'];
+const facIndex={}; facOrder.forEach((f,i)=>facIndex[f]=i);
+const TYPE = {
+  laboral:{n:'Laboral / cargo',c:'oklch(0.72 0.11 235)'},
+  politico:{n:'Político / alianza',c:'oklch(0.80 0.13 95)'},
+  partidario:{n:'Partidario',c:'oklch(0.70 0.15 320)'},
+  judicial:{n:'Judicial',c:'oklch(0.66 0.19 28)'},
+  familiar:{n:'Familiar',c:'oklch(0.78 0.12 352)'}
+};
+const ENT = [
+  {id:'castillo',label:'Pedro Castillo',sl:'Castillo',type:'person',fac:'gobierno'},
+  {id:'boluarte',label:'Dina Boluarte',sl:'Boluarte',type:'person',fac:'gobierno'},
+  {id:'mvasquez',label:'Mirtha Vásquez',sl:'M. Vásquez',type:'person',fac:'gobierno'},
+  {id:'atorres',label:'Aníbal Torres',sl:'A. Torres',type:'person',fac:'gobierno'},
+  {id:'otarola',label:'Alberto Otárola',sl:'Otárola',type:'person',fac:'gobierno'},
+  {id:'adrianzen',label:'Gustavo Adrianzén',sl:'Adrianzén',type:'person',fac:'gobierno'},
+  {id:'jsilva',label:'Juan Silva',sl:'J. Silva',type:'person',fac:'gobierno'},
+  {id:'galvarado',label:'Geiner Alvarado',sl:'Alvarado',type:'person',fac:'gobierno'},
+  {id:'bpacheco',label:'Bruno Pacheco',sl:'Pacheco',type:'person',fac:'gobierno'},
+  {id:'cerronV',label:'Vladimir Cerrón',sl:'V. Cerrón',type:'person',fac:'peruLibre'},
+  {id:'cerronW',label:'Waldemar Cerrón',sl:'W. Cerrón',type:'person',fac:'peruLibre'},
+  {id:'bellido',label:'Guido Bellido',sl:'Bellido',type:'person',fac:'peruLibre'},
+  {id:'bchavez',label:'Betssy Chávez',sl:'B. Chávez',type:'person',fac:'peruLibre'},
+  {id:'bermejo',label:'Guillermo Bermejo',sl:'Bermejo',type:'person',fac:'peruLibre'},
+  {id:'lparedes',label:'Lilia Paredes',sl:'L. Paredes',type:'person',fac:'familia'},
+  {id:'yparedes',label:'Yenifer Paredes',sl:'Y. Paredes',type:'person',fac:'familia'},
+  {id:'keiko',label:'Keiko Fujimori',sl:'Keiko F.',type:'person',fac:'fujimorismo'},
+  {id:'lopezaliaga',label:'Rafael López Aliaga',sl:'López A.',type:'person',fac:'renovacion'},
+  {id:'montoya',label:'Jorge Montoya',sl:'Montoya',type:'person',fac:'renovacion'},
+  {id:'asoto',label:'Alejandro Soto',sl:'A. Soto',type:'person',fac:'app'},
+  {id:'acesar',label:'César Acuña',sl:'C. Acuña',type:'person',fac:'app'},
+  {id:'jwilliams',label:'José Williams',sl:'Williams',type:'person',fac:'congreso'},
+  {id:'benavides',label:'Patricia Benavides',sl:'Benavides',type:'person',fac:'justicia'},
+  {id:'ejecutivo',label:'Poder Ejecutivo',sl:'Ejecutivo',type:'org',fac:'gobierno'},
+  {id:'perulibre',label:'Perú Libre',sl:'Perú Libre',type:'org',fac:'peruLibre'},
+  {id:'fuerzaPop',label:'Fuerza Popular',sl:'Fuerza Pop.',type:'org',fac:'fujimorismo'},
+  {id:'renovPop',label:'Renovación Popular',sl:'Renov. Pop.',type:'org',fac:'renovacion'},
+  {id:'appPart',label:'Alianza para el Progreso',sl:'APP',type:'org',fac:'app'},
+  {id:'congreso',label:'Congreso de la República',sl:'Congreso',type:'org',fac:'congreso'},
+  {id:'fiscalia',label:'Ministerio Público',sl:'Fiscalía',type:'org',fac:'justicia'},
+  {id:'judicial',label:'Poder Judicial',sl:'P. Judicial',type:'org',fac:'justicia'}
+];
+const R=(s,t,k,w,start,end,label)=>({s,t,k,w,start,end,label});
+const REL = [
+  R('castillo','ejecutivo','laboral',3,'2021-07','2022-12','Presidente de la República'),
+  R('castillo','perulibre','partidario',3,'2021-07','2022-06','Electo por Perú Libre'),
+  R('castillo','congreso','politico',3,'2021-07','2022-12','Tensión y vacancias'),
+  R('bellido','ejecutivo','laboral',2,'2021-07','2021-10','PCM (primer gabinete)'),
+  R('bellido','castillo','politico',2,'2021-07','2021-10','Aliado inicial'),
+  R('bellido','perulibre','partidario',2,'2021-07','2024-12','Militante PL'),
+  R('mvasquez','ejecutivo','laboral',2,'2021-10','2022-02','PCM'),
+  R('mvasquez','castillo','politico',2,'2021-10','2022-02','Gabinete'),
+  R('atorres','ejecutivo','laboral',2,'2022-02','2022-11','PCM'),
+  R('atorres','castillo','politico',2,'2022-02','2022-12','Aliado cercano'),
+  R('bchavez','ejecutivo','laboral',2,'2022-11','2022-12','PCM'),
+  R('bchavez','castillo','politico',3,'2022-11','2022-12','Mensaje del 7-Dic'),
+  R('bchavez','fiscalia','judicial',2,'2022-12',null,'Investigación'),
+  R('castillo','fiscalia','judicial',3,'2022-12',null,'Investigación por rebelión'),
+  R('castillo','judicial','judicial',3,'2022-12',null,'Prisión preventiva'),
+  R('bpacheco','castillo','laboral',2,'2021-07','2021-11','Secretario de Palacio'),
+  R('bpacheco','fiscalia','judicial',2,'2021-11',null,'Colaborador / investigación'),
+  R('jsilva','ejecutivo','laboral',2,'2021-07','2022-05','Min. Transportes'),
+  R('jsilva','fiscalia','judicial',3,'2022-05',null,'Investigación'),
+  R('galvarado','ejecutivo','laboral',2,'2021-08','2022-12','Min. Vivienda'),
+  R('galvarado','fiscalia','judicial',2,'2022-09',null,'Investigación'),
+  R('lparedes','castillo','familiar',3,'2021-07',null,'Esposa'),
+  R('yparedes','lparedes','familiar',2,'2021-07',null,'Hermana'),
+  R('yparedes','fiscalia','judicial',2,'2022-08',null,'Investigación'),
+  R('lparedes','fiscalia','judicial',2,'2022-08',null,'Investigación'),
+  R('cerronV','perulibre','partidario',3,'2021-07',null,'Secretario general'),
+  R('cerronW','perulibre','partidario',2,'2021-07',null,'Congresista PL'),
+  R('cerronW','cerronV','familiar',2,'2021-07',null,'Hermano'),
+  R('bermejo','perulibre','partidario',2,'2021-07','2023-12','Congresista'),
+  R('bermejo','fiscalia','judicial',2,'2021-09',null,'Investigación'),
+  R('cerronV','judicial','judicial',2,'2023-10',null,'Requisitoria / prófugo'),
+  R('castillo','cerronV','politico',2,'2021-07','2021-12','Tensión Ejecutivo–PL'),
+  R('boluarte','ejecutivo','laboral',3,'2022-12',null,'Presidenta'),
+  R('boluarte','castillo','politico',2,'2021-07','2022-12','Fórmula presidencial'),
+  R('boluarte','perulibre','partidario',1,'2021-07','2022-01','Expulsada de PL'),
+  R('otarola','ejecutivo','laboral',3,'2022-12','2024-03','PCM'),
+  R('otarola','boluarte','politico',3,'2022-12','2024-03','Mano derecha'),
+  R('adrianzen','ejecutivo','laboral',2,'2024-03',null,'PCM'),
+  R('adrianzen','boluarte','politico',2,'2024-03',null,'Gabinete'),
+  R('boluarte','fiscalia','judicial',2,'2024-03',null,'Caso Rolex'),
+  R('jwilliams','congreso','laboral',2,'2022-07','2023-07','Presidente del Congreso'),
+  R('asoto','congreso','laboral',2,'2023-07','2024-07','Presidente del Congreso'),
+  R('asoto','appPart','partidario',2,'2021-07',null,'Bancada APP'),
+  R('acesar','appPart','partidario',3,'2021-07',null,'Fundador APP'),
+  R('keiko','fuerzaPop','partidario',3,'2021-07',null,'Lideresa'),
+  R('keiko','judicial','judicial',2,'2021-07',null,'Caso Cócteles'),
+  R('fuerzaPop','congreso','politico',3,'2021-07',null,'Bancada / oposición'),
+  R('lopezaliaga','renovPop','partidario',3,'2021-07',null,'Líder'),
+  R('montoya','renovPop','partidario',2,'2021-07','2024-12','Congresista'),
+  R('fuerzaPop','boluarte','politico',2,'2023-01',null,'Gobernabilidad'),
+  R('appPart','boluarte','politico',2,'2023-01',null,'Alianza'),
+  R('renovPop','boluarte','politico',1,'2023-01',null,'Soporte parcial'),
+  R('benavides','fiscalia','laboral',3,'2022-08','2023-12','Fiscal de la Nación'),
+  R('benavides','judicial','judicial',2,'2023-12',null,'Destitución / investigación'),
+  R('benavides','congreso','politico',2,'2023-09',null,'Denuncias constitucionales'),
+  R('appPart','congreso','politico',2,'2021-07',null,'Bancada'),
+  R('renovPop','congreso','politico',2,'2021-07',null,'Bancada'),
+  R('perulibre','congreso','politico',2,'2021-07',null,'Bancada')
+];
+const id2ent={}; ENT.forEach(e=>id2ent[e.id]=e);
+
+// ===================== TIEMPO =====================
+const MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
+const miOf=(s)=>{const a=s.split('-');return (Number(a[0])-2021)*12+(Number(a[1])-1);};
+const monthLabel=(mi)=>{const y=2021+Math.floor(mi/12);const m=((mi%12)+12)%12;return MESES[m]+' '+y;};
+let MIN=9999,MAX=-9999;
+REL.forEach(r=>{const a=miOf(r.start);const b=r.end?miOf(r.end):a;MIN=Math.min(MIN,a);MAX=Math.max(MAX,b);});
+
+// ===================== ESTADO =====================
+const S = {
+  selected:null, t:MAX, mode:'vig', playing:false,           // mode: off | vig | acc
+  lens:'ninguno', cMetric:'grado', pathFrom:'', pathTo:'',    // lens: ninguno|centralidad|puentes|camino
+  focus:null,                                                // entidad enfocada (ego-grafo); null = vista general top-K
+  types:{laboral:true,politico:true,partidario:true,judicial:true,familiar:true},
+  facs:Object.fromEntries(facOrder.map(f=>[f,true]))
+};
+const pos={}; let drag=null, playTimer=null, anaCache=null;
+let VIS=new Set();          // entidades visibles actuales (ego del foco, o top-K)
+const TOPK=55;              // nº de entidades en la vista general (sin foco)
+
+// Conjunto visible: ego del foco (vecinos directos) o, sin foco, top-K por grado.
+function egoSet(){
+  if(S.focus && id2ent[S.focus]){
+    const ego=new Set([S.focus]);
+    for(const r of REL){ if(r.s===S.focus)ego.add(r.t); else if(r.t===S.focus)ego.add(r.s); }
+    return ego;
+  }
+  const deg={};
+  for(const r of REL){ deg[r.s]=(deg[r.s]||0)+1; deg[r.t]=(deg[r.t]||0)+1; }
+  return new Set(ENT.map(e=>e.id).sort((a,b)=>(deg[b]||0)-(deg[a]||0)).slice(0,TOPK));
+}
+// Cambiar el foco: recalcula visibles, re-acomoda el layout de ese subconjunto.
+function setFocus(id){
+  S.focus = id || null;
+  if(S.focus){ S.selected=S.focus; }
+  VIS = egoSet();
+  runLayout(VIS);
+  render();
+}
+
+// ===================== LAYOUT (Fruchterman–Reingold) =====================
+function runLayout(idsSet){
+  const W=1120,H=720;
+  const ents = idsSet ? ENT.filter(e=>idsSet.has(e.id)) : ENT;
+  const n=ents.length; if(!n)return;
+  const idset = idsSet || new Set(ents.map(e=>e.id));
+  const facAng={}; facOrder.forEach((f,i)=>facAng[f]=i/facOrder.length*Math.PI*2);
+  const P={};
+  ents.forEach(e=>{const a=facAng[e.fac]+(Math.random()-0.5)*0.7;const rr=170+Math.random()*130;P[e.id]={x:W/2+Math.cos(a)*rr,y:H/2+Math.sin(a)*rr};});
+  const links=REL.filter(r=>idset.has(r.s)&&idset.has(r.t)).map(r=>[r.s,r.t]);
+  const k=Math.sqrt(W*H/n)*0.82; let temp=W/8;
+  for(let it=0;it<520;it++){
+    const disp={}; ents.forEach(e=>disp[e.id]={x:0,y:0});
+    for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){
+      const a=P[ents[i].id],b=P[ents[j].id];let dx=a.x-b.x,dy=a.y-b.y;let d=Math.sqrt(dx*dx+dy*dy)||0.01;
+      const f=k*k/d,ux=dx/d,uy=dy/d;
+      disp[ents[i].id].x+=ux*f;disp[ents[i].id].y+=uy*f;disp[ents[j].id].x-=ux*f;disp[ents[j].id].y-=uy*f;
+    }
+    for(const [s,t] of links){const a=P[s],b=P[t];if(!a||!b)continue;let dx=a.x-b.x,dy=a.y-b.y;let d=Math.sqrt(dx*dx+dy*dy)||0.01;const f=d*d/k,ux=dx/d,uy=dy/d;disp[s].x-=ux*f;disp[s].y-=uy*f;disp[t].x+=ux*f;disp[t].y+=uy*f;}
+    ents.forEach(e=>{const p=P[e.id];disp[e.id].x-=(p.x-W/2)*0.018;disp[e.id].y-=(p.y-H/2)*0.018;});
+    ents.forEach(e=>{const p=P[e.id],dp=disp[e.id];let d=Math.sqrt(dp.x*dp.x+dp.y*dp.y)||0.01;const m=Math.min(d,temp);p.x+=dp.x/d*m;p.y+=dp.y/d*m;p.x=Math.max(50,Math.min(W-50,p.x));p.y=Math.max(50,Math.min(H-50,p.y));});
+    temp*=0.985;
+  }
+  ents.forEach(e=>pos[e.id]={x:P[e.id].x,y:P[e.id].y});
+}
+
+// ===================== FILTRO TEMPORAL =====================
+const TWIN=2;  // ventana (meses) para "vigente" con datos de eventos puntuales
+function relEnTiempo(r){
+  if(S.mode==='off') return true;
+  if(r.monthsIdx){  // datos REALES: relación con actividad en meses puntuales
+    if(S.mode==='acc') return r.monthsIdx.some(m=>m<=S.t);
+    return r.monthsIdx.some(m=>m>=S.t-TWIN && m<=S.t);
+  }
+  const a=miOf(r.start), b=r.end?miOf(r.end):MAX;  // datos ilustrativos: intervalos
+  if(S.mode==='acc') return a<=S.t;
+  return a<=S.t && S.t<=b;
+}
+function relVisible(r){
+  return VIS.has(r.s) && VIS.has(r.t)
+    && S.types[r.k] && S.facs[id2ent[r.s].fac] && S.facs[id2ent[r.t].fac] && relEnTiempo(r);
+}
+
+// ===================== ANÁLISIS DE RED (sobre la red VISIBLE = temporal-aware) =====================
+function computeAnalysis(){
+  const key=JSON.stringify([S.facs,S.types,S.t,S.mode,S.focus]);
+  if(anaCache && anaCache.key===key) return anaCache.data;
+  const ids=ENT.filter(e=>VIS.has(e.id) && S.facs[e.fac]).map(e=>e.id);
+  const idset=new Set(ids);
+  const adj=new Map(); ids.forEach(id=>adj.set(id,new Set()));
+  for(const r of REL){ if(!relVisible(r))continue; if(idset.has(r.s)&&idset.has(r.t)){adj.get(r.s).add(r.t);adj.get(r.t).add(r.s);} }
+  const edges=[]; for(const id of ids)for(const nb of adj.get(id))if(id<nb)edges.push([id,nb]);
+  const deg={}; ids.forEach(id=>deg[id]=adj.get(id).size);
+
+  // betweenness (Brandes)
+  const btw={}; ids.forEach(v=>btw[v]=0);
+  for(const s of ids){
+    const stack=[],pred={},sigma={},dist={};
+    ids.forEach(v=>{pred[v]=[];sigma[v]=0;dist[v]=-1;});
+    sigma[s]=1;dist[s]=0;const q=[s];
+    while(q.length){const v=q.shift();stack.push(v);
+      for(const w of adj.get(v)){ if(dist[w]<0){dist[w]=dist[v]+1;q.push(w);} if(dist[w]===dist[v]+1){sigma[w]+=sigma[v];pred[w].push(v);} }}
+    const delta={};ids.forEach(v=>delta[v]=0);
+    while(stack.length){const w=stack.pop();for(const v of pred[w])delta[v]+=(sigma[v]/sigma[w])*(1+delta[w]);if(w!==s)btw[w]+=delta[w];}
+  }
+  ids.forEach(v=>btw[v]/=2);
+
+  // PageRank
+  const N=ids.length||1,d=0.85;let pr={};ids.forEach(v=>pr[v]=1/N);
+  for(let it=0;it<60;it++){
+    const np={};let dangling=0;
+    ids.forEach(v=>{if(adj.get(v).size===0)dangling+=pr[v];});
+    ids.forEach(v=>{np[v]=(1-d)/N+d*dangling/N;});
+    ids.forEach(v=>{const nb=adj.get(v);if(nb.size>0){const share=pr[v]/nb.size;nb.forEach(w=>{np[w]+=d*share;});}});
+    pr=np;
+  }
+
+  // componentes
+  const seen=new Set();let comp=0;
+  for(const s of ids){if(seen.has(s))continue;comp++;const q=[s];seen.add(s);while(q.length){const v=q.shift();for(const w of adj.get(v))if(!seen.has(w)){seen.add(w);q.push(w);}}}
+
+  // camino medio
+  let totD=0,totP=0;
+  for(const s of ids){const dist={};dist[s]=0;const q=[s];while(q.length){const v=q.shift();for(const w of adj.get(v))if(dist[w]===undefined){dist[w]=dist[v]+1;q.push(w);}}for(const kk in dist)if(kk!==s){totD+=dist[kk];totP++;}}
+  const avgPath=totP>0?totD/totP:null;
+
+  // puntos de articulación (Tarjan)
+  const ap=new Set(),visited=new Set(),disc={},low={};const timer={t:0};
+  const dfs=(u,parent)=>{visited.add(u);disc[u]=low[u]=timer.t++;let children=0;
+    for(const v of adj.get(u)){
+      if(!visited.has(v)){children++;dfs(v,u);low[u]=Math.min(low[u],low[v]);if(parent!==null&&low[v]>=disc[u])ap.add(u);}
+      else if(v!==parent){low[u]=Math.min(low[u],disc[v]);}
+    }
+    if(parent===null&&children>1)ap.add(u);
+  };
+  for(const s of ids)if(!visited.has(s))dfs(s,null);
+
+  let crossCount=0;for(const [a,b] of edges)if(id2ent[a].fac!==id2ent[b].fac)crossCount++;
+  const maxBtw=Math.max(0.0001,...ids.map(id=>btw[id]||0));
+  const data={ids,idset,adj,edges,deg,btw,pr,comp,avgPath,ap,crossCount,maxBtw};
+  anaCache={key,data};
+  return data;
+}
+function bfsPath(a,b,adj){if(!adj.get(a)||!adj.get(b))return null;const prev={};prev[a]=a;const q=[a];
+  while(q.length){const v=q.shift();if(v===b){const path=[b];let c=b;while(c!==a){c=prev[c];path.push(c);}return path.reverse();}
+    for(const w of adj.get(v))if(prev[w]===undefined){prev[w]=v;q.push(w);}}return null;}
+function relTypeBetween(a,b){for(const r of REL){if(((r.s===a&&r.t===b)||(r.s===b&&r.t===a))&&relVisible(r))return r.pred||TYPE[r.k].n;}return '';}
+
+// ===================== RENDER =====================
+const $=(id)=>document.getElementById(id);
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+const _norm=(s)=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+
+function render(){
+  const A=computeAnalysis();
+  const {ids,idset,adj,edges,deg,btw,pr,comp,avgPath,ap,crossCount,maxBtw}=A;
+  const sel=S.selected, lens=S.lens;
+  const mMap=S.cMetric==='intermediacion'?btw:S.cMetric==='influencia'?pr:deg;
+  const maxMetric=Math.max(0.0001,...ids.map(id=>mMap[id]||0));
+  const nbr=new Set(); if(sel&&adj.get(sel))adj.get(sel).forEach(x=>nbr.add(x));
+
+  // camino
+  const pathNodeSet=new Set(),pathPairs=new Set();
+  let pathFound=false,pathNone=false,pathSummary='',pathLine=[];
+  if(lens==='camino'){
+    const from=S.pathFrom,to=S.pathTo;
+    if(from&&to&&from!==to&&idset.has(from)&&idset.has(to)){
+      const path=bfsPath(from,to,adj);
+      if(path){pathFound=true;path.forEach(id=>pathNodeSet.add(id));
+        for(let i=0;i<path.length-1;i++){const a=path[i],b=path[i+1];pathPairs.add(a<b?a+'|'+b:b+'|'+a);}
+        const steps=path.length-1;pathSummary=steps+' paso'+(steps===1?'':'s')+' de separación';
+        pathLine=path.map((id,i)=>{const e=id2ent[id];let via='';if(i<path.length-1)via=relTypeBetween(id,path[i+1]);return {label:e.label,color:FAC[e.fac].c,via};});
+      } else {pathNone=true;pathSummary='Sin conexión entre ambos en este momento.';}
+    } else if(from&&to&&from===to){pathNone=true;pathSummary='Elige dos entidades distintas.';}
+  }
+
+  // ---- aristas ----
+  let edgesSvg='';
+  for(const r of REL){
+    if(!relVisible(r))continue;
+    const a=pos[r.s],b=pos[r.t]; if(!a||!b)continue;
+    const cross=id2ent[r.s].fac!==id2ent[r.t].fac;
+    const key=r.s<r.t?r.s+'|'+r.t:r.t+'|'+r.s, onPath=pathPairs.has(key);
+    let stroke=TYPE[r.k].c, width=0.8+r.w*0.85, opacity=0.55;
+    if(lens==='puentes'){ opacity=cross?0.9:0.1; if(cross)width+=0.5; }
+    else if(lens==='camino'){ opacity=onPath?1:0.05; if(onPath){stroke='oklch(0.95 0.01 250)';width=Math.max(width,2.6);} }
+    else if(lens==='centralidad'){ opacity=0.3; }
+    if(sel&&lens!=='camino'){ if(r.s===sel||r.t===sel)opacity=Math.max(opacity,0.9); else opacity*=0.12; }
+    edgesSvg+=`<path d="M${a.x} ${a.y} L${b.x} ${b.y}" fill="none" stroke="${stroke}" stroke-width="${width}" opacity="${opacity}" stroke-linecap="round"></path>`;
+  }
+
+  // ---- nodos ----
+  let nodesSvg='';
+  ENT.forEach(e=>{
+    if(!VIS.has(e.id))return;
+    const p=pos[e.id]; if(!p)return;
+    const vis=S.facs[e.fac], dg=deg[e.id]||0;
+    let r;
+    if(lens==='centralidad') r=7+24*((mMap[e.id]||0)/maxMetric);
+    else if(lens==='puentes') r=8+16*((btw[e.id]||0)/maxBtw);
+    else r=8+Math.min(dg,12)*1.0;
+    r=Math.max(r,6);
+    let opacity=0.92, ring='rgba(255,255,255,0.1)', sw=1, halo=false;
+    const activo=dg>0||S.mode==='off';
+    if(!vis){opacity=0.05;}
+    else if(lens==='camino'){const onP=pathNodeSet.has(e.id);opacity=onP?1:0.12;if(e.id===S.pathFrom||e.id===S.pathTo){ring='#fff';sw=2.6;}else if(onP){ring='oklch(0.9 0.02 250)';sw=1.8;}}
+    else if(lens==='puentes'){const isAP=ap.has(e.id),bro=(btw[e.id]||0)>0;opacity=isAP?1:(bro?0.82:0.3);if(isAP){ring='#fff';sw=2.2;halo=true;}}
+    else if(sel){opacity=e.id===sel?1:(nbr.has(e.id)?0.95:0.16);}
+    else if(!activo){opacity=0.14;}
+    if(e.id===sel){ring='#fff';sw=2.6;}
+    const fill=FAC[e.fac].c, showLabel=vis&&opacity>0.5;
+    const haloEl=halo?`<circle cx="${p.x}" cy="${p.y}" r="${r+5}" fill="none" stroke="oklch(0.95 0.02 250)" stroke-width="1.4" opacity="0.45"></circle>`:'';
+    const shape=e.type==='org'
+      ? `<rect x="${p.x-r}" y="${p.y-r}" width="${r*2}" height="${r*2}" rx="4" fill="${fill}" stroke="${ring}" stroke-width="${sw}"></rect>`
+      : `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${fill}" stroke="${ring}" stroke-width="${sw}"></circle>`;
+    const lbl=showLabel?`<text x="${p.x}" y="${p.y+r+11}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="oklch(0.92 0.01 250)" style="pointer-events:none">${esc(e.sl)}</text>`:'';
+    nodesSvg+=`<g opacity="${opacity}" style="cursor:pointer" data-node="${e.id}">${haloEl}${shape}${lbl}</g>`;
+  });
+  $('svg').innerHTML=edgesSvg+nodesSvg;
+
+  // ---- lente: selector + panel ----
+  const lensDefs=[['ninguno','Ninguno'],['centralidad','Centralidad'],['puentes','Puentes'],['camino','Camino']];
+  $('lenses').innerHTML=lensDefs.map(d=>`<div class="lensBtn ${lens===d[0]?'on':''}" data-lens="${d[0]}">${d[1]}</div>`).join('');
+  const lensHints={ninguno:'Elige un enfoque para extraer información de la estructura de la red.',centralidad:'Quién ocupa las posiciones más importantes según distintos criterios.',puentes:'Quién conecta facciones que de otro modo estarían separadas.',camino:'Cómo se enlaza un actor con otro y a cuántos pasos de distancia.'};
+  $('lensHint').textContent=lensHints[lens];
+
+  let panel='';
+  if(lens==='centralidad'){
+    const metDefs=[['grado','Grado'],['intermediacion','Intermed.'],['influencia','Influencia']];
+    const sorted=ids.map(id=>({id,v:mMap[id]||0})).sort((a,b)=>b.v-a.v).slice(0,10);
+    const fmt=(v)=>S.cMetric==='grado'?String(v):S.cMetric==='intermediacion'?String(Math.round(v)):(v*100).toFixed(1)+'%';
+    let insight='';
+    if(sorted.length&&sorted[0].v>0){const top=id2ent[sorted[0].id].label;
+      insight=S.cMetric==='grado'?top+' encabeza la red por número de vínculos directos ('+fmt(sorted[0].v)+').'
+        :S.cMetric==='intermediacion'?top+' es el principal punto de paso: por ahí cruza la mayor parte de las conexiones indirectas.'
+        :top+' es la entidad más influyente, por estar ligada a otras muy conectadas.';
+    } else insight='Sin vínculos en este momento.';
+    panel+=`<div class="grid3">${metDefs.map(d=>`<div class="metBtn ${S.cMetric===d[0]?'on':''}" data-metric="${d[0]}">${d[1]}</div>`).join('')}</div>`;
+    panel+=`<div class="insight">${esc(insight)}</div>`;
+    panel+=sorted.map((row,i)=>{const e=id2ent[row.id];return `<div class="rankrow ${row.id===sel?'selrow':''}" data-sel="${row.id}">
+      <span class="rk">${i+1}</span><span class="sw" style="background:${FAC[e.fac].c}"></span>
+      <div style="flex:1;min-width:0"><div class="lbl">${esc(e.label)}</div><div class="barbg"><div class="bar" style="width:${row.v/maxMetric*100}%;background:${FAC[e.fac].c}"></div></div></div>
+      <span class="sc">${fmt(row.v)}</span></div>`;}).join('');
+  } else if(lens==='puentes'){
+    const apN=ap.size;
+    const crit=apN===0?'No hay puntos únicos de quiebre.':(apN+' actor'+(apN===1?'':'es')+' crítico'+(apN===1?'':'s')+': si desaparece'+(apN===1?'':'n')+', la red se fragmenta.');
+    panel+=`<div class="insight">${esc(crossCount)} de ${esc(edges.length)} vínculos cruzan facciones. ${esc(crit)}</div>`;
+    const distinctFacs=(id)=>{const s=new Set();adj.get(id).forEach(x=>s.add(id2ent[x].fac));return s.size;};
+    const brokers=ids.map(id=>({id,v:btw[id]||0})).filter(x=>x.v>0||ap.has(x.id)).sort((a,b)=>b.v-a.v).slice(0,8);
+    panel+=brokers.map((row,i)=>{const e=id2ent[row.id];return `<div class="rankrow ${row.id===sel?'selrow':''}" data-sel="${row.id}">
+      <span class="rk">${i+1}</span><span class="sw" style="background:${FAC[e.fac].c}"></span>
+      <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span class="lbl">${esc(e.label)}</span>${ap.has(row.id)?'<span class="crit">CRÍTICO</span>':''}</div>
+      <div class="p mono" style="font-size:9.5px;color:oklch(0.58 0.01 250);margin-top:2px">conecta ${distinctFacs(row.id)} facciones</div></div>
+      <span class="sc">${Math.round(row.v)}</span></div>`;}).join('');
+    if(!brokers.length) panel+=`<div class="lensHint">Ningún puente en este momento.</div>`;
+  } else if(lens==='camino'){
+    const entOptions=ids.map(id=>id2ent[id]).sort((a,b)=>(facIndex[a.fac]-facIndex[b.fac])||a.label.localeCompare(b.label));
+    const opts=entOptions.map(e=>`<option value="${e.id}">${esc(e.label)}</option>`).join('');
+    panel+=`<div style="margin-bottom:9px"><div class="p mono" style="font-size:9.5px;color:var(--mut2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Origen</div>
+      <select class="sel2" id="pathFrom"><option value="">— elegir —</option>${opts}</select></div>`;
+    panel+=`<div style="margin-bottom:12px"><div class="p mono" style="font-size:9.5px;color:var(--mut2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Destino</div>
+      <select class="sel2" id="pathTo"><option value="">— elegir —</option>${opts}</select></div>`;
+    if(pathFound){
+      panel+=`<div class="pathbox"><div style="font-size:13px;font-weight:700">${esc(pathSummary)}</div><div style="margin-top:9px">`;
+      pathLine.forEach((p,i)=>{panel+=`<div style="display:flex;align-items:center;gap:9px"><span style="width:11px;height:11px;border-radius:3px;background:${p.color};flex:none"></span><span style="font-size:12.5px;font-weight:500">${esc(p.label)}</span></div>`;
+        if(p.via)panel+=`<div style="margin-left:5px;border-left:1px solid oklch(0.4 0.01 255);padding:3px 0 3px 14px;font-size:9.5px;color:var(--mut);font-family:'JetBrains Mono',monospace">${esc(p.via)}</div>`;});
+      panel+=`</div></div>`;
+    } else if(pathNone){ panel+=`<div class="lensHint">${esc(pathSummary)}</div>`; }
+  }
+  $('lensPanel').innerHTML=panel;
+  // restaurar valores de los selects de camino
+  if(lens==='camino'){ const pf=$('pathFrom'),pt=$('pathTo'); if(pf)pf.value=S.pathFrom; if(pt)pt.value=S.pathTo; }
+
+  // ---- métricas ----
+  let nEdges=0; for(const r of REL) if(relVisible(r)) nEdges++;
+  const nNodesActivos=ids.filter(id=>(deg[id]||0)>0).length;
+  const dens=ids.length>1?Math.round(2*nEdges/(ids.length*(ids.length-1))*100):0;
+  const cards=[
+    ['Entidades', S.mode==='off'?String(ids.length):nNodesActivos+' act.'],
+    ['Vínculos', String(nEdges)],
+    ['Densidad', ids.length>1?dens+'%':'—'],
+    ['Componentes', String(comp)],
+    ['Camino medio', avgPath!=null?avgPath.toFixed(1)+' pasos':'—'],
+    ['Momento', S.mode==='off'?'todo':monthLabel(S.t)]
+  ];
+  $('cards').innerHTML=cards.map(c=>`<div class="card"><div class="l">${c[0]}</div><div class="v">${c[1]}</div></div>`).join('');
+  $('m-temporal').textContent=S.mode==='off'?'':('· '+(S.mode==='vig'?'vigentes':'acumulado'));
+
+  // ---- detalle de selección ----
+  if(sel && S.facs[id2ent[sel].fac]){
+    const e=id2ent[sel];
+    const rels=REL.filter(r=>(r.s===sel||r.t===sel)&&S.types[r.k]&&S.facs[id2ent[r.s].fac]&&S.facs[id2ent[r.t].fac])
+      .sort((a,b)=>miOf(a.start)-miOf(b.start))
+      .map(r=>{const o=r.s===sel?r.t:r.s;const en=relEnTiempo(r);return `<div class="rel" style="opacity:${en?1:0.35}">
+        <span class="d" style="background:${TYPE[r.k].c}"></span>
+        <div><div class="c">${esc(id2ent[o].label)}</div>
+        <div class="p mono">${esc(r.pred||TYPE[r.k].n)} · ${esc(monthLabel(miOf(r.start)))}–${r.end?esc(monthLabel(miOf(r.end))):'actualidad'}</div></div></div>`;}).join('');
+    $('selwrap').innerHTML=`<div class="selbox">
+      <div class="top"><div class="name">${esc(e.label)}</div>
+        <div style="display:flex;gap:10px;align-items:center">${S.focus===sel?'':`<span data-ego="${sel}" style="cursor:pointer;color:oklch(0.82 0.1 250);font-size:11px;white-space:nowrap">ver ego</span>`}<div class="x" data-clear="1">×</div></div></div>
+      <div class="meta mono">${esc(FAC[e.fac].n)} · ${e.type==='org'?'Organización':'Persona'} · ${deg[sel]||0} vínculos ahora</div>
+      ${rels}</div>`;
+  } else $('selwrap').innerHTML='';
+
+  // ---- chips ----
+  $('types').innerHTML=Object.keys(TYPE).map(k=>`<div class="chip ${S.types[k]?'on':'off'}" data-type="${k}"><span class="bar" style="background:${TYPE[k].c}"></span><span>${esc(TYPE[k].n)}</span></div>`).join('');
+  $('facs').innerHTML=facOrder.map(k=>`<div class="chip ${S.facs[k]?'on':'off'}" data-fac="${k}"><span class="sw" style="background:${FAC[k].c}"></span><span>${esc(FAC[k].n)}</span></div>`).join('');
+
+  // ---- barra temporal ----
+  $('tmonth').textContent=S.mode==='off'?'sin filtro':monthLabel(S.t);
+  $('slider').value=S.t;
+  $('mode-off').classList.toggle('on',S.mode==='off');
+  $('mode-vig').classList.toggle('on',S.mode==='vig');
+  $('mode-acc').classList.toggle('on',S.mode==='acc');
+
+  // ---- barra de foco (ego vs vista general) ----
+  if(S.focus && id2ent[S.focus]){
+    $('focusbar').innerHTML=`<div style="border:1px solid var(--accent);background:oklch(0.24 0.02 255);border-radius:9px;padding:9px 11px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span style="font-size:12px">Ego de <b>${esc(id2ent[S.focus].label)}</b></span>
+        <span id="verTodo" style="cursor:pointer;color:oklch(0.82 0.1 250);font-size:11px;white-space:nowrap">✕ ver todo</span>
+      </div>
+      <div class="mono" style="font-size:10px;color:var(--mut);margin-top:3px">${VIS.size-1} vínculos directos · el slider y los análisis aplican a su red</div></div>`;
+  } else {
+    $('focusbar').innerHTML=`<div class="mono" style="font-size:10.5px;color:var(--mut);line-height:1.5">Vista general: top ${TOPK} entidades por conexiones. <b>Busca</b> una entidad arriba (o clic en un nodo → “ver ego”) para explorar su red completa.</div>`;
+  }
+}
+
+// ===================== INTERACCIÓN =====================
+function toSvg(ev){const svg=$('svg');const r=svg.getBoundingClientRect();return {x:(ev.clientX-r.left)/r.width*1120,y:(ev.clientY-r.top)/r.height*720};}
+function setPathPoint(id){ if(!S.pathFrom){S.pathFrom=id;} else if(!S.pathTo&&id!==S.pathFrom){S.pathTo=id;} else {S.pathFrom=id;S.pathTo='';} }
+$('svg').addEventListener('pointerdown',ev=>{const g=ev.target.closest('[data-node]');if(!g)return;ev.preventDefault();drag={id:g.getAttribute('data-node'),moved:false};});
+window.addEventListener('pointermove',ev=>{if(!drag)return;const p=toSvg(ev);pos[drag.id]={x:p.x,y:p.y};drag.moved=true;render();});
+window.addEventListener('pointerup',()=>{if(!drag)return;if(!drag.moved){if(S.lens==='camino')setPathPoint(drag.id);else S.selected=S.selected===drag.id?null:drag.id;render();}drag=null;});
+
+document.addEventListener('click',ev=>{
+  const L=ev.target.closest('[data-lens]'); if(L){S.lens=L.getAttribute('data-lens');render();return;}
+  const M=ev.target.closest('[data-metric]'); if(M){S.cMetric=M.getAttribute('data-metric');render();return;}
+  const RS=ev.target.closest('[data-sel]'); if(RS){const id=RS.getAttribute('data-sel');S.selected=S.selected===id?null:id;render();return;}
+  const c=ev.target.closest('[data-clear]'); if(c){S.selected=null;render();return;}
+  const t=ev.target.closest('[data-type]'); if(t){const k=t.getAttribute('data-type');S.types[k]=!S.types[k];render();return;}
+  const f=ev.target.closest('[data-fac]'); if(f){const k=f.getAttribute('data-fac');S.facs[k]=!S.facs[k];render();return;}
+});
+document.addEventListener('change',ev=>{
+  if(ev.target.id==='pathFrom'){S.pathFrom=ev.target.value;render();}
+  if(ev.target.id==='pathTo'){S.pathTo=ev.target.value;render();}
+});
+
+// barra temporal
+$('slider').addEventListener('input',e=>{if(S.mode==='off')S.mode='vig';S.t=Number(e.target.value);render();});
+$('mode-off').addEventListener('click',()=>setMode('off'));
+$('mode-vig').addEventListener('click',()=>setMode('vig'));
+$('mode-acc').addEventListener('click',()=>setMode('acc'));
+function setMode(m){S.mode=m;if(m==='off')stopPlay();render();}
+$('play').addEventListener('click',()=>{S.playing?stopPlay():startPlay();});
+function startPlay(){if(S.mode==='off')S.mode='vig';if(S.t>=MAX)S.t=MIN;S.playing=true;$('play').textContent='⏸';playTimer=setInterval(()=>{S.t++;if(S.t>MAX){stopPlay();return;}render();},420);render();}
+function stopPlay(){S.playing=false;$('play').textContent='▶';if(playTimer){clearInterval(playTimer);playTimer=null;}}
+
+// ===================== CARGA DE DATOS REALES (?slug=) =====================
+// Convierte el JSON del precompute (scripts/export_red_temporal.py) al modelo de
+// la viz. Las relaciones reales son ABIERTAS (sin taxonomía) y con eventos por
+// mes → un solo "tipo" y filtrado temporal por meses puntuales.
+function aplicarDatos(d){
+  Object.keys(FAC).forEach(k=>delete FAC[k]); Object.entries(d.facs).forEach(([k,v])=>FAC[k]=v);
+  facOrder.length=0; facOrder.push(...Object.keys(FAC));
+  Object.keys(facIndex).forEach(k=>delete facIndex[k]); facOrder.forEach((f,i)=>facIndex[f]=i);
+  Object.keys(TYPE).forEach(k=>delete TYPE[k]);
+  TYPE.vinculo={n:'Vínculo (relación abierta)',c:'oklch(0.70 0.04 250)'};
+  ENT.length=0; d.entities.forEach(e=>ENT.push({id:e.id,label:e.label,sl:e.sl,type:e.type,fac:(FAC[e.fac]?e.fac:facOrder[0])}));
+  Object.keys(id2ent).forEach(k=>delete id2ent[k]); ENT.forEach(e=>id2ent[e.id]=e);
+  REL.length=0;
+  d.pairs.forEach(p=>{
+    if(!id2ent[p.s]||!id2ent[p.t])return;
+    const idx=p.months.map(miOf);
+    REL.push({s:p.s,t:p.t,k:'vinculo',w:Math.min(3,1+Math.log10(p.count||1)),
+      months:p.months,monthsIdx:idx,pred:p.pred,
+      start:p.months[0],end:p.months[p.months.length-1],count:p.count});
+  });
+  MIN=9999;MAX=-9999; REL.forEach(r=>r.monthsIdx.forEach(m=>{MIN=Math.min(MIN,m);MAX=Math.max(MAX,m);}));
+  S.facs={}; facOrder.forEach(f=>S.facs[f]=true);
+  S.types={vinculo:true};
+  S.t=MAX; S.selected=null; S.lens='ninguno'; S.pathFrom=''; S.pathTo=''; anaCache=null;
+  document.querySelector('.title').textContent=d.title||('Red temporal · '+d.slug);
+  document.querySelector('.sub').innerHTML='Grafo real de relaciones <b>abiertas</b> ('+esc(d.slug)+') con línea de tiempo y análisis de red recalculado por mes. Aristas = pares co-ocurrentes; color de nodo = comunidad detectada.';
+}
+async function cargar(){
+  const slug=new URLSearchParams(location.search).get('slug');
+  if(!slug)return;
+  try{ const r=await fetch('red_'+esc(slug)+'.json?t='+Date.now()); if(r.ok) aplicarDatos(await r.json());
+       else console.warn('no hay red_'+slug+'.json'); }
+  catch(e){ console.error('carga falló',e); }
+}
+
+// ===================== BÚSQUEDA → EGO =====================
+function buscar(q){
+  const box=$('searchres'), nq=_norm(q).trim();
+  if(!nq){ box.style.display='none'; return; }
+  const hits=ENT.filter(e=>_norm(e.label).includes(nq)).slice(0,10);
+  box.innerHTML = hits.length
+    ? hits.map(e=>`<div data-eid="${e.id}" style="padding:7px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid oklch(0.24 0.01 255)"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${(FAC[e.fac]||{c:'#888'}).c};margin-right:7px"></span>${esc(e.label)}</div>`).join('')
+    : '<div style="padding:8px 10px;font-size:11px;color:var(--mut)">sin resultados</div>';
+  box.style.display='block';
+}
+$('search').addEventListener('input',e=>buscar(e.target.value));
+document.addEventListener('click',ev=>{
+  const h=ev.target.closest('[data-eid]');
+  if(h){ const id=h.getAttribute('data-eid'); $('search').value=id2ent[id].label; $('searchres').style.display='none'; setFocus(id); return; }
+  if(ev.target.closest('#verTodo')){ $('search').value=''; setFocus(null); return; }
+  const eg=ev.target.closest('[data-ego]');
+  if(eg){ const id=eg.getAttribute('data-ego'); $('search').value=id2ent[id].label; setFocus(id); return; }
+  if(!ev.target.closest('#search')) $('searchres').style.display='none';
+});
+
+// ===================== INIT =====================
+async function init(){
+  await cargar();
+  $('slider').min=MIN;$('slider').max=MAX;$('slider').value=S.t;
+  const years=[];for(let y=2021+Math.floor(MIN/12);y<=2021+Math.floor(MAX/12);y++)years.push(y);
+  $('ticks').innerHTML=years.map(y=>`<span>${y}</span>`).join('');
+  VIS=egoSet();
+  runLayout(VIS);
+  render();
+}
+init();
+</script>
+</body>
+</html>

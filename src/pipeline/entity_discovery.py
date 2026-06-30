@@ -187,21 +187,34 @@ def _agrupar(
 
     Retorna {slug: {nombre, tipo, alias, n_menciones, n_docs}}.
     """
-    grupos: list[dict] = []
-    # BLOCKING: índice (tipo, token) -> índices de grupos que contienen ese token.
-    # Cada mención solo se compara con grupos que comparten ≥1 token (mismo
-    # resultado que comparar contra todos —los de intersección 0 nunca casan—
-    # pero O(menciones × candidatos) en vez de O(menciones × grupos)).
-    indice: dict[tuple[str, str], set[int]] = {}
-
+    # PASADA 1 (O(menciones), barata): dedupe a FORMAS ÚNICAS con conteo y
+    # doc_ids. A escala, millones de menciones son strings idénticos repetidos
+    # ("Lima" ×70k…); agrupar cada repetición es el cuello. Agrupamos las formas
+    # únicas (decenas-cientos de miles), no las menciones (millones).
+    formas: dict[tuple[str, str], list] = {}  # (texto,tipo) -> [count, {docs}, toks]
     for texto_raw, tipo, doc_id in menciones:
         texto = _limpiar_span(texto_raw)
         if not texto:
             continue
-        toks = _tokens(texto)
-        if len(toks) < _MIN_TOKENS:
-            continue
+        key = (texto, tipo)
+        f = formas.get(key)
+        if f is None:
+            toks = _tokens(texto)
+            if len(toks) < _MIN_TOKENS:
+                continue
+            formas[key] = [1, {doc_id}, toks]
+        else:
+            f[0] += 1
+            f[1].add(doc_id)
 
+    # PASADA 2: agrupar las formas únicas por contención de tokens (≥0.7), de
+    # más frecuente a menos (ancla los grupos en las formas comunes → estable).
+    # BLOCKING: índice (tipo, token) -> grupos que contienen ese token.
+    grupos: list[dict] = []
+    indice: dict[tuple[str, str], set[int]] = {}
+    for (texto, tipo), (count, docs, toks) in sorted(
+        formas.items(), key=lambda kv: -kv[1][0]
+    ):
         candidatos: set[int] = set()
         for tok in toks:
             candidatos.update(indice.get((tipo, tok), ()))
@@ -222,9 +235,9 @@ def _agrupar(
                 {
                     "tokens": set(toks),
                     "tipo": tipo,
-                    "frecuencias": {texto: 1},  # {forma: count}
-                    "doc_ids": {doc_id},
-                    "n_menciones": 1,
+                    "frecuencias": {texto: count},  # {forma: count}
+                    "doc_ids": docs,
+                    "n_menciones": count,
                 }
             )
             for tok in toks:
@@ -233,9 +246,9 @@ def _agrupar(
             g = grupos[mejor_gi]
             nuevos = toks - g["tokens"]
             g["tokens"] |= toks
-            g["n_menciones"] += 1
-            g["doc_ids"].add(doc_id)
-            g["frecuencias"][texto] = g["frecuencias"].get(texto, 0) + 1
+            g["n_menciones"] += count
+            g["doc_ids"] |= docs
+            g["frecuencias"][texto] = g["frecuencias"].get(texto, 0) + count
             for tok in nuevos:                 # indexar tokens nuevos del grupo
                 indice.setdefault((tipo, tok), set()).add(mejor_gi)
 

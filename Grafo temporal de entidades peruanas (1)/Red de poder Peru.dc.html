@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:oklch(0.36 0.01 255);border-radius:6px}
+::-webkit-scrollbar-track{background:transparent}
+select{outline:none;-webkit-appearance:none;appearance:none}
+</style>
+</helmet>
+<div style="height:100vh;width:100%;display:flex;flex-direction:column;background:oklch(0.165 0.006 255);color:oklch(0.93 0.005 250);font-family:Archivo,system-ui,sans-serif;overflow:hidden">
+
+  <div data-screen-label="Encabezado" style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding:14px 22px;border-bottom:1px solid oklch(0.28 0.01 255);flex:none">
+    <div>
+      <div style="font-size:19px;font-weight:700;letter-spacing:-0.01em">Red de poder · Perú 2021–2026</div>
+      <div style="font-size:11px;color:oklch(0.6 0.01 250);font-family:'JetBrains Mono',monospace;margin-top:4px;max-width:640px;line-height:1.55">Análisis estructural de vínculos entre personajes y organizaciones. Reconstrucción ilustrativa con fines de demostración, basada en información de dominio público.</div>
+    </div>
+    <div style="display:flex;gap:16px;align-items:center;flex:none;padding-top:3px">
+      <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:oklch(0.6 0.01 250);font-family:'JetBrains Mono',monospace"><span style="width:11px;height:11px;border-radius:50%;background:oklch(0.62 0.02 250);display:inline-block"></span>Persona</span>
+      <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:oklch(0.6 0.01 250);font-family:'JetBrains Mono',monospace"><span style="width:11px;height:11px;border-radius:3px;background:oklch(0.62 0.02 250);display:inline-block"></span>Organización</span>
+    </div>
+  </div>
+
+  <div style="flex:1;display:flex;min-height:0">
+
+    <div style="width:346px;flex:none;border-right:1px solid oklch(0.28 0.01 255);overflow-y:auto;padding:16px 16px 30px">
+
+      <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:oklch(0.55 0.01 250);font-family:'JetBrains Mono',monospace;margin-bottom:9px">Enfoque de análisis</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:9px">
+        <sc-for list="{{ lensOptions }}" as="o" hint-placeholder-count="4">
+          <div onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</div>
+        </sc-for>
+      </div>
+      <div style="font-size:10.5px;color:oklch(0.55 0.01 250);font-family:'JetBrains Mono',monospace;line-height:1.5;margin-bottom:16px">{{ lensHint }}</div>
+
+      <sc-if value="{{ isCent }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-bottom:18px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:11px">
+            <sc-for list="{{ metricOptions }}" as="m" hint-placeholder-count="3">
+              <div onClick="{{ m.onClick }}" style="{{ m.style }}">{{ m.label }}</div>
+            </sc-for>
+          </div>
+          <div style="border:1px solid oklch(0.33 0.018 250);background:oklch(0.205 0.012 255);border-radius:9px;padding:10px 11px;margin-bottom:12px;font-size:11.5px;line-height:1.45;color:oklch(0.84 0.01 250)">{{ insightText }}</div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <sc-for list="{{ rankRows }}" as="row" hint-placeholder-count="8">
+              <div onClick="{{ row.onClick }}" style="{{ row.bg }}">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:oklch(0.55 0.01 250);width:15px;flex:none;text-align:right">{{ row.rank }}</span>
+                <span style="width:9px;height:9px;border-radius:2px;background:{{ row.color }};flex:none"></span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ row.label }}</div>
+                  <div style="height:4px;border-radius:2px;margin-top:4px;background:oklch(0.3 0.01 255);overflow:hidden"><div style="height:100%;border-radius:2px;width:{{ row.barW }};background:{{ row.color }}"></div></div>
+                </div>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:oklch(0.72 0.01 250);flex:none">{{ row.score }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isBrokers }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-bottom:18px">
+          <div style="border:1px solid oklch(0.33 0.018 250);background:oklch(0.205 0.012 255);border-radius:9px;padding:10px 11px;margin-bottom:12px;font-size:11.5px;line-height:1.45;color:oklch(0.84 0.01 250)">{{ insightText }}</div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <sc-for list="{{ brokerRows }}" as="row" hint-placeholder-count="6">
+              <div onClick="{{ row.onClick }}" style="{{ row.bg }}">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:oklch(0.55 0.01 250);width:15px;flex:none;text-align:right">{{ row.rank }}</span>
+                <span style="width:9px;height:9px;border-radius:2px;background:{{ row.color }};flex:none"></span>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ row.label }}</span><sc-if value="{{ row.critico }}" hint-placeholder-val="{{ false }}"><span style="font-size:8.5px;font-family:'JetBrains Mono',monospace;letter-spacing:0.04em;color:oklch(0.78 0.16 28);border:1px solid oklch(0.5 0.14 28);border-radius:4px;padding:1px 4px;flex:none">CRÍTICO</span></sc-if></div>
+                  <div style="font-size:9.5px;color:oklch(0.58 0.01 250);font-family:'JetBrains Mono',monospace;margin-top:2px">conecta {{ row.facCount }} facciones</div>
+                </div>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:oklch(0.72 0.01 250);flex:none">{{ row.score }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isPath }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-bottom:18px">
+          <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:12px">
+            <div>
+              <div style="font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;color:oklch(0.55 0.01 250);font-family:'JetBrains Mono',monospace;margin-bottom:4px">Origen</div>
+              <select value="{{ pathFrom }}" onChange="{{ setPathFrom }}" style="width:100%;background:oklch(0.21 0.009 255);color:oklch(0.92 0.01 250);border:1px solid oklch(0.34 0.01 255);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:Archivo,sans-serif">
+                <option value="">— elegir —</option>
+                <sc-for list="{{ entOptions }}" as="o" hint-placeholder-count="6"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;color:oklch(0.55 0.01 250);font-family:'JetBrains Mono',monospace;margin-bottom:4px">Destino</div>
+              <select value="{{ pathTo }}" onChange="{{ setPathTo }}" style="width:100%;background:oklch(0.21 0.009 255);color:oklch(0.92 0.01 250);border:1px solid oklch(0.34 0.01 255);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:Archivo,sans-serif">
+                <option value="">— elegir —</option>
+                <sc-for list="{{ entOptions }}" as="o" hint-placeholder-count="6"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
+              </select>
+            </div>
+          </div>
+          <sc-if value="{{ pathFound }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1px solid oklch(0.33 0.018 250);background:oklch(0.205 0.012 255);border-radius:9px;padding:11px 12px">
+              <div style="font-size:13px;font-weight:700;color:oklch(0.9 0.01 250)">{{ pathSummary }}</div>
+              <div style="margin-top:9px;display:flex;flex-direction:column">
+                <sc-for list="{{ pathLine }}" as="p" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:9px">
+                    <span style="width:11px;height:11px;border-radius:3px;background:{{ p.color }};flex:none"></span>
+                    <span style="font-size:12.5px;font-weight:500">{{ p.label }}</span>
+                  </div>
+                  <sc-if value="{{ p.via }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-left:5px;border-left:1px solid oklch(0.4 0.01 255);padding:3px 0 3px 14px;font-size:9.5px;color:oklch(0.6 0.01 250);font-family:'JetBrains Mono',monospace">{{ p.via }}</div>
+                  </sc-if>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ pathNone }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:11.5px;color:oklch(0.62 0.01 250);font-family:'JetBrains Mono',monospace;line-height:1.5">{{ pathSummary }}</div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:oklch(0.55 0.01 250);font-family:'JetBrains Mono',monospace;margin-bottom:9px">Métricas de la red</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:20px">
+        <sc-for list="{{ metricCards }}" as="mc" hint-placeholder-count="5">
+          <div style="border:1px solid oklch(0.3 0.01 255);background:oklch(0.2 0.008 255);border-radius:9px;padding:8px 10px">
+            <div style="font-size:9px;letter-spacing:0.07em;text-transform:uppercase;color:oklch(0.55 0.01 250);font-family:'JetBrains Mono',monospace">{{ mc.label }}</div>
+            <div style="font-size:17px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:2px">{{ mc.value }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ false }}">
+        <div style="border:1px solid oklch(0.33 0.01 255);background:oklch(0.21 0.008 255);border-radius:11px;padding:13px;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="width:12px;height:12px;border-radius:3px;background:{{ sel.color }};display:inline-block;flex:none"></span>
+              <span style="font-weight:700;font-size:15px;line-height:1.15">{{ sel.label }}</span>
+            </div>
+            <div onClick="{{ clearSel }}" style="cursor:pointer;color:oklch(0.6 0.01 250);font-size:18px;line-height:0.8;flex:none">×</div>
+          </div>
+          <div style="font-size:10.5px;color:oklch(0.62 0.01 250);margin-top:6px;font-family:'JetBrains Mono',monospace">{{ sel.facLabel }} · {{ sel.kind }} · {{ sel.degree }} vínculos</div>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:9px;max-height:260px;overflow:auto">
+            <sc-for list="{{ sel.rels }}" as="r" hint-placeholder-count="4">
+              <div style="display:flex;gap:9px;align-items:flex-start">
+                <span style="width:7px;height:7px;border-radius:50%;background:{{ r.color }};margin-top:5px;flex:none"></span>
+                <div>
+                  <div style="font-size:12.5px;font-weight:500;line-height:1.25">{{ r.counter }}</div>
+                  <div style="font-size:10px;color:oklch(0.58 0.01 250);font-family:'JetBrains Mono',monospace;margin-top:1px">{{ r.typeLabel }} · {{ r.period }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:oklch(0.55 0.01 250);font-family:'JetBrains Mono',monospace;margin-bottom:9px">Tipo de vínculo</div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:20px">
+        <sc-for list="{{ typeList }}" as="ty" hint-placeholder-count="5">
+          <div onClick="{{ ty.onClick }}" style="{{ ty.style }}">
+            <span style="width:16px;height:3px;border-radius:2px;background:{{ ty.color }};display:inline-block;flex:none"></span>
+            <span style="font-size:12px">{{ ty.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:oklch(0.55 0.01 250);font-family:'JetBrains Mono',monospace;margin-bottom:9px">Facción / entidad</div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:18px">
+        <sc-for list="{{ facList }}" as="f" hint-placeholder-count="8">
+          <div onClick="{{ f.onClick }}" style="{{ f.style }}">
+            <span style="width:12px;height:12px;border-radius:3px;background:{{ f.color }};display:inline-block;flex:none"></span>
+            <span style="font-size:12px">{{ f.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font-size:10px;color:oklch(0.5 0.01 250);font-family:'JetBrains Mono',monospace;line-height:1.7;border-top:1px solid oklch(0.26 0.01 255);padding-top:13px">{{ pageNote }}</div>
+    </div>
+
+    <div style="flex:1;min-width:0;position:relative;background:radial-gradient(circle at 50% 38%, oklch(0.205 0.011 258), oklch(0.15 0.006 255))">
+      <div style="position:absolute;inset:0">
+        <svg ref="{{ svgRef }}" viewBox="0 0 1120 720" width="100%" height="100%" style="display:block">
+          <sc-for list="{{ graphEdges }}" as="e" hint-placeholder-count="50">
+            <path d="{{ e.d }}" fill="none" stroke="{{ e.stroke }}" stroke-width="{{ e.width }}" opacity="{{ e.opacity }}" stroke-linecap="round"></path>
+          </sc-for>
+          <sc-for list="{{ graphNodes }}" as="n" hint-placeholder-count="24">
+            <g opacity="{{ n.opacity }}" style="cursor:pointer" onPointerDown="{{ n.onDown }}">
+              <sc-if value="{{ n.halo }}" hint-placeholder-val="{{ false }}">
+                <circle cx="{{ n.x }}" cy="{{ n.y }}" r="{{ n.haloR }}" fill="none" stroke="oklch(0.95 0.02 250)" stroke-width="1.4" opacity="0.45"></circle>
+              </sc-if>
+              <sc-if value="{{ n.isOrg }}" hint-placeholder-val="{{ false }}">
+                <rect x="{{ n.rx }}" y="{{ n.ry }}" width="{{ n.size }}" height="{{ n.size }}" rx="4" fill="{{ n.fill }}" stroke="{{ n.ring }}" stroke-width="{{ n.sw }}"></rect>
+              </sc-if>
+              <sc-if value="{{ n.isPerson }}" hint-placeholder-val="{{ true }}">
+                <circle cx="{{ n.x }}" cy="{{ n.y }}" r="{{ n.r }}" fill="{{ n.fill }}" stroke="{{ n.ring }}" stroke-width="{{ n.sw }}"></circle>
+              </sc-if>
+              <sc-if value="{{ n.showLabel }}" hint-placeholder-val="{{ false }}">
+                <text x="{{ n.x }}" y="{{ n.ly }}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="oklch(0.92 0.01 250)" style="pointer-events:none">{{ n.label }}</text>
+              </sc-if>
+            </g>
+          </sc-for>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:760},&quot;showLabels&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Vista&quot;},&quot;defaultLens&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ninguno&quot;,&quot;centralidad&quot;,&quot;puentes&quot;,&quot;camino&quot;],&quot;default&quot;:&quot;ninguno&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Análisis&quot;},&quot;curvedEdges&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Vista&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.FAC = {
+      gobierno:   {n:'Ejecutivo / Gobierno', c:'oklch(0.70 0.12 250)'},
+      peruLibre:  {n:'Perú Libre', c:'oklch(0.64 0.17 25)'},
+      familia:    {n:'Entorno familiar', c:'oklch(0.72 0.13 355)'},
+      fujimorismo:{n:'Fujimorismo', c:'oklch(0.64 0.15 330)'},
+      renovacion: {n:'Renovación Popular', c:'oklch(0.70 0.12 150)'},
+      app:        {n:'Alianza para el Progreso', c:'oklch(0.74 0.12 78)'},
+      congreso:   {n:'Congreso', c:'oklch(0.72 0.10 205)'},
+      justicia:   {n:'Justicia / Fiscalía', c:'oklch(0.64 0.16 295)'}
+    };
+    this.facOrder = ['gobierno','peruLibre','familia','fujimorismo','renovacion','app','congreso','justicia'];
+    this.facIndex = {}; this.facOrder.forEach((f,i)=>this.facIndex[f]=i);
+    this.TYPE = {
+      laboral:    {n:'Laboral / cargo', c:'oklch(0.72 0.11 235)'},
+      politico:   {n:'Político / alianza', c:'oklch(0.80 0.13 95)'},
+      partidario: {n:'Partidario', c:'oklch(0.70 0.15 320)'},
+      judicial:   {n:'Judicial', c:'oklch(0.66 0.19 28)'},
+      familiar:   {n:'Familiar', c:'oklch(0.78 0.12 352)'}
+    };
+    this.ENT = [
+      {id:'castillo',label:'Pedro Castillo',sl:'Castillo',type:'person',fac:'gobierno'},
+      {id:'boluarte',label:'Dina Boluarte',sl:'Boluarte',type:'person',fac:'gobierno'},
+      {id:'mvasquez',label:'Mirtha Vásquez',sl:'M. Vásquez',type:'person',fac:'gobierno'},
+      {id:'atorres',label:'Aníbal Torres',sl:'A. Torres',type:'person',fac:'gobierno'},
+      {id:'otarola',label:'Alberto Otárola',sl:'Otárola',type:'person',fac:'gobierno'},
+      {id:'adrianzen',label:'Gustavo Adrianzén',sl:'Adrianzén',type:'person',fac:'gobierno'},
+      {id:'jsilva',label:'Juan Silva',sl:'J. Silva',type:'person',fac:'gobierno'},
+      {id:'galvarado',label:'Geiner Alvarado',sl:'Alvarado',type:'person',fac:'gobierno'},
+      {id:'bpacheco',label:'Bruno Pacheco',sl:'Pacheco',type:'person',fac:'gobierno'},
+      {id:'cerronV',label:'Vladimir Cerrón',sl:'V. Cerrón',type:'person',fac:'peruLibre'},
+      {id:'cerronW',label:'Waldemar Cerrón',sl:'W. Cerrón',type:'person',fac:'peruLibre'},
+      {id:'bellido',label:'Guido Bellido',sl:'Bellido',type:'person',fac:'peruLibre'},
+      {id:'bchavez',label:'Betssy Chávez',sl:'B. Chávez',type:'person',fac:'peruLibre'},
+      {id:'bermejo',label:'Guillermo Bermejo',sl:'Bermejo',type:'person',fac:'peruLibre'},
+      {id:'lparedes',label:'Lilia Paredes',sl:'L. Paredes',type:'person',fac:'familia'},
+      {id:'yparedes',label:'Yenifer Paredes',sl:'Y. Paredes',type:'person',fac:'familia'},
+      {id:'keiko',label:'Keiko Fujimori',sl:'Keiko F.',type:'person',fac:'fujimorismo'},
+      {id:'lopezaliaga',label:'Rafael López Aliaga',sl:'López A.',type:'person',fac:'renovacion'},
+      {id:'montoya',label:'Jorge Montoya',sl:'Montoya',type:'person',fac:'renovacion'},
+      {id:'asoto',label:'Alejandro Soto',sl:'A. Soto',type:'person',fac:'app'},
+      {id:'acesar',label:'César Acuña',sl:'C. Acuña',type:'person',fac:'app'},
+      {id:'jwilliams',label:'José Williams',sl:'Williams',type:'person',fac:'congreso'},
+      {id:'benavides',label:'Patricia Benavides',sl:'Benavides',type:'person',fac:'justicia'},
+      {id:'ejecutivo',label:'Poder Ejecutivo',sl:'Ejecutivo',type:'org',fac:'gobierno'},
+      {id:'perulibre',label:'Perú Libre',sl:'Perú Libre',type:'org',fac:'peruLibre'},
+      {id:'fuerzaPop',label:'Fuerza Popular',sl:'Fuerza Pop.',type:'org',fac:'fujimorismo'},
+      {id:'renovPop',label:'Renovación Popular',sl:'Renov. Pop.',type:'org',fac:'renovacion'},
+      {id:'appPart',label:'Alianza para el Progreso',sl:'APP',type:'org',fac:'app'},
+      {id:'congreso',label:'Congreso de la República',sl:'Congreso',type:'org',fac:'congreso'},
+      {id:'fiscalia',label:'Ministerio Público',sl:'Fiscalía',type:'org',fac:'justicia'},
+      {id:'judicial',label:'Poder Judicial',sl:'P. Judicial',type:'org',fac:'justicia'}
+    ];
+    const R = (s,t,k,w,start,end,label)=>({s,t,k,w,start,end,label});
+    this.REL = [
+      R('castillo','ejecutivo','laboral',3,'2021-07','2022-12','Presidente de la República'),
+      R('castillo','perulibre','partidario',3,'2021-07','2022-06','Electo por Perú Libre'),
+      R('castillo','congreso','politico',3,'2021-07','2022-12','Tensión y vacancias'),
+      R('bellido','ejecutivo','laboral',2,'2021-07','2021-10','PCM (primer gabinete)'),
+      R('bellido','castillo','politico',2,'2021-07','2021-10','Aliado inicial'),
+      R('bellido','perulibre','partidario',2,'2021-07','2024-12','Militante PL'),
+      R('mvasquez','ejecutivo','laboral',2,'2021-10','2022-02','PCM'),
+      R('mvasquez','castillo','politico',2,'2021-10','2022-02','Gabinete'),
+      R('atorres','ejecutivo','laboral',2,'2022-02','2022-11','PCM'),
+      R('atorres','castillo','politico',2,'2022-02','2022-12','Aliado cercano'),
+      R('bchavez','ejecutivo','laboral',2,'2022-11','2022-12','PCM'),
+      R('bchavez','castillo','politico',3,'2022-11','2022-12','Mensaje del 7-Dic'),
+      R('bchavez','fiscalia','judicial',2,'2022-12',null,'Investigación'),
+      R('castillo','fiscalia','judicial',3,'2022-12',null,'Investigación por rebelión'),
+      R('castillo','judicial','judicial',3,'2022-12',null,'Prisión preventiva'),
+      R('bpacheco','castillo','laboral',2,'2021-07','2021-11','Secretario de Palacio'),
+      R('bpacheco','fiscalia','judicial',2,'2021-11',null,'Colaborador / investigación'),
+      R('jsilva','ejecutivo','laboral',2,'2021-07','2022-05','Min. Transportes'),
+      R('jsilva','fiscalia','judicial',3,'2022-05',null,'Investigación'),
+      R('galvarado','ejecutivo','laboral',2,'2021-08','2022-12','Min. Vivienda'),
+      R('galvarado','fiscalia','judicial',2,'2022-09',null,'Investigación'),
+      R('lparedes','castillo','familiar',3,'2021-07',null,'Esposa'),
+      R('yparedes','lparedes','familiar',2,'2021-07',null,'Hermana'),
+      R('yparedes','fiscalia','judicial',2,'2022-08',null,'Investigación'),
+      R('lparedes','fiscalia','judicial',2,'2022-08',null,'Investigación'),
+      R('cerronV','perulibre','partidario',3,'2021-07',null,'Secretario general'),
+      R('cerronW','perulibre','partidario',2,'2021-07',null,'Congresista PL'),
+      R('cerronW','cerronV','familiar',2,'2021-07',null,'Hermano'),
+      R('bermejo','perulibre','partidario',2,'2021-07','2023-12','Congresista'),
+      R('bermejo','fiscalia','judicial',2,'2021-09',null,'Investigación'),
+      R('cerronV','judicial','judicial',2,'2023-10',null,'Requisitoria / prófugo'),
+      R('castillo','cerronV','politico',2,'2021-07','2021-12','Tensión Ejecutivo–PL'),
+      R('boluarte','ejecutivo','laboral',3,'2022-12',null,'Presidenta'),
+      R('boluarte','castillo','politico',2,'2021-07','2022-12','Fórmula presidencial'),
+      R('boluarte','perulibre','partidario',1,'2021-07','2022-01','Expulsada de PL'),
+      R('otarola','ejecutivo','laboral',3,'2022-12','2024-03','PCM'),
+      R('otarola','boluarte','politico',3,'2022-12','2024-03','Mano derecha'),
+      R('adrianzen','ejecutivo','laboral',2,'2024-03',null,'PCM'),
+      R('adrianzen','boluarte','politico',2,'2024-03',null,'Gabinete'),
+      R('boluarte','fiscalia','judicial',2,'2024-03',null,'Caso Rolex'),
+      R('jwilliams','congreso','laboral',2,'2022-07','2023-07','Presidente del Congreso'),
+      R('asoto','congreso','laboral',2,'2023-07','2024-07','Presidente del Congreso'),
+      R('asoto','appPart','partidario',2,'2021-07',null,'Bancada APP'),
+      R('acesar','appPart','partidario',3,'2021-07',null,'Fundador APP'),
+      R('keiko','fuerzaPop','partidario',3,'2021-07',null,'Lideresa'),
+      R('keiko','judicial','judicial',2,'2021-07',null,'Caso Cócteles'),
+      R('fuerzaPop','congreso','politico',3,'2021-07',null,'Bancada / oposición'),
+      R('lopezaliaga','renovPop','partidario',3,'2021-07',null,'Líder'),
+      R('montoya','renovPop','partidario',2,'2021-07','2024-12','Congresista'),
+      R('fuerzaPop','boluarte','politico',2,'2023-01',null,'Gobernabilidad'),
+      R('appPart','boluarte','politico',2,'2023-01',null,'Alianza'),
+      R('renovPop','boluarte','politico',1,'2023-01',null,'Soporte parcial'),
+      R('benavides','fiscalia','laboral',3,'2022-08','2023-12','Fiscal de la Nación'),
+      R('benavides','judicial','judicial',2,'2023-12',null,'Destitución / investigación'),
+      R('benavides','congreso','politico',2,'2023-09',null,'Denuncias constitucionales'),
+      R('appPart','congreso','politico',2,'2021-07',null,'Bancada'),
+      R('renovPop','congreso','politico',2,'2021-07',null,'Bancada'),
+      R('perulibre','congreso','politico',2,'2021-07',null,'Bancada')
+    ];
+    this.id2ent = {}; this.ENT.forEach(e=>this.id2ent[e.id]=e);
+    this.pos = {};
+    // temporal range
+    let lo=9999, hi=-9999;
+    this.REL.forEach(r=>{ const a=this.miOf(r.start); const b=r.end?this.miOf(r.end):a; lo=Math.min(lo,a); hi=Math.max(hi,b); });
+    this.miMin=lo; this.miMax=hi;
+    this.state = {
+      lens: (props && props.defaultLens) || 'ninguno',
+      cMetric: 'grado',
+      pathFrom: '', pathTo: '',
+      selected:null, ready:false,
+      timeOn:false, timeMI:hi, timeMode:'vigente', playing:false,
+      types:{laboral:true,politico:true,partidario:true,judicial:true,familiar:true},
+      facs:{gobierno:true,peruLibre:true,familia:true,fujimorismo:true,renovacion:true,app:true,congreso:true,justicia:true}
+    };
+    this.bSvgRef = (el)=>{ this.svg = el; };
+  }
+
+  miOf(s){ const a=s.split('-'); return (Number(a[0])-2021)*12 + (Number(a[1])-1); }
+  monthLabel(mi){ const y=2021+Math.floor(mi/12); const m=((mi%12)+12)%12; const n=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic']; return n[m]+' '+y; }
+
+  componentDidMount(){
+    this.runLayout();
+    this.setState({ready:true});
+    this._mm=(e)=>this.onMove(e);
+    this._mu=(e)=>this.onUp(e);
+    window.addEventListener('pointermove',this._mm);
+    window.addEventListener('pointerup',this._mu);
+  }
+  componentWillUnmount(){
+    window.removeEventListener('pointermove',this._mm);
+    window.removeEventListener('pointerup',this._mu);
+  }
+
+  runLayout(){
+    const W=1120,H=720, ents=this.ENT, n=ents.length;
+    const facAng={}; this.facOrder.forEach((f,i)=>facAng[f]=i/this.facOrder.length*Math.PI*2);
+    const P={};
+    ents.forEach(e=>{ const a=facAng[e.fac]+(Math.random()-0.5)*0.7; const rr=170+Math.random()*130; P[e.id]={x:W/2+Math.cos(a)*rr, y:H/2+Math.sin(a)*rr}; });
+    const links=this.REL.map(r=>[r.s,r.t]);
+    const k=Math.sqrt(W*H/n)*0.82;
+    let temp=W/8;
+    for(let it=0; it<520; it++){
+      const disp={}; ents.forEach(e=>disp[e.id]={x:0,y:0});
+      for(let i=0;i<n;i++){ for(let j=i+1;j<n;j++){
+        const a=P[ents[i].id], b=P[ents[j].id];
+        let dx=a.x-b.x, dy=a.y-b.y; let d=Math.sqrt(dx*dx+dy*dy)||0.01;
+        const f=k*k/d, ux=dx/d, uy=dy/d;
+        disp[ents[i].id].x+=ux*f; disp[ents[i].id].y+=uy*f;
+        disp[ents[j].id].x-=ux*f; disp[ents[j].id].y-=uy*f;
+      }}
+      for(const [s,t] of links){
+        const a=P[s], b=P[t]; if(!a||!b) continue;
+        let dx=a.x-b.x, dy=a.y-b.y; let d=Math.sqrt(dx*dx+dy*dy)||0.01;
+        const f=d*d/k, ux=dx/d, uy=dy/d;
+        disp[s].x-=ux*f; disp[s].y-=uy*f; disp[t].x+=ux*f; disp[t].y+=uy*f;
+      }
+      ents.forEach(e=>{ const p=P[e.id]; disp[e.id].x-=(p.x-W/2)*0.018; disp[e.id].y-=(p.y-H/2)*0.018; });
+      ents.forEach(e=>{
+        const p=P[e.id], dp=disp[e.id]; let d=Math.sqrt(dp.x*dp.x+dp.y*dp.y)||0.01;
+        const m=Math.min(d,temp); p.x+=dp.x/d*m; p.y+=dp.y/d*m;
+        p.x=Math.max(50,Math.min(W-50,p.x)); p.y=Math.max(50,Math.min(H-50,p.y));
+      });
+      temp*=0.985;
+    }
+    this.pos={}; ents.forEach(e=>this.pos[e.id]={x:P[e.id].x, y:P[e.id].y});
+  }
+
+  toSvg(ev){ const svg=this.svg; if(!svg) return null; const r=svg.getBoundingClientRect(); return {x:(ev.clientX-r.left)/r.width*1120, y:(ev.clientY-r.top)/r.height*720}; }
+  onDown(ev,id){ ev.preventDefault(); this.drag={id,moved:false}; }
+  onMove(ev){ if(!this.drag) return; const p=this.toSvg(ev); if(p){ this.pos[this.drag.id]={x:p.x,y:p.y}; this.drag.moved=true; this.forceUpdate(); } }
+  onUp(){ if(!this.drag) return; if(!this.drag.moved){ if(this.state.lens==='camino') this.setPathPoint(this.drag.id); else this.selectNode(this.drag.id); } this.drag=null; }
+
+  selectNode(id){ this.setState(s=>({selected: s.selected===id?null:id})); }
+  clearSel(){ this.setState({selected:null}); }
+  toggleType(k){ this.setState(s=>({types:{...s.types,[k]:!s.types[k]}})); }
+  toggleFac(k){ this.setState(s=>({facs:{...s.facs,[k]:!s.facs[k]}})); }
+  setLens(l){ this.setState({lens:l}); }
+  setMetric(m){ this.setState({cMetric:m}); }
+  setPathFrom(ev){ this.setState({pathFrom:ev.target.value}); }
+  setPathTo(ev){ this.setState({pathTo:ev.target.value}); }
+  setPathPoint(id){ this.setState(s=>{ if(!s.pathFrom) return {pathFrom:id}; if(!s.pathTo && id!==s.pathFrom) return {pathTo:id}; return {pathFrom:id,pathTo:''}; }); }
+
+  // ---------- network analysis (cached by faction/type filters) ----------
+  computeAnalysis(){
+    const key = JSON.stringify([this.state.facs, this.state.types]);
+    if(this._ana && this._ana.key===key) return this._ana.data;
+    const ids = this.ENT.filter(e=>this.state.facs[e.fac]).map(e=>e.id);
+    const idset = new Set(ids);
+    const adj = new Map(); ids.forEach(id=>adj.set(id,new Set()));
+    for(const r of this.REL){
+      if(!this.state.types[r.k]) continue;
+      if(!idset.has(r.s)||!idset.has(r.t)) continue;
+      adj.get(r.s).add(r.t); adj.get(r.t).add(r.s);
+    }
+    const edges=[];
+    for(const id of ids){ for(const nb of adj.get(id)){ if(id<nb) edges.push([id,nb]); } }
+    const deg={}; ids.forEach(id=>deg[id]=adj.get(id).size);
+
+    // betweenness (Brandes, unweighted, undirected)
+    const btw={}; ids.forEach(v=>btw[v]=0);
+    for(const s of ids){
+      const stack=[], pred={}, sigma={}, dist={};
+      ids.forEach(v=>{pred[v]=[];sigma[v]=0;dist[v]=-1;});
+      sigma[s]=1; dist[s]=0; const q=[s];
+      while(q.length){ const v=q.shift(); stack.push(v);
+        for(const w of adj.get(v)){
+          if(dist[w]<0){dist[w]=dist[v]+1;q.push(w);}
+          if(dist[w]===dist[v]+1){sigma[w]+=sigma[v];pred[w].push(v);}
+        }
+      }
+      const delta={}; ids.forEach(v=>delta[v]=0);
+      while(stack.length){ const w=stack.pop();
+        for(const v of pred[w]) delta[v]+=(sigma[v]/sigma[w])*(1+delta[w]);
+        if(w!==s) btw[w]+=delta[w];
+      }
+    }
+    ids.forEach(v=>btw[v]/=2);
+
+    // PageRank
+    const N=ids.length||1, d=0.85; let pr={}; ids.forEach(v=>pr[v]=1/N);
+    for(let it=0; it<60; it++){
+      const np={}; let dangling=0;
+      ids.forEach(v=>{ if(adj.get(v).size===0) dangling+=pr[v]; });
+      ids.forEach(v=>{ np[v]=(1-d)/N + d*dangling/N; });
+      ids.forEach(v=>{ const nb=adj.get(v); if(nb.size>0){ const share=pr[v]/nb.size; nb.forEach(w=>{ np[w]+=d*share; }); } });
+      pr=np;
+    }
+
+    // components
+    const seen=new Set(); let comp=0;
+    for(const s of ids){ if(seen.has(s)) continue; comp++; const q=[s]; seen.add(s); while(q.length){const v=q.shift(); for(const w of adj.get(v)){ if(!seen.has(w)){seen.add(w);q.push(w);} }} }
+
+    // average shortest path (over reachable ordered pairs)
+    let totD=0, totP=0;
+    for(const s of ids){ const dist={}; dist[s]=0; const q=[s];
+      while(q.length){ const v=q.shift(); for(const w of adj.get(v)){ if(dist[w]===undefined){dist[w]=dist[v]+1;q.push(w);} } }
+      for(const kk in dist){ if(kk!==s){ totD+=dist[kk]; totP++; } } }
+    const avgPath = totP>0? totD/totP : null;
+
+    // articulation points (Tarjan)
+    const ap=new Set(), visited=new Set(), disc={}, low={}; let timer={t:0};
+    const dfs=(u,parent)=>{
+      visited.add(u); disc[u]=low[u]=timer.t++; let children=0;
+      for(const v of adj.get(u)){
+        if(!visited.has(v)){ children++; dfs(v,u); low[u]=Math.min(low[u],low[v]);
+          if(parent!==null && low[v]>=disc[u]) ap.add(u);
+        } else if(v!==parent){ low[u]=Math.min(low[u],disc[v]); }
+      }
+      if(parent===null && children>1) ap.add(u);
+    };
+    for(const s of ids){ if(!visited.has(s)) dfs(s,null); }
+
+    let crossCount=0; for(const [a,b] of edges){ if(this.id2ent[a].fac!==this.id2ent[b].fac) crossCount++; }
+    const maxDeg=Math.max(0.0001,...ids.map(id=>deg[id]||0));
+    const maxBtw=Math.max(0.0001,...ids.map(id=>btw[id]||0));
+    const maxPr=Math.max(0.0001,...ids.map(id=>pr[id]||0));
+
+    const data={ids,idset,adj,edges,deg,btw,pr,comp,avgPath,ap,crossCount,maxDeg,maxBtw,maxPr};
+    this._ana={key,data};
+    return data;
+  }
+
+  bfsPath(a,b,adj){ if(!adj.get(a)||!adj.get(b)) return null; const prev={}; prev[a]=a; const q=[a];
+    while(q.length){ const v=q.shift(); if(v===b){ const path=[b]; let c=b; while(c!==a){ c=prev[c]; path.push(c);} return path.reverse(); }
+      for(const w of adj.get(v)){ if(prev[w]===undefined){ prev[w]=v; q.push(w);} } } return null; }
+
+  relTypeBetween(a,b){ for(const r of this.REL){ if(((r.s===a&&r.t===b)||(r.s===b&&r.t===a)) && this.state.types[r.k] && this.state.facs[this.id2ent[r.s].fac] && this.state.facs[this.id2ent[r.t].fac]) return this.TYPE[r.k].n; } return ''; }
+
+  renderVals(){
+    const S=this.state, sel=S.selected, lens=S.lens;
+    const FAC=this.FAC, TYPE=this.TYPE;
+    const showLabels = (this.props && this.props.showLabels!==undefined) ? this.props.showLabels : true;
+    const curved = (this.props && this.props.curvedEdges) || false;
+    const A = S.ready ? this.computeAnalysis() : {ids:[],idset:new Set(),adj:new Map(),edges:[],deg:{},btw:{},pr:{},comp:0,avgPath:null,ap:new Set(),crossCount:0,maxDeg:1,maxBtw:1,maxPr:1};
+    const {ids,idset,adj,edges,deg,btw,pr,comp,avgPath,ap,crossCount,maxBtw,maxDeg}=A;
+
+    // metric map for centrality lens
+    const mMap = S.cMetric==='intermediacion'?btw : S.cMetric==='influencia'?pr : deg;
+    const maxMetric = Math.max(0.0001, ...ids.map(id=>mMap[id]||0));
+
+    // neighbors of selection
+    const nbr=new Set(); if(sel && adj.get(sel)) adj.get(sel).forEach(x=>nbr.add(x));
+
+    // path
+    const pathNodeSet=new Set(); const pathPairs=new Set();
+    let pathFound=false, pathNone=false, pathSummary='', pathLine=[];
+    if(lens==='camino'){
+      const from=S.pathFrom, to=S.pathTo;
+      if(from&&to&&from!==to&&idset.has(from)&&idset.has(to)){
+        const path=this.bfsPath(from,to,adj);
+        if(path){ pathFound=true; path.forEach(id=>pathNodeSet.add(id));
+          for(let i=0;i<path.length-1;i++){ const a=path[i],b=path[i+1]; pathPairs.add(a<b?a+'|'+b:b+'|'+a); }
+          const steps=path.length-1; pathSummary=steps+' paso'+(steps===1?'':'s')+' de separación';
+          pathLine=path.map((id,i)=>{ const e=this.id2ent[id]; let via=''; if(i<path.length-1) via=this.relTypeBetween(id,path[i+1]); return {label:e.label,color:FAC[e.fac].c,via,isLast:i===path.length-1}; });
+        } else { pathNone=true; pathSummary='Sin conexión entre ambos en la red filtrada.'; }
+      } else if(from&&to&&from===to){ pathNone=true; pathSummary='Elige dos entidades distintas.'; }
+    }
+
+    // ---- edges ----
+    const graphEdges=[];
+    if(S.ready){
+      for(const r of this.REL){
+        if(!S.types[r.k]) continue;
+        const Ae=this.id2ent[r.s], Be=this.id2ent[r.t];
+        if(!S.facs[Ae.fac]||!S.facs[Be.fac]) continue;
+        const a=this.pos[r.s], b=this.pos[r.t]; if(!a||!b) continue;
+        const cross = Ae.fac!==Be.fac;
+        const key = r.s<r.t? r.s+'|'+r.t : r.t+'|'+r.s;
+        const onPath = pathPairs.has(key);
+        let stroke=TYPE[r.k].c, width=0.8+r.w*0.85, opacity=0.5;
+        if(lens==='puentes'){ if(cross){opacity=0.9;width+=0.5;} else opacity=0.1; }
+        else if(lens==='camino'){ opacity=onPath?1:0.05; if(onPath){stroke='oklch(0.95 0.01 250)';width=Math.max(width,2.6);} }
+        else if(lens==='centralidad'){ opacity=0.3; }
+        if(sel && lens!=='camino'){ if(r.s===sel||r.t===sel) opacity=Math.max(opacity,0.9); else opacity*=0.12; }
+        let d;
+        if(curved){ const mx=(a.x+b.x)/2, my=(a.y+b.y)/2, dx=b.x-a.x, dy=b.y-a.y, off=0.16; const cx=mx-dy*off, cy=my+dx*off; d='M'+a.x+' '+a.y+' Q'+cx+' '+cy+' '+b.x+' '+b.y; }
+        else d='M'+a.x+' '+a.y+' L'+b.x+' '+b.y;
+        graphEdges.push({d,stroke,width,opacity});
+      }
+    }
+
+    // ---- nodes ----
+    let graphNodes=[];
+    if(S.ready){
+      graphNodes=this.ENT.map(e=>{
+        const p=this.pos[e.id]; if(!p) return null;
+        const vis=S.facs[e.fac], isOrg=e.type==='org';
+        const dg=deg[e.id]||0;
+        let r;
+        if(lens==='centralidad') r = 7 + 24*((mMap[e.id]||0)/maxMetric);
+        else if(lens==='puentes') r = 8 + 16*((btw[e.id]||0)/maxBtw);
+        else r = 8 + Math.min(dg,12)*1.0;
+        r=Math.max(r,6);
+        let opacity=0.92, ring='rgba(255,255,255,0.1)', sw=1, halo=false;
+        if(!vis){ opacity=0.05; }
+        else if(lens==='camino'){ const onP=pathNodeSet.has(e.id); opacity=onP?1:0.12; if(e.id===S.pathFrom||e.id===S.pathTo){ring='#fff';sw=2.6;} else if(onP){ring='oklch(0.9 0.02 250)';sw=1.8;} }
+        else if(lens==='puentes'){ const isAP=ap.has(e.id), bro=(btw[e.id]||0)>0; opacity=isAP?1:(bro?0.82:0.3); if(isAP){ring='#fff';sw=2.2;halo=true;} }
+        else if(sel){ opacity = e.id===sel?1:(nbr.has(e.id)?0.95:0.16); }
+        if(e.id===sel){ ring='#fff'; sw=2.6; }
+        return { id:e.id, label:e.sl, x:p.x, y:p.y, r, haloR:r+5, fill:FAC[e.fac].c, isOrg, isPerson:!isOrg,
+          rx:p.x-r, ry:p.y-r, size:r*2, ring, sw, ly:p.y+r+11, opacity, halo,
+          showLabel: showLabels && vis && opacity>0.5,
+          onDown:(ev)=>this.onDown(ev,e.id) };
+      }).filter(Boolean);
+    }
+
+    // ---- ranking rows ----
+    const metricName={grado:'vínculos directos',intermediacion:'intermediación',influencia:'influencia'};
+    const sortedByMetric=ids.map(id=>({id,v:mMap[id]||0})).sort((a,b)=>b.v-a.v).slice(0,10);
+    const fmt=(v)=> S.cMetric==='grado'?String(v): S.cMetric==='intermediacion'?String(Math.round(v)):(v*100).toFixed(1)+'%';
+    const rankRows=sortedByMetric.map((row,i)=>{ const e=this.id2ent[row.id]; return {
+      rank:i+1, label:e.label, color:FAC[e.fac].c, barW:(row.v/maxMetric*100)+'%', score:fmt(row.v),
+      bg:'display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:7px;cursor:pointer;background:'+(row.id===sel?'oklch(0.27 0.013 255)':'transparent'),
+      onClick:()=>this.selectNode(row.id) }; });
+
+    const distinctFacs=(id)=>{ const s=new Set(); adj.get(id).forEach(x=>s.add(this.id2ent[x].fac)); return s.size; };
+    const brokerRows=ids.map(id=>({id,v:btw[id]||0})).filter(x=>x.v>0||ap.has(x.id)).sort((a,b)=>b.v-a.v).slice(0,8)
+      .map((row,i)=>{ const e=this.id2ent[row.id]; return {
+        rank:i+1, label:e.label, color:FAC[e.fac].c, score:String(Math.round(row.v)), critico:ap.has(row.id), facCount:String(distinctFacs(row.id)),
+        bg:'display:flex;align-items:center;gap:8px;padding:6px 7px;border-radius:7px;cursor:pointer;background:'+(row.id===sel?'oklch(0.27 0.013 255)':'transparent'),
+        onClick:()=>this.selectNode(row.id) }; });
+
+    // ---- insight text ----
+    let insightText='';
+    if(lens==='centralidad' && rankRows.length){
+      const top=rankRows[0].label;
+      if(S.cMetric==='grado') insightText=top+' encabeza la red por número de vínculos directos ('+rankRows[0].score+').';
+      else if(S.cMetric==='intermediacion') insightText=top+' es el principal punto de paso: por ahí cruza la mayor parte de las conexiones indirectas de la red.';
+      else insightText=top+' es la entidad más influyente, por estar ligada a otras muy conectadas.';
+    } else if(lens==='puentes'){
+      const apN=ap.size;
+      const critTxt = apN===0?'No hay puntos únicos de quiebre.':(apN+' actor'+(apN===1?'':'es')+' crítico'+(apN===1?'':'s')+': si desaparece'+(apN===1?'':'n')+', la red se fragmenta.');
+      insightText = crossCount+' de '+edges.length+' vínculos cruzan facciones. '+critTxt;
+    }
+
+    // ---- metric cards ----
+    const n=ids.length;
+    const metricCards=[
+      {label:'Entidades', value:String(n)},
+      {label:'Vínculos', value:String(edges.length)},
+      {label:'Densidad', value: n>1? Math.round(2*edges.length/(n*(n-1))*100)+'%':'—'},
+      {label:'Componentes', value:String(comp)},
+      {label:'Camino medio', value: avgPath!=null? avgPath.toFixed(1)+' pasos':'—'}
+    ];
+
+    // ---- selected detail ----
+    let hasSel=false, selObj=null;
+    if(sel && idset.has(sel)){ const e=this.id2ent[sel]; hasSel=true;
+      const rels=this.REL.filter(r=>(r.s===sel||r.t===sel) && S.types[r.k] && S.facs[this.id2ent[r.s].fac] && S.facs[this.id2ent[r.t].fac])
+        .sort((a,b)=>this.miOf(a.start)-this.miOf(b.start))
+        .map(r=>{ const other=r.s===sel?r.t:r.s; return { counter:this.id2ent[other].label, typeLabel:TYPE[r.k].n, color:TYPE[r.k].c,
+          period:this.monthLabel(this.miOf(r.start))+' – '+(r.end?this.monthLabel(this.miOf(r.end)):'actualidad') }; });
+      selObj={ label:e.label, color:FAC[e.fac].c, facLabel:FAC[e.fac].n, kind:e.type==='org'?'Organización':'Persona', degree:deg[sel]||0, rels };
+    }
+
+    // ---- chrome ----
+    const lensDefs=[{k:'ninguno',l:'Ninguno'},{k:'centralidad',l:'Centralidad'},{k:'puentes',l:'Puentes'},{k:'camino',l:'Camino'}];
+    const lensStyle=(on)=>'text-align:center;padding:8px 6px;border-radius:8px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid '+(on?'oklch(0.47 0.04 255)':'oklch(0.3 0.01 255)')+';background:'+(on?'oklch(0.28 0.016 255)':'transparent')+';color:'+(on?'oklch(0.96 0.01 250)':'oklch(0.62 0.01 250)');
+    const lensOptions=lensDefs.map(d=>({label:d.l,style:lensStyle(S.lens===d.k),onClick:()=>this.setLens(d.k)}));
+    const metricDefs=[{k:'grado',l:'Grado'},{k:'intermediacion',l:'Intermed.'},{k:'influencia',l:'Influencia'}];
+    const metricStyle=(on)=>'text-align:center;padding:6px 4px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid '+(on?'oklch(0.47 0.04 255)':'oklch(0.3 0.01 255)')+';background:'+(on?'oklch(0.28 0.016 255)':'transparent')+';color:'+(on?'oklch(0.96 0.01 250)':'oklch(0.62 0.01 250)');
+    const metricOptions=metricDefs.map(d=>({label:d.l,style:metricStyle(S.cMetric===d.k),onClick:()=>this.setMetric(d.k)}));
+    const chipStyle=(on)=>'display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:8px;cursor:pointer;border:1px solid '+(on?'oklch(0.34 0.01 255)':'transparent')+';background:'+(on?'oklch(0.225 0.009 255)':'transparent')+';opacity:'+(on?1:0.4);
+    const typeList=Object.keys(TYPE).map(k=>({ label:TYPE[k].n, color:TYPE[k].c, style:chipStyle(S.types[k]), onClick:()=>this.toggleType(k) }));
+    const facList=this.facOrder.map(k=>({ label:FAC[k].n, color:FAC[k].c, style:chipStyle(S.facs[k]), onClick:()=>this.toggleFac(k) }));
+    const entOptions=ids.map(id=>this.id2ent[id]).sort((a,b)=>(this.facIndex[a.fac]-this.facIndex[b.fac])||a.label.localeCompare(b.label)).map(e=>({id:e.id,label:e.label}));
+
+    const lensHints={
+      ninguno:'Elige un enfoque para extraer información de la estructura de la red.',
+      centralidad:'Quién ocupa las posiciones más importantes según distintos criterios.',
+      puentes:'Quién conecta facciones que de otro modo estarían separadas.',
+      camino:'Cómo se enlaza un actor con otro y a cuántos pasos de distancia.'
+    };
+    const pageNote = lens==='camino'
+      ? 'Clic en dos nodos (o usa los menús) para trazar la ruta · arrastra para reordenar.'
+      : 'Clic en un nodo para enfocarlo · arrástralo para reordenar · usa los enfoques de arriba para analizar.';
+
+    return {
+      lensOptions, lensHint:lensHints[lens],
+      isCent:lens==='centralidad', isBrokers:lens==='puentes', isPath:lens==='camino',
+      metricOptions, insightText, rankRows, brokerRows,
+      entOptions, pathFrom:S.pathFrom, pathTo:S.pathTo, setPathFrom:(e)=>this.setPathFrom(e), setPathTo:(e)=>this.setPathTo(e),
+      pathFound, pathNone, pathSummary, pathLine,
+      metricCards,
+      svgRef:this.bSvgRef, graphEdges, graphNodes,
+      hasSel, sel:selObj, clearSel:()=>this.clearSel(),
+      typeList, facList, pageNote
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -233,15 +233,15 @@ class KnowledgeGraph:
             )
         return rel_id
 
-    def insert_relations_bulk(self, edges, *, batch_size: int = 10000) -> int:
+    def insert_relations_bulk(self, edges, *, batch_size: int = 10000, on_batch=None) -> int:
         """Inserta muchas aristas en BLOQUE: mucho más rápido que `insert_relation`
         una a una (un commit por lote, no por arista; sin RETURNING por fila).
 
         Asigna ids EXPLÍCITOS secuenciales en Python (evita el round-trip de
         RETURNING). Pensado para CONSTRUIR un grafo nuevo, donde esta es la única
         vía de inserción y el grafo queda read-only tras el build. Devuelve el
-        número de aristas insertadas.
-        """
+        número de aristas insertadas. `on_batch(total)` se llama tras cada commit
+        (para reportar progreso)."""
         import itertools
 
         nid = (
@@ -294,6 +294,8 @@ class KnowledgeGraph:
                 )
             self._conn.execute("COMMIT")
             total += len(chunk)
+            if on_batch is not None:
+                on_batch(total)
         return total
 
     def update_relation_type(self, relation_id: int, tipo: str | None) -> None:
