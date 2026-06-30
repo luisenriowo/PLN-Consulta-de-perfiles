@@ -1,5 +1,16 @@
 [
   {
+    "slug": "andina-2025",
+    "nombre": "Andina 2025+ — grafo abierto",
+    "tipo": "tema",
+    "rango_fechas": [
+      "2025-01-01",
+      "2026-06-28"
+    ],
+    "n_entidades": 50,
+    "n_relaciones": 32829
+  },
+  {
     "slug": "andina-v1",
     "nombre": "Andina v1 — grafo abierto (2021)",
     "tipo": "tema",

@@ -462,6 +462,7 @@
       $("figura").dispatchEvent(new Event("change"));
     }
   }
+  window.__mostrarVistaGrafo = mostrarVista;
 
   function init() {
     $("vista-grafo").addEventListener("click", () => mostrarVista(true));
