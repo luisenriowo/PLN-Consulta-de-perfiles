@@ -130,7 +130,7 @@
 
     <div class="graph">
       <div class="svgwrap">
-        <svg id="svg" viewBox="0 0 1120 720" preserveAspectRatio="xMidYMid meet"></svg>
+        <svg id="svg" viewBox="0 0 1500 980" preserveAspectRatio="xMidYMid meet"></svg>
       </div>
       <div class="timebar">
         <div class="timerow">
@@ -279,12 +279,13 @@ const S = {
   selected:null, t:MAX, mode:'vig', playing:false,           // mode: off | vig | acc
   lens:'ninguno', cMetric:'grado', pathFrom:'', pathTo:'',    // lens: ninguno|centralidad|puentes|camino
   focus:null,                                                // entidad enfocada (ego-grafo); null = vista general top-K
+  pairView:null,                                             // par {s,t} cuya evolución+fuentes se muestra
   types:{laboral:true,politico:true,partidario:true,judicial:true,familiar:true},
   facs:Object.fromEntries(facOrder.map(f=>[f,true]))
 };
 const pos={}; let drag=null, playTimer=null, anaCache=null;
 let VIS=new Set();          // entidades visibles actuales (ego del foco, o top-K)
-const TOPK=55;              // nº de entidades en la vista general (sin foco)
+const TOPK=42;              // nº de entidades en la vista general (sin foco)
 
 // Conjunto visible: ego del foco (vecinos directos) o, sin foco, top-K por grado.
 function egoSet(){
@@ -300,6 +301,7 @@ function egoSet(){
 // Cambiar el foco: recalcula visibles, re-acomoda el layout de ese subconjunto.
 function setFocus(id){
   S.focus = id || null;
+  S.pairView = null;
   if(S.focus){ S.selected=S.focus; }
   VIS = egoSet();
   runLayout(VIS);
@@ -308,7 +310,7 @@ function setFocus(id){
 
 // ===================== LAYOUT (Fruchterman–Reingold) =====================
 function runLayout(idsSet){
-  const W=1120,H=720;
+  const W=1500,H=980;
   const ents = idsSet ? ENT.filter(e=>idsSet.has(e.id)) : ENT;
   const n=ents.length; if(!n)return;
   const idset = idsSet || new Set(ents.map(e=>e.id));
@@ -316,8 +318,8 @@ function runLayout(idsSet){
   const P={};
   ents.forEach(e=>{const a=facAng[e.fac]+(Math.random()-0.5)*0.7;const rr=170+Math.random()*130;P[e.id]={x:W/2+Math.cos(a)*rr,y:H/2+Math.sin(a)*rr};});
   const links=REL.filter(r=>idset.has(r.s)&&idset.has(r.t)).map(r=>[r.s,r.t]);
-  const k=Math.sqrt(W*H/n)*0.82; let temp=W/8;
-  for(let it=0;it<520;it++){
+  const k=Math.sqrt(W*H/n)*1.75; let temp=W/8;   // ↑↑ distancia ideal → mucho más espacio
+  for(let it=0;it<650;it++){
     const disp={}; ents.forEach(e=>disp[e.id]={x:0,y:0});
     for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){
       const a=P[ents[i].id],b=P[ents[j].id];let dx=a.x-b.x,dy=a.y-b.y;let d=Math.sqrt(dx*dx+dy*dy)||0.01;
@@ -325,7 +327,7 @@ function runLayout(idsSet){
       disp[ents[i].id].x+=ux*f;disp[ents[i].id].y+=uy*f;disp[ents[j].id].x-=ux*f;disp[ents[j].id].y-=uy*f;
     }
     for(const [s,t] of links){const a=P[s],b=P[t];if(!a||!b)continue;let dx=a.x-b.x,dy=a.y-b.y;let d=Math.sqrt(dx*dx+dy*dy)||0.01;const f=d*d/k,ux=dx/d,uy=dy/d;disp[s].x-=ux*f;disp[s].y-=uy*f;disp[t].x+=ux*f;disp[t].y+=uy*f;}
-    ents.forEach(e=>{const p=P[e.id];disp[e.id].x-=(p.x-W/2)*0.018;disp[e.id].y-=(p.y-H/2)*0.018;});
+    ents.forEach(e=>{const p=P[e.id];disp[e.id].x-=(p.x-W/2)*0.008;disp[e.id].y-=(p.y-H/2)*0.008;});
     ents.forEach(e=>{const p=P[e.id],dp=disp[e.id];let d=Math.sqrt(dp.x*dp.x+dp.y*dp.y)||0.01;const m=Math.min(d,temp);p.x+=dp.x/d*m;p.y+=dp.y/d*m;p.x=Math.max(50,Math.min(W-50,p.x));p.y=Math.max(50,Math.min(H-50,p.y));});
     temp*=0.985;
   }
@@ -559,15 +561,32 @@ function render(){
     const e=id2ent[sel];
     const rels=REL.filter(r=>(r.s===sel||r.t===sel)&&S.types[r.k]&&S.facs[id2ent[r.s].fac]&&S.facs[id2ent[r.t].fac])
       .sort((a,b)=>miOf(a.start)-miOf(b.start))
-      .map(r=>{const o=r.s===sel?r.t:r.s;const en=relEnTiempo(r);return `<div class="rel" style="opacity:${en?1:0.35}">
+      .map(r=>{const o=r.s===sel?r.t:r.s;const en=relEnTiempo(r);return `<div class="rel" data-pair-other="${o}" title="ver evolución y fuentes" style="opacity:${en?1:0.35};cursor:pointer">
         <span class="d" style="background:${TYPE[r.k].c}"></span>
-        <div><div class="c">${esc(id2ent[o].label)}</div>
+        <div style="flex:1"><div class="c">${esc(id2ent[o].label)} <span style="color:oklch(0.7 0.1 250);font-size:10px">›</span></div>
         <div class="p mono">${esc(r.pred||TYPE[r.k].n)} · ${esc(monthLabel(miOf(r.start)))}–${r.end?esc(monthLabel(miOf(r.end))):'actualidad'}</div></div></div>`;}).join('');
-    $('selwrap').innerHTML=`<div class="selbox">
+    let sb=`<div class="selbox">
       <div class="top"><div class="name">${esc(e.label)}</div>
         <div style="display:flex;gap:10px;align-items:center">${S.focus===sel?'':`<span data-ego="${sel}" style="cursor:pointer;color:oklch(0.82 0.1 250);font-size:11px;white-space:nowrap">ver ego</span>`}<div class="x" data-clear="1">×</div></div></div>
-      <div class="meta mono">${esc(FAC[e.fac].n)} · ${e.type==='org'?'Organización':'Persona'} · ${deg[sel]||0} vínculos ahora</div>
+      <div class="meta mono">${esc((FAC[e.fac]||{n:'?'}).n)} · ${e.type==='org'?'Organización':'Persona'} · ${deg[sel]||0} vínculos ahora</div>
+      <div class="meta mono" style="margin-top:4px;color:oklch(0.6 0.08 250)">clic en un vínculo → su evolución y fuentes</div>
       ${rels}</div>`;
+    // panel de evolución + fuentes del par seleccionado
+    if(S.pairView){
+      const pr=REL.find(r=>(r.s===S.pairView.s&&r.t===S.pairView.t)||(r.s===S.pairView.t&&r.t===S.pairView.s));
+      if(pr){
+        const steps=(pr.evol||[]).map(s=>`<div style="border-left:2px solid var(--accent);padding:1px 0 1px 9px">
+          <div style="font-size:11px"><span class="mono" style="color:oklch(0.74 0.1 250)">${esc(s.f)}</span> · <b>${esc(s.p)}</b></div>
+          ${s.ev?`<div style="font-size:10.5px;color:var(--mut);margin-top:2px;line-height:1.4">${esc(s.ev)}</div>`:''}
+          ${s.url?`<a href="${esc(s.url)}" target="_blank" rel="noopener" style="font-size:10px;color:oklch(0.78 0.12 230)">fuente ↗</a>`:'<span style="font-size:10px;color:var(--mut2)">sin enlace</span>'}
+        </div>`).join('') || '<div class="mono" style="font-size:11px;color:var(--mut)">sin evidencia registrada</div>';
+        sb+=`<div class="selbox" style="margin-top:-10px;border-color:var(--accent)">
+          <div class="top"><div class="name" style="font-size:13.5px">${esc(id2ent[pr.s].label)} <span style="color:var(--mut)">~</span> ${esc(id2ent[pr.t].label)}</div><div class="x" data-clearpair="1">×</div></div>
+          <div class="meta mono">Evolución · ${(pr.evol||[]).length} momentos · ${pr.count} co-menciones</div>
+          <div style="margin-top:11px;display:flex;flex-direction:column;gap:11px;max-height:320px;overflow:auto">${steps}</div></div>`;
+      }
+    }
+    $('selwrap').innerHTML=sb;
   } else $('selwrap').innerHTML='';
 
   // ---- chips ----
@@ -595,17 +614,19 @@ function render(){
 }
 
 // ===================== INTERACCIÓN =====================
-function toSvg(ev){const svg=$('svg');const r=svg.getBoundingClientRect();return {x:(ev.clientX-r.left)/r.width*1120,y:(ev.clientY-r.top)/r.height*720};}
+function toSvg(ev){const svg=$('svg');const r=svg.getBoundingClientRect();return {x:(ev.clientX-r.left)/r.width*1500,y:(ev.clientY-r.top)/r.height*980};}
 function setPathPoint(id){ if(!S.pathFrom){S.pathFrom=id;} else if(!S.pathTo&&id!==S.pathFrom){S.pathTo=id;} else {S.pathFrom=id;S.pathTo='';} }
 $('svg').addEventListener('pointerdown',ev=>{const g=ev.target.closest('[data-node]');if(!g)return;ev.preventDefault();drag={id:g.getAttribute('data-node'),moved:false};});
 window.addEventListener('pointermove',ev=>{if(!drag)return;const p=toSvg(ev);pos[drag.id]={x:p.x,y:p.y};drag.moved=true;render();});
-window.addEventListener('pointerup',()=>{if(!drag)return;if(!drag.moved){if(S.lens==='camino')setPathPoint(drag.id);else S.selected=S.selected===drag.id?null:drag.id;render();}drag=null;});
+window.addEventListener('pointerup',()=>{if(!drag)return;if(!drag.moved){if(S.lens==='camino')setPathPoint(drag.id);else{S.selected=S.selected===drag.id?null:drag.id;S.pairView=null;}render();}drag=null;});
 
 document.addEventListener('click',ev=>{
   const L=ev.target.closest('[data-lens]'); if(L){S.lens=L.getAttribute('data-lens');render();return;}
   const M=ev.target.closest('[data-metric]'); if(M){S.cMetric=M.getAttribute('data-metric');render();return;}
   const RS=ev.target.closest('[data-sel]'); if(RS){const id=RS.getAttribute('data-sel');S.selected=S.selected===id?null:id;render();return;}
-  const c=ev.target.closest('[data-clear]'); if(c){S.selected=null;render();return;}
+  const PO=ev.target.closest('[data-pair-other]'); if(PO){S.pairView={s:S.selected,t:PO.getAttribute('data-pair-other')};render();return;}
+  if(ev.target.closest('[data-clearpair]')){S.pairView=null;render();return;}
+  const c=ev.target.closest('[data-clear]'); if(c){S.selected=null;S.pairView=null;render();return;}
   const t=ev.target.closest('[data-type]'); if(t){const k=t.getAttribute('data-type');S.types[k]=!S.types[k];render();return;}
   const f=ev.target.closest('[data-fac]'); if(f){const k=f.getAttribute('data-fac');S.facs[k]=!S.facs[k];render();return;}
 });
@@ -641,7 +662,7 @@ function aplicarDatos(d){
     if(!id2ent[p.s]||!id2ent[p.t])return;
     const idx=p.months.map(miOf);
     REL.push({s:p.s,t:p.t,k:'vinculo',w:Math.min(3,1+Math.log10(p.count||1)),
-      months:p.months,monthsIdx:idx,pred:p.pred,
+      months:p.months,monthsIdx:idx,pred:p.pred,evol:p.evol||[],
       start:p.months[0],end:p.months[p.months.length-1],count:p.count});
   });
   MIN=9999;MAX=-9999; REL.forEach(r=>r.monthsIdx.forEach(m=>{MIN=Math.min(MIN,m);MAX=Math.max(MAX,m);}));
