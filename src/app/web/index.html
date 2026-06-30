@@ -3,116 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cronologías — figuras políticas</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Red temporal</title>
+  <meta http-equiv="refresh" content="0; url=/red_temporal.html?slug=andina-v2" />
+  <script>
+    const target = "/red_temporal.html?slug=andina-v2";
+    window.location.replace(target);
+  </script>
 </head>
 <body>
-  <header class="topbar">
-    <h1 class="brand">Cronologías</h1>
-    <div class="toolbar">
-      <div class="vista-switch" role="tablist" aria-label="Vista">
-        <button id="vista-timeline" class="vista-btn activo" type="button">Cronología</button>
-        <button id="vista-grafo" class="vista-btn" type="button">Grafo</button>
-      </div>
-      <label class="ctl ctl-lg">
-        <span>Figura</span>
-        <select id="figura"></select>
-      </label>
-      <label class="ctl ctl-lg" id="ctl-condicion">
-        <span>Condición</span>
-        <select id="condicion"></select>
-      </label>
-      <label class="ctl ctl-sm">
-        <span>Desde</span>
-        <input type="date" id="desde" />
-      </label>
-      <label class="ctl ctl-sm">
-        <span>Hasta</span>
-        <input type="date" id="hasta" />
-      </label>
-      <label class="ctl toggle" id="ctl-comparar">
-        <input type="checkbox" id="comparar" />
-        <span>Comparar</span>
-      </label>
-      <button id="btn-nueva" class="btn-nueva" type="button">+ Nueva figura</button>
-    </div>
-  </header>
-
-  <section id="nueva" class="nueva oculto">
-    <form id="form-nueva">
-      <h2>Procesar una figura nueva</h2>
-      <label>Nombre completo
-        <input id="n-nombre" required placeholder="Pedro Castillo" autocomplete="off" />
-      </label>
-      <label>Homónimos a excluir <span class="opt">(opcional)</span>
-        <input id="n-homonimos" placeholder="otros con el mismo apellido, separados por coma" autocomplete="off" />
-      </label>
-      <label>Términos de búsqueda extra <span class="opt">(opcional)</span>
-        <input id="n-terminos" placeholder="partido, caso… separados por coma" autocomplete="off" />
-      </label>
-      <button type="submit">Procesar</button>
-      <p class="hint">Corre el pipeline completo en <strong>background</strong> — toma unos minutos
-        (scraping + NER + clustering + generación).</p>
-    </form>
-    <div id="n-estado" class="n-estado"></div>
-  </section>
-
-  <main>
-    <div id="cargando" class="cargando">Cargando figura…</div>
-    <div id="meta" class="meta oculto"></div>
-    <p id="aviso" class="aviso oculto">
-      Caso disputado: las descripciones van <strong>atribuidas a su fuente</strong>;
-      nada se afirma como hecho. En comparación, el <em>Sistema</em> está anclado a los
-      pasajes; la <em>Ablación</em> genera sin anclaje — el contraste es el experimento.
-    </p>
-    <section id="resumen" class="resumen-wrap oculto" aria-label="Resumen en números"></section>
-    <section id="timeline" class="timeline oculto" aria-live="polite"></section>
-    <p id="vacio" class="vacio oculto">Sin eventos en el rango seleccionado.</p>
-    <p id="error" class="error oculto"></p>
-
-    <section id="grafo-vista" class="grafo-vista oculto" aria-label="Grafo de relaciones">
-      <div class="grafo-controles">
-        <div class="g-buscar-wrap">
-          <input id="g-buscar" class="g-buscar" type="search" placeholder="Buscar entidad…" autocomplete="off" />
-          <div id="g-resultados" class="g-resultados"></div>
-        </div>
-        <div class="g-acciones">
-          <button id="g-ver-todo" class="g-btn" type="button" title="Volver al grafo completo">Ver grafo completo</button>
-          <button id="g-modo-evolucion" class="g-btn" type="button" title="Seleccionar dos entidades para ver su evolución temporal">Modo evolución</button>
-          <span id="g-evolucion-estado" class="g-evolucion-estado"></span>
-        </div>
-        <div class="g-tipos" id="g-tipos"></div>
-        <label class="g-conf">Confianza ≥ <output id="g-conf-val">0.0</output>
-          <input type="range" id="g-conf" min="0" max="1" step="0.05" value="0" />
-        </label>
-        <span class="g-stats" id="g-stats"></span>
-      </div>
-      <div class="grafo-layout">
-        <div id="cy" class="cy"></div>
-        <aside id="grafo-panel" class="grafo-panel">
-          <p class="gp-hint">Clic en un <strong>nodo</strong> para ver sus relaciones en
-            el tiempo, o en una <strong>arista</strong> para ver la evidencia y las fuentes.</p>
-        </aside>
-      </div>
-      <p id="grafo-msg" class="grafo-msg oculto"></p>
-    </section>
-  </main>
-
-  <div id="fuentes-modal" class="modal-fondo oculto" role="dialog" aria-modal="true">
-    <div class="modal-panel">
-      <div class="modal-header">
-        <div class="modal-meta">
-          <p id="modal-titulo" class="modal-titulo"></p>
-          <p id="modal-n" class="modal-n"></p>
-        </div>
-        <button id="modal-cerrar" class="modal-cerrar" aria-label="Cerrar">✕</button>
-      </div>
-      <div id="modal-cuerpo" class="modal-cuerpo"></div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
-  <script src="app.js"></script>
-  <script src="grafo.js"></script>
+  <p>Redirigiendo a la red temporal… <a href="/red_temporal.html?slug=andina-v2">Abrir</a></p>
 </body>
 </html>
