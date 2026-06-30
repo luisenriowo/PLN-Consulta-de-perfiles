@@ -22,7 +22,6 @@ let FIGURA             = null;
 let CONDICION_ACTIVA   = "sistema_rag";
 let _obs               = null;
 let _eventosActuales   = [];
-let FIGURAS_META       = [];
 
 // ── Helpers HTML ──────────────────────────────────────────────────────────────
 
@@ -148,14 +147,6 @@ function statHTML(valor, etiqueta, nota) {
   </div>`;
 }
 
-function figuraLabel(f) {
-  if (f.tipo === "tema") {
-    const n = f.n_relaciones ?? 0;
-    return `${f.nombre} · ${n} relaciones`;
-  }
-  return `${f.nombre} · ${f.n_eventos ?? 0} eventos`;
-}
-
 function eventoTipoHTML(e) {
   const est  = e.estatus ? `<span class="estatus">${esc(e.estatus)}</span>` : "";
   const span = e.span
@@ -237,20 +228,6 @@ async function cargarResumen(slug) {
 
 async function cargarFigura(slug) {
   if (window.__vistaGrafo) return;   // en vista grafo, grafo.js maneja la carga
-  const metaFigura = FIGURAS_META.find((f) => f.slug === slug);
-  if (metaFigura?.tipo === "tema") {
-    ocultar("cargando");
-    ocultar("meta");
-    ocultar("aviso");
-    ocultar("resumen");
-    ocultar("timeline");
-    ocultar("vacio");
-    ocultar("error");
-    $("timeline").innerHTML = "";
-    $("resumen").innerHTML  = "";
-    requestAnimationFrame(() => $("vista-grafo").click());
-    return;
-  }
   // Estado de carga: solo el spinner visible
   mostrar("cargando");
   ocultar("meta");
@@ -307,10 +284,9 @@ async function cargarFigura(slug) {
 
 async function recargarFiguras(seleccionar) {
   const figuras = await (await fetch("api/figuras")).json();
-  FIGURAS_META = figuras;
   const sel = $("figura");
   sel.innerHTML = figuras.map((f) =>
-    `<option value="${esc(f.slug)}">${esc(figuraLabel(f))}</option>`
+    `<option value="${esc(f.slug)}">${esc(f.nombre)} · ${f.n_eventos} eventos</option>`
   ).join("");
   if (seleccionar) sel.value = seleccionar;
   cargarFigura(sel.value);
@@ -427,7 +403,6 @@ async function init() {
 
   try {
     const figuras = await (await fetch("api/figuras")).json();
-    FIGURAS_META = figuras;
     if (!figuras.length) {
       ocultar("cargando");
       $("error").textContent = `No hay figuras procesadas. Usa "+ Nueva figura" para crear una.`;
@@ -436,7 +411,7 @@ async function init() {
     }
     const sel = $("figura");
     sel.innerHTML = figuras.map((f) =>
-      `<option value="${esc(f.slug)}">${esc(figuraLabel(f))}</option>`
+      `<option value="${esc(f.slug)}">${esc(f.nombre)} · ${f.n_eventos} eventos</option>`
     ).join("");
     sel.addEventListener("change", () => cargarFigura(sel.value));
     cargarFigura(figuras[0].slug);
