@@ -1,4 +1,4 @@
-"""Construye el corpus 2021–2025 de Humala (v2) y reporta gate-metrics.
+"""Construye el corpus por defecto 2025–2026 de Humala (v2) y reporta gate-metrics.
 
 Densifica ANTES de persistir, para construir una sola vez:
   - Andina (PRIMARIA), queries de TÉRMINO suelto (la búsqueda es por frase, así

@@ -20,7 +20,7 @@ API = os.environ.get("TIMELINE_API", "http://127.0.0.1:8000")
 st.set_page_config(page_title="timeline-gen", page_icon="🗓️", layout="centered")
 st.title("🗓️ Línea de tiempo — figuras políticas")
 st.caption(
-    "Generada desde un corpus de noticias (Agencia Andina, 2021–2025). "
+    "Generada desde un corpus de noticias (Agencia Andina, 2025–2026). "
     "Caso disputado: todo evento va **atribuido a su fuente**, nada se afirma como hecho."
 )
 

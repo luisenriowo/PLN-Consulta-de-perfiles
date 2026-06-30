@@ -182,7 +182,7 @@ def main() -> None:
     st.set_page_config(page_title="Visor de cronologías", page_icon="🗓️", layout="wide")
     st.title("🗓️ Visor de cronologías — Ollanta Humala")
     st.caption(
-        "Líneas de tiempo generadas desde noticias (Agencia Andina, 2021–2025). "
+        "Líneas de tiempo generadas desde noticias (Agencia Andina, 2025–2026). "
         "Caso disputado: todo evento va **atribuido a su fuente**, nada se afirma como hecho."
     )
 

@@ -7,7 +7,7 @@ metadatos reales (title, url, dominio, fecha) pero NO el cuerpo: `texto` = titul
 ⚠ Rate limit medido: la DOC API exige **1 request cada ≥5 s** (si no, 429
 "Please limit requests to one every 5 seconds"). Por eso usamos backoff base 6 s.
 La DOC API admite rango con start/enddatetime (≈2017→), suficiente para la
-ventana 2021–2025; la profundidad mayor exigiría BigQuery (fuera de alcance).
+ventana 2025–2026 por defecto; la profundidad mayor exigiría BigQuery (fuera de alcance).
 """
 
 from __future__ import annotations

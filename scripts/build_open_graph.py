@@ -33,23 +33,42 @@ from src.storage import KnowledgeGraph
 
 log = logging.getLogger(__name__)
 
+_JSONL_WARN_LIMIT = 5
+
 
 
 def _cargar(slug: str, jsonl: Path | None) -> list[Documento]:
     if jsonl is not None:
         docs = []
+        descartadas = 0
         with jsonl.open(encoding="utf-8") as f:
-            for linea in f:
-                r = json.loads(linea)
-                docs.append(
-                    Documento(
-                        doc_id=r["doc_id"],
-                        fuente=r["fuente"],
-                        url=r["url"],
-                        fecha_pub=pd.Timestamp(r["fecha_pub"]).date(),  # ty: ignore[invalid-argument-type]
-                        texto=r["texto"],
+            for n_linea, linea in enumerate(f, 1):
+                try:
+                    r = json.loads(linea)
+                    docs.append(
+                        Documento(
+                            doc_id=r["doc_id"],
+                            fuente=r["fuente"],
+                            url=r["url"],
+                            fecha_pub=pd.Timestamp(r["fecha_pub"]).date(),  # ty: ignore[invalid-argument-type]
+                            texto=r["texto"],
+                        )
                     )
-                )
+                except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+                    descartadas += 1
+                    if descartadas <= _JSONL_WARN_LIMIT:
+                        log.warning(
+                            "saltando JSONL inválido en %s:%d (%s)",
+                            jsonl,
+                            n_linea,
+                            exc,
+                        )
+                    continue
+        if descartadas:
+            log.warning(
+                "JSONL cargado con %d líneas descartadas por formato inválido",
+                descartadas,
+            )
         return docs
     df = pd.read_parquet(manifiesto.corpus_path(slug))
     docs = []

@@ -230,6 +230,8 @@ data/corpus_metrics.json
 # Crawl de archivo completo (regenerable por scripts/crawl_andina.py)
 data/*.jsonl
 data/*.ckpt.json
+andina_crawl_new/
+andina_crawl.jsonl
 # Menciones NER persistidas (regenerable por scripts/ner_corpus.py)
 data/menciones_*/
 # Salidas finales (data/salidas/ y data/figuras.json) SÍ se suben.
