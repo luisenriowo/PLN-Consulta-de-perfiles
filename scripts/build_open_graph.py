@@ -12,11 +12,14 @@ Etapas: filtro de idioma (descarta inglés) → descubrir entidades (actores) �
 Uso:
   python scripts/build_open_graph.py <slug>                 # usa data/corpus_<slug>.parquet
   python scripts/build_open_graph.py andina --jsonl data/andina_crawl.jsonl --top-n 300
+  python scripts/build_open_graph.py andina --jsonl data/andina_crawl.jsonl --inicio 03-2026 --fin 05-2026
 """
 
 from __future__ import annotations
 
 import argparse
+from calendar import monthrange
+from datetime import date
 import json
 import logging
 import os
@@ -34,6 +37,30 @@ from src.storage import KnowledgeGraph
 log = logging.getLogger(__name__)
 
 _JSONL_WARN_LIMIT = 5
+
+
+def _mes_anio(valor: str) -> tuple[int, int]:
+    """Parsea MM-YYYY estricto y devuelve (mes, anio)."""
+    if len(valor) != 7 or valor[2] != "-":
+        raise argparse.ArgumentTypeError("usa formato MM-YYYY, por ejemplo 03-2026")
+    mes_txt, anio_txt = valor.split("-", 1)
+    if not (mes_txt.isdigit() and anio_txt.isdigit()):
+        raise argparse.ArgumentTypeError("usa formato MM-YYYY, por ejemplo 03-2026")
+    mes = int(mes_txt)
+    anio = int(anio_txt)
+    if mes < 1 or mes > 12:
+        raise argparse.ArgumentTypeError("el mes debe estar entre 01 y 12")
+    return mes, anio
+
+
+def _inicio_mes(valor: str) -> date:
+    mes, anio = _mes_anio(valor)
+    return date(anio, mes, 1)
+
+
+def _fin_mes(valor: str) -> date:
+    mes, anio = _mes_anio(valor)
+    return date(anio, mes, monthrange(anio, mes)[1])
 
 
 
@@ -93,9 +120,21 @@ def build(
     enriquecer_wikidata: bool = False,
     corpus_slug: str | None = None,
     usar_menciones: bool = False,
+    inicio: date | None = None,
+    fin: date | None = None,
 ) -> dict:
+    if (inicio is None) != (fin is None):
+        raise ValueError("inicio y fin deben usarse juntos")
+    if inicio is not None and fin is not None and inicio > fin:
+        raise ValueError("inicio no puede ser posterior a fin")
+
     docs = _cargar(corpus_slug or slug, jsonl)
     log.info("docs cargados: %d", len(docs))
+
+    if inicio is not None and fin is not None:
+        docs = [d for d in docs if inicio <= d.fecha_pub <= fin]
+        log.info("tras filtro de fechas [%s, %s]: %d", inicio, fin, len(docs))
+
     docs = [d for d in docs if es_espanol(d.texto)]
     log.info("tras filtro de idioma (ES): %d", len(docs))
 
@@ -185,7 +224,15 @@ if __name__ == "__main__":
         "--menciones", action="store_true",
         help="reusar menciones NER persistidas (scripts/ner_corpus.py) en vez de re-NER",
     )
+    p.add_argument(
+        "--inicio", type=_inicio_mes, help="mes inicial inclusivo, formato MM-YYYY"
+    )
+    p.add_argument("--fin", type=_fin_mes, help="mes final inclusivo, formato MM-YYYY")
     args = p.parse_args()
+    if (args.inicio is None) != (args.fin is None):
+        p.error("--inicio y --fin deben usarse juntos")
+    if args.inicio is not None and args.fin is not None and args.inicio > args.fin:
+        p.error("--inicio no puede ser posterior a --fin")
     build(
         args.slug,
         jsonl=args.jsonl,
@@ -193,4 +240,6 @@ if __name__ == "__main__":
         enriquecer_wikidata=args.wikidata,
         corpus_slug=args.corpus_slug,
         usar_menciones=args.menciones,
+        inicio=args.inicio,
+        fin=args.fin,
     )
