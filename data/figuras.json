@@ -1,5 +1,16 @@
 [
   {
+    "slug": "andina-v1",
+    "nombre": "Andina v1 — grafo abierto (2021)",
+    "tipo": "tema",
+    "rango_fechas": [
+      "2021-01-01",
+      "2026-05-19"
+    ],
+    "n_entidades": 150,
+    "n_relaciones": 93032
+  },
+  {
     "slug": "keiko",
     "nombre": "Keiko Fujimori",
     "tipo": "figura",

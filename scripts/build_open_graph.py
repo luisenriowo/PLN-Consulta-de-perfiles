@@ -101,10 +101,9 @@ def build(
 
     log.info("extrayendo relaciones abiertas fechadas…")
     vistos: set = set()
-    n = 0
-    with KnowledgeGraph(slug) as g:
-        for ent in entidades:
-            g.upsert_entity(ent)
+
+    def _aristas():
+        # Genera aristas abiertas únicas (dedup por par+fecha+predicado+doc+oración).
         for rel in extraer_relaciones_abiertas(docs, entidades):
             clave = (
                 rel.entity_a.entity_id,
@@ -117,22 +116,24 @@ def build(
             if clave in vistos:
                 continue
             vistos.add(clave)
-            g.insert_relation(
-                RelationEdge(
-                    origen_id=rel.entity_a.entity_id,
-                    destino_id=rel.entity_b.entity_id,
-                    tipo=None,
-                    predicado=rel.predicado,
-                    fecha=rel.fecha,
-                    evidencia=[rel.oracion],
-                    fuentes=[rel.doc_id],
-                    confianza=1.0,
-                    metodo="openie",
-                )
+            yield RelationEdge(
+                origen_id=rel.entity_a.entity_id,
+                destino_id=rel.entity_b.entity_id,
+                tipo=None,
+                predicado=rel.predicado,
+                fecha=rel.fecha,
+                evidencia=[rel.oracion],
+                fuentes=[rel.doc_id],
+                confianza=1.0,
+                metodo="openie",
             )
-            n += 1
-            if n % 500 == 0:
-                log.info("  aristas abiertas: %d", n)
+
+    with KnowledgeGraph(slug) as g:
+        for ent in entidades:
+            g.upsert_entity(ent)
+        # Inserción en BLOQUE (un commit por lote) — evita el cuello de los inserts
+        # de a una arista, que dominaban el tiempo a escala de archivo.
+        n = g.insert_relations_bulk(_aristas())
 
     log.info("== LISTO == entidades=%d aristas_abiertas=%d", len(entidades), n)
     return {"entidades": len(entidades), "aristas": n}

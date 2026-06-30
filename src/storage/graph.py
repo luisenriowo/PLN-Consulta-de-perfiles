@@ -233,6 +233,69 @@ class KnowledgeGraph:
             )
         return rel_id
 
+    def insert_relations_bulk(self, edges, *, batch_size: int = 10000) -> int:
+        """Inserta muchas aristas en BLOQUE: mucho más rápido que `insert_relation`
+        una a una (un commit por lote, no por arista; sin RETURNING por fila).
+
+        Asigna ids EXPLÍCITOS secuenciales en Python (evita el round-trip de
+        RETURNING). Pensado para CONSTRUIR un grafo nuevo, donde esta es la única
+        vía de inserción y el grafo queda read-only tras el build. Devuelve el
+        número de aristas insertadas.
+        """
+        import itertools
+
+        nid = (
+            self._conn.execute(
+                "SELECT coalesce(max(id), 0) FROM relations"
+            ).fetchone()[0]
+            + 1
+        )
+        it = iter(edges)
+        total = 0
+        while True:
+            chunk = list(itertools.islice(it, batch_size))
+            if not chunk:
+                break
+            rels, ev, src = [], [], []
+            for e in chunk:
+                rid = nid
+                nid += 1
+                rels.append(
+                    (
+                        rid,
+                        self.slug,
+                        e.origen_id,
+                        e.destino_id,
+                        e.tipo,
+                        e.predicado,
+                        e.fecha.isoformat(),
+                        e.confianza,
+                        e.metodo,
+                    )
+                )
+                ev.extend((rid, p) for p in e.evidencia)
+                src.extend((rid, d) for d in e.fuentes)
+            self._conn.execute("BEGIN TRANSACTION")
+            self._conn.executemany(
+                """INSERT INTO relations (id, figura_slug, origen_id, destino_id,
+                       tipo, predicado, fecha, confianza, metodo)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                rels,
+            )
+            if ev:
+                self._conn.executemany(
+                    "INSERT INTO relation_evidence (relation_id, pasaje) VALUES (?, ?)",
+                    ev,
+                )
+            if src:
+                self._conn.executemany(
+                    "INSERT INTO relation_sources (relation_id, doc_id) VALUES (?, ?)",
+                    src,
+                )
+            self._conn.execute("COMMIT")
+            total += len(chunk)
+        return total
+
     def update_relation_type(self, relation_id: int, tipo: str | None) -> None:
         """Persiste el tipo inducido/anotado de una arista existente.
 
